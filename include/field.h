@@ -40,8 +40,11 @@ extern "C" {
 /* Implementation of finite (prime) field math following GNU GMP sytle */ 
 
 typedef struct {
-    mpz_t i, p;
-} mpFp_t;
+    mpz_t i;
+    mpz_t p;
+} _mpFp_t;
+
+typedef _mpFp_t mpFp_t[1];
 
 void mpFp_init(mpFp_t i);
 void mpFp_clear(mpFp_t i);

@@ -33,37 +33,44 @@
 #include <gmp.h>
 
 void mpFp_init(mpFp_t i) {
-    mpz_init(i.i);
-    mpz_init(i.p);
+    mpz_init(i->i);
+    mpz_init(i->p);
     return;
 }
 
 void mpFp_clear(mpFp_t i) {
-    mpz_clear(i.i);
-    mpz_clear(i.p);
+    mpz_clear(i->i);
+    mpz_clear(i->p);
     return;
 }
 
 void mpFp_set(mpFp_t rop, mpFp_t op) {
-    mpz_set(rop.p, op.p);
-    mpz_set(rop.i, op.i);
+    mpz_set(rop->p, op->p);
+    mpz_set(rop->i, op->i);
     return;
 }
 
 void mpFp_set_mpz(mpFp_t rop, mpz_t i, mpz_t p) {
-    mpz_set(rop.p, p);
-    mpz_set(rop.i, i);
+    mpz_set(rop->p, p);
+    mpz_mod(rop->i, i, p);
     return;
 }
 
 void mpFp_set_ui(mpFp_t rop, unsigned long i, mpz_t p) {
-    mpz_set(rop.p, p);
-    mpz_set_ui(rop.i, i);
+    mpz_t t;
+    mpz_init(t);
+    
+    mpz_set(rop->p, p);
+    mpz_set_ui(t, i);
+    mpz_mod(rop->i, t, p);
+    //mpz_set_ui(rop->i, i);
+    
+    mpz_clear(t);
     return;
 }
 
 void mpz_set_mpFp(mpz_t rop, mpFp_t op) {
-    mpz_set(rop, op.i);
+    mpz_set(rop, op->i);
     return;
 }
 
@@ -71,13 +78,13 @@ void mpFp_swap(mpFp_t rop, mpFp_t op) {
     mpz_t t;
     mpz_init(t);
 
-    mpz_set(t, rop.p);
-    mpz_set(rop.p, op.p);
-    mpz_set(op.p, t);
+    mpz_set(t, rop->p);
+    mpz_set(rop->p, op->p);
+    mpz_set(op->p, t);
 
-    mpz_set(t, rop.i);
-    mpz_set(rop.i, op.i);
-    mpz_set(op.i, t);
+    mpz_set(t, rop->i);
+    mpz_set(rop->i, op->i);
+    mpz_set(op->i, t);
 
     mpz_clear(t);
     return;
@@ -94,7 +101,7 @@ void mpFp_cswap(mpFp_t rop, mpFp_t op, int swap) {
     mpz_init(c);
     mpz_init(d);
     
-    assert(mpz_cmp(rop.p, op.p) == 0);
+    assert(mpz_cmp(rop->p, op->p) == 0);
 
     if (swap != 0) {
         s = 1;
@@ -104,14 +111,14 @@ void mpFp_cswap(mpFp_t rop, mpFp_t op, int swap) {
         ns = 1;
     }
     
-    mpz_mul_ui(a, op.i, s);
-    mpz_mul_ui(b, rop.i, ns);
+    mpz_mul_ui(a, op->i, s);
+    mpz_mul_ui(b, rop->i, ns);
     
-    mpz_mul_ui(c, op.i, ns);
-    mpz_mul_ui(d, rop.i, s);
+    mpz_mul_ui(c, op->i, ns);
+    mpz_mul_ui(d, rop->i, s);
     
-    mpz_add(rop.i, a, b);
-    mpz_add(op.i, c, d);
+    mpz_add(rop->i, a, b);
+    mpz_add(op->i, c, d);
 
     mpz_clear(d);
     mpz_clear(c);
@@ -124,12 +131,12 @@ void mpFp_cswap(mpFp_t rop, mpFp_t op, int swap) {
 
 void mpFp_add(mpFp_t rop, mpFp_t op1, mpFp_t op2) {
     mpz_t t;
-    assert (mpz_cmp(op1.p, op2.p) == 0);
-    mpz_set(rop.p, op1.p);
+    assert (mpz_cmp(op1->p, op2->p) == 0);
+    mpz_set(rop->p, op1->p);
     mpz_init(t);
 
-    mpz_add(t, op1.i, op2.i);
-    mpz_mod(rop.i, t, op1.p);
+    mpz_add(t, op1->i, op2->i);
+    mpz_mod(rop->i, t, op1->p);
 
     mpz_clear(t);
     return;
@@ -137,11 +144,11 @@ void mpFp_add(mpFp_t rop, mpFp_t op1, mpFp_t op2) {
 
 void mpFp_add_ui(mpFp_t rop, mpFp_t op1, unsigned long op2) {
     mpz_t t;
-    mpz_set(rop.p, op1.p);
+    mpz_set(rop->p, op1->p);
     mpz_init(t);
 
-    mpz_add_ui(t, op1.i, op2);
-    mpz_mod(rop.i, t, op1.p);
+    mpz_add_ui(t, op1->i, op2);
+    mpz_mod(rop->i, t, op1->p);
 
     mpz_clear(t);
     return;
@@ -150,12 +157,12 @@ void mpFp_add_ui(mpFp_t rop, mpFp_t op1, unsigned long op2) {
 void mpFp_sub(mpFp_t rop, mpFp_t op1, mpFp_t op2) {
     mpz_t t;
 
-    assert (mpz_cmp(op1.p, op2.p) == 0);
-    mpz_set(rop.p, op1.p);
+    assert (mpz_cmp(op1->p, op2->p) == 0);
+    mpz_set(rop->p, op1->p);
     mpz_init(t);
 
-    mpz_sub(t, op1.i, op2.i);
-    mpz_mod(rop.i, t, op1.p);
+    mpz_sub(t, op1->i, op2->i);
+    mpz_mod(rop->i, t, op1->p);
 
     mpz_clear(t);
     return;
@@ -163,11 +170,11 @@ void mpFp_sub(mpFp_t rop, mpFp_t op1, mpFp_t op2) {
 
 void mpFp_sub_ui(mpFp_t rop, mpFp_t op1, unsigned long op2) {
     mpz_t t;
-    mpz_set(rop.p, op1.p);
+    mpz_set(rop->p, op1->p);
     mpz_init(t);
 
-    mpz_sub_ui(t, op1.i, op2);
-    mpz_mod(rop.i, t, op1.p);
+    mpz_sub_ui(t, op1->i, op2);
+    mpz_mod(rop->i, t, op1->p);
 
     mpz_clear(t);
     return;
@@ -175,12 +182,12 @@ void mpFp_sub_ui(mpFp_t rop, mpFp_t op1, unsigned long op2) {
 
 void mpFp_mul(mpFp_t rop, mpFp_t op1, mpFp_t op2) {
     mpz_t t;
-    assert (mpz_cmp(op1.p, op2.p) == 0);
-    mpz_set(rop.p, op1.p);
+    assert (mpz_cmp(op1->p, op2->p) == 0);
+    mpz_set(rop->p, op1->p);
     mpz_init(t);
 
-    mpz_mul(t, op1.i, op2.i);
-    mpz_mod(rop.i, t, op1.p);
+    mpz_mul(t, op1->i, op2->i);
+    mpz_mod(rop->i, t, op1->p);
 
     mpz_clear(t);
     return;
@@ -188,11 +195,11 @@ void mpFp_mul(mpFp_t rop, mpFp_t op1, mpFp_t op2) {
 
 void mpFp_mul_ui(mpFp_t rop, mpFp_t op1, unsigned long op2) {
     mpz_t t;
-    mpz_set(rop.p, op1.p);
+    mpz_set(rop->p, op1->p);
     mpz_init(t);
 
-    mpz_mul_ui(t, op1.i, op2);
-    mpz_mod(rop.i, t, op1.p);
+    mpz_mul_ui(t, op1->i, op2);
+    mpz_mod(rop->i, t, op1->p);
 
     mpz_clear(t);
     return;
@@ -200,11 +207,11 @@ void mpFp_mul_ui(mpFp_t rop, mpFp_t op1, unsigned long op2) {
 
 void mpFp_pow(mpFp_t rop, mpFp_t op1, mpz_t op2) {
     mpz_t t;
-    mpz_set(rop.p, op1.p);
+    mpz_set(rop->p, op1->p);
     mpz_init(t);
 
-    mpz_powm(t, op1.i, op2, op1.p);
-    mpz_mod(rop.i, t, op1.p);
+    mpz_powm(t, op1->i, op2, op1->p);
+    mpz_mod(rop->i, t, op1->p);
 
     mpz_clear(t);
     return;
@@ -212,19 +219,19 @@ void mpFp_pow(mpFp_t rop, mpFp_t op1, mpz_t op2) {
 
 void mpFp_pow_ui(mpFp_t rop, mpFp_t op1, unsigned long op2) {
     mpz_t t;
-    mpz_set(rop.p, op1.p);
+    mpz_set(rop->p, op1->p);
     mpz_init(t);
 
-    mpz_powm_ui(t, op1.i, op2, op1.p);
-    mpz_mod(rop.i, t, op1.p);
+    mpz_powm_ui(t, op1->i, op2, op1->p);
+    mpz_mod(rop->i, t, op1->p);
 
     mpz_clear(t);
     return;
 }
 
 void mpFp_neg(mpFp_t rop, mpFp_t op) {
-    mpz_set(rop.p, op.p);
-    mpz_sub(rop.i, op.p, op.i);
+    mpz_set(rop->p, op->p);
+    mpz_sub(rop->i, op->p, op->i);
     return;
 }
 
@@ -246,8 +253,8 @@ void mpFp_inv(mpFp_t rop, mpFp_t op) {
     mpz_init(y);
     mpz_init(q);
     
-    mpz_set(lastr, op.i);
-    mpz_set(r, op.p);
+    mpz_set(lastr, op->i);
+    mpz_set(r, op->p);
     mpz_set_ui(x, 0);
 
     while (mpz_cmp_ui(r, 0) != 0) {
@@ -259,8 +266,8 @@ void mpFp_inv(mpFp_t rop, mpFp_t op) {
         mpz_mul(q, q, y);
         mpz_sub(x, x, q);
     }
-    mpz_mod(rop.i, lastx, op.p);
-    mpz_set(rop.p, op.p);
+    mpz_mod(rop->i, lastx, op->p);
+    mpz_set(rop->p, op->p);
     mpz_clear(q);
     mpz_clear(y);
     mpz_clear(x);
@@ -273,11 +280,11 @@ void mpFp_inv(mpFp_t rop, mpFp_t op) {
 /* comparison */
 
 int mpFp_cmp(mpFp_t op1, mpFp_t op2) {
-    assert (mpz_cmp(op1.p, op2.p) == 0);
+    assert (mpz_cmp(op1->p, op2->p) == 0);
     
-    return mpz_cmp(op1.i, op2.i);
+    return mpz_cmp(op1->i, op2->i);
 }
 
 int mpFp_cmp_ui(mpFp_t op1, unsigned long op2) {
-    return mpz_cmp_ui(op1.i, op2);
+    return mpz_cmp_ui(op1->i, op2);
 }
