@@ -256,15 +256,16 @@ void mpFp_inv(mpFp_t rop, mpFp_t op) {
     mpz_set(lastr, op->i);
     mpz_set(r, op->p);
     mpz_set_ui(x, 0);
+    mpz_set_ui(lastx, 1);
 
     while (mpz_cmp_ui(r, 0) != 0) {
         mpz_set(y, r);
         mpz_tdiv_qr(q, r, lastr, y);
         mpz_set(lastr, y);
         mpz_set(y, x);
-        mpz_set(x, lastx);
-        mpz_mul(q, q, y);
-        mpz_sub(x, x, q);
+        mpz_mul(q, q, x);
+        mpz_sub(x, lastx, q);
+        mpz_set(lastx, y);
     }
     mpz_mod(rop->i, lastx, op->p);
     mpz_set(rop->p, op->p);

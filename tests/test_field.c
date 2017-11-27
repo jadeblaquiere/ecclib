@@ -53,6 +53,12 @@ START_TEST(test_mpFp_add)
     mpFp_set_ui(b, 9, p);
     mpFp_add(c, a, b);
     assert(mpFp_cmp_ui(c, 4) == 0);
+    mpFp_add_ui(c, a, 9);
+    assert(mpFp_cmp_ui(c, 4) == 0);
+    mpFp_neg(b,a);
+    assert(mpFp_cmp_ui(b, 5) == 0);
+    mpFp_add(c, a, b);
+    assert(mpFp_cmp_ui(c, 0) == 0);
     
     // 2**255-19 (a prime number)
     mpz_set_str(p, p25519, 10);
@@ -60,6 +66,8 @@ START_TEST(test_mpFp_add)
     mpFp_set_mpz(a, d, p);
     mpFp_set_ui(b, 9, p);
     mpFp_add(c, a, b);
+    assert(mpFp_cmp_ui(c, 21) == 0);
+    mpFp_add_ui(c, a, 9);
     assert(mpFp_cmp_ui(c, 21) == 0);
     
     mpz_clear(d);
@@ -108,6 +116,181 @@ START_TEST(test_mpFp_sub)
     mpFp_clear(a);
 END_TEST
 
+START_TEST(test_mpFp_mul)
+    mpFp_t a, b, c;
+    mpz_t p;
+    mpz_t d;
+    mpFp_init(a);
+    mpFp_init(b);
+    mpFp_init(c);
+    mpz_init(p);
+    mpz_init(d);
+
+    mpz_set_ui(p, 17);
+    mpz_set_ui(d, 12);
+
+    mpFp_set_mpz(a, d, p);
+    mpFp_set_ui(b, 9, p);
+    mpFp_mul(c, a, b);
+    assert(mpFp_cmp_ui(c, 6) == 0);
+    mpFp_swap(b, a);
+    mpFp_mul(c, a, b);
+    assert(mpFp_cmp_ui(c, 6) == 0);
+    mpFp_mul_ui(c, a, 9);
+    assert(mpFp_cmp_ui(c, 13) == 0);
+    
+    // 2**255-19 (a prime number)
+    mpz_set_str(p, p25519, 10);
+    
+    mpFp_set_mpz(a, d, p);
+    mpFp_set_ui(b, 9, p);
+    mpFp_mul(c, a, b);
+    assert(mpFp_cmp_ui(c, 108) == 0);
+    mpFp_mul_ui(c, a, 9);
+    assert(mpFp_cmp_ui(c, 108) == 0);
+    
+    mpz_clear(d);
+    mpz_clear(p);
+    mpFp_clear(c);
+    mpFp_clear(b);
+    mpFp_clear(a);
+END_TEST
+
+START_TEST(test_mpFp_pow)
+    mpFp_t a, b, c;
+    mpz_t p;
+    mpz_t d;
+    mpFp_init(a);
+    mpFp_init(b);
+    mpFp_init(c);
+    mpz_init(p);
+    mpz_init(d);
+
+    mpz_set_ui(p, 17);
+    mpz_set_ui(d, 12);
+
+    mpFp_set_mpz(a, d, p);
+    mpFp_set_ui(b, 9, p);
+    mpFp_pow(c, a, b);
+    assert(mpFp_cmp_ui(c, 5) == 0);
+    mpFp_swap(b, a);
+    mpFp_pow(c, a, b);
+    assert(mpFp_cmp_ui(c, 16) == 0);
+    mpFp_pow_ui(c, a, 9);
+    assert(mpFp_cmp_ui(c, 9) == 0);
+    
+    // 2**255-19 (a prime number)
+    mpz_set_str(p, p25519, 10);
+    
+    mpFp_set_mpz(a, d, p);
+    mpFp_set_ui(b, 9, p);
+    mpFp_pow(c, a, b);
+    assert(mpFp_cmp_ui(c, 5159780352) == 0);
+    mpFp_pow_ui(c, a, 9);
+    assert(mpFp_cmp_ui(c, 5159780352) == 0);
+    
+    mpz_clear(d);
+    mpz_clear(p);
+    mpFp_clear(c);
+    mpFp_clear(b);
+    mpFp_clear(a);
+END_TEST
+
+START_TEST(test_mpFp_inv)
+    mpFp_t a, b, c;
+    mpz_t p, d, e;
+    mpFp_init(a);
+    mpFp_init(b);
+    mpFp_init(c);
+    mpz_init(p);
+    mpz_init(d);
+    mpz_init(e);
+
+    mpz_set_ui(p, 17);
+    mpz_set_ui(d, 12);
+
+    mpFp_set_mpz(a, d, p);
+    mpz_sub_ui(e, p, 2);
+    mpFp_pow(c, a, e);
+    mpFp_inv(b, a);
+    assert(mpFp_cmp_ui(c, 10) == 0);
+    assert(mpFp_cmp_ui(b, 10) == 0);
+    assert(mpFp_cmp(c, b) == 0);
+    mpFp_mul(c, a, b);
+    assert(mpFp_cmp_ui(c, 1) == 0);
+    
+    // 2**255-19 (a prime number)
+    mpz_set_str(p, p25519, 10);
+    
+    // compare extended euclidean algorithm result to inverse by pow
+    // from Fermat's little thereom
+    mpFp_set_mpz(a, d, p);
+    mpz_sub_ui(e, p, 2);
+    mpFp_pow(c, a, e);
+    mpFp_inv(b, a);
+    assert(mpFp_cmp(c, b) == 0);
+    mpFp_mul(c, a, b);
+    assert(mpFp_cmp_ui(c, 1) == 0);
+    
+    mpz_clear(e);
+    mpz_clear(d);
+    mpz_clear(p);
+    mpFp_clear(c);
+    mpFp_clear(b);
+    mpFp_clear(a);
+END_TEST
+
+START_TEST(test_mpFp_swap_cswap)
+    mpFp_t a, b, c, d;
+    mpz_t p;
+    mpz_t e;
+    mpFp_init(a);
+    mpFp_init(b);
+    mpFp_init(c);
+    mpFp_init(d);
+    mpz_init(p);
+    mpz_init(e);
+
+    mpz_set_ui(p, 17);
+    mpz_set_ui(e, 12);
+
+    mpFp_set_mpz(a, e, p);
+    mpFp_set_ui(b, 9, p);
+    mpFp_set(c, a);
+    mpFp_set(d, b);
+    mpFp_swap(a, b);
+    assert(mpFp_cmp(c, b) == 0);
+    assert(mpFp_cmp(c, a) != 0);
+    assert(mpFp_cmp(d, b) != 0);
+    assert(mpFp_cmp(d, a) == 0);
+
+    mpFp_set_mpz(a, e, p);
+    mpFp_set_ui(b, 9, p);
+    mpFp_set(c, a);
+    mpFp_set(d, b);
+    mpFp_cswap(a, b, 0);
+    assert(mpFp_cmp(c, b) != 0);
+    assert(mpFp_cmp(c, a) == 0);
+    assert(mpFp_cmp(d, b) == 0);
+    assert(mpFp_cmp(d, a) != 0);
+
+    mpFp_set_mpz(a, e, p);
+    mpFp_set_ui(b, 9, p);
+    mpFp_set(c, a);
+    mpFp_set(d, b);
+    mpFp_cswap(a, b, 1);
+    assert(mpFp_cmp(c, b) == 0);
+    assert(mpFp_cmp(c, a) != 0);
+    assert(mpFp_cmp(d, b) != 0);
+    assert(mpFp_cmp(d, a) == 0);
+    
+    mpz_clear(d);
+    mpz_clear(p);
+    mpFp_clear(c);
+    mpFp_clear(b);
+    mpFp_clear(a);
+END_TEST
+
 static Suite *mpFp_test_suite(void) {
     Suite *s;
     TCase *tc;
@@ -117,6 +300,10 @@ static Suite *mpFp_test_suite(void) {
 
     tcase_add_test(tc, test_mpFp_add);
     tcase_add_test(tc, test_mpFp_sub);
+    tcase_add_test(tc, test_mpFp_mul);
+    tcase_add_test(tc, test_mpFp_pow);
+    tcase_add_test(tc, test_mpFp_inv);
+    tcase_add_test(tc, test_mpFp_swap_cswap);
     suite_add_tcase(s, tc);
     return s;
 }
