@@ -158,23 +158,25 @@ END_TEST
 
 START_TEST(test_mpFp_pow)
     mpFp_t a, b, c;
-    mpz_t p;
-    mpz_t d;
+    mpz_t p, d, e;
     mpFp_init(a);
     mpFp_init(b);
     mpFp_init(c);
     mpz_init(p);
     mpz_init(d);
+    mpz_init(e);
 
     mpz_set_ui(p, 17);
     mpz_set_ui(d, 12);
 
     mpFp_set_mpz(a, d, p);
     mpFp_set_ui(b, 9, p);
-    mpFp_pow(c, a, b);
+    mpz_set_mpFp(e, b);
+    mpFp_pow(c, a, e);
     assert(mpFp_cmp_ui(c, 5) == 0);
     mpFp_swap(b, a);
-    mpFp_pow(c, a, b);
+    mpz_set_mpFp(e, b);
+    mpFp_pow(c, a, e);
     assert(mpFp_cmp_ui(c, 16) == 0);
     mpFp_pow_ui(c, a, 9);
     assert(mpFp_cmp_ui(c, 9) == 0);
@@ -184,7 +186,8 @@ START_TEST(test_mpFp_pow)
     
     mpFp_set_mpz(a, d, p);
     mpFp_set_ui(b, 9, p);
-    mpFp_pow(c, a, b);
+    mpz_set_mpFp(e, b);
+    mpFp_pow(c, a, e);
     assert(mpFp_cmp_ui(c, 5159780352) == 0);
     mpFp_pow_ui(c, a, 9);
     assert(mpFp_cmp_ui(c, 5159780352) == 0);
@@ -284,8 +287,9 @@ START_TEST(test_mpFp_swap_cswap)
     assert(mpFp_cmp(d, b) != 0);
     assert(mpFp_cmp(d, a) == 0);
     
-    mpz_clear(d);
+    mpz_clear(e);
     mpz_clear(p);
+    mpFp_clear(d);
     mpFp_clear(c);
     mpFp_clear(b);
     mpFp_clear(a);
