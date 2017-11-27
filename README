@@ -1,0 +1,16 @@
+README for libecc:
+
+libecc provides basic elliptic curve math functions which can be used
+to implement higher level cryptography algorithms. 
+
+libecc follows the traditional GNU autotools build process so it _should_
+build without issue on most platforms where autotools is present. GMP is the
+only dependency. 
+
+Example build and install sequence:
+
+$ autoreconf --install
+$ ./configure --prefix=/usr
+$ make
+$ make check
+$ sudo make install
