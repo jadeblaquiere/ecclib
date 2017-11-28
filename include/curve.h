@@ -56,6 +56,7 @@ typedef _mpECurve_t mpECurve_t[1];
 void mpECurve_init(mpECurve_t c);
 void mpECurve_clear(mpECurve_t c);
 
+void mpECurve_set(mpECurve_t rop, mpECurve_t op);
 void mpECurve_set_str(mpECurve_t c, char *p, char *a, char *b, char *n,
                       char *h, char *Gx, char *Gy, unsigned int bits);
 

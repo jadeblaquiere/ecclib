@@ -56,6 +56,18 @@ void mpECurve_clear(mpECurve_t c) {
     return;
 }
 
+void mpECurve_set(mpECurve_t rop, mpECurve_t op){
+    mpz_set(rop->p, op->p);
+    mpz_set(rop->a, op->a);
+    mpz_set(rop->b, op->b);
+    mpz_set(rop->n, op->n);
+    mpz_set(rop->h, op->h);
+    mpz_set(rop->G[0], op->G[0]);
+    mpz_set(rop->G[1], op->G[1]);
+    rop->bits = op->bits;
+    return;
+}
+
 void mpECurve_set_str(mpECurve_t c, char *p, char *a, char *b, char *n,
 char *h, char *Gx, char *Gy, unsigned int bits){
     mpz_set_str(c->p, p, 0);
@@ -111,4 +123,3 @@ int mpECurve_cmp(mpECurve_t op1, mpECurve_t op2) {
     r = mpz_cmp(op1->G[1], op2->G[1]) ; if (r != 0) return r;
     return 0;
 }
-

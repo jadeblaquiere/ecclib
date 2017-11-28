@@ -61,10 +61,11 @@ START_TEST(test_mpECurve_create)
 END_TEST
 
 START_TEST(test_mpECurve_cmp)
-    mpECurve_t a, b, c;
+    mpECurve_t a, b, c, d;
     mpECurve_init(a);
     mpECurve_init(b);
     mpECurve_init(c);
+    mpECurve_init(d);
 
 //    name: 'secp112r1',
 //    p: 0xDB7C_2ABF62E3_5E668076_BEAD208B,
@@ -114,10 +115,15 @@ START_TEST(test_mpECurve_cmp)
         "0xA89CE5AF8724C0A23E0E0FF77500",
         112);
 
+    mpECurve_set(d, b);
+
     assert(mpECurve_cmp(a,b) != 0);
     assert(mpECurve_cmp(b,c) != 0);
     assert(mpECurve_cmp(a,c) == 0);
+    assert(mpECurve_cmp(d,b) == 0);
+    assert(mpECurve_cmp(d,c) != 0);
 
+    mpECurve_clear(d);
     mpECurve_clear(c);
     mpECurve_clear(b);
     mpECurve_clear(a);
