@@ -32,6 +32,7 @@
 #include <curve.h>
 #include <gmp.h>
 #include <check.h>
+#include <stdio.h>
 #include <stdlib.h>
 
 START_TEST(test_mpECurve_create)
@@ -47,7 +48,7 @@ START_TEST(test_mpECurve_create)
 //    n: 0xDB7C_2ABF62E3_5E7628DF_AC6561C5,
 //    h: 1
 
-    mpECurve_set_str(a, 
+    mpECurve_set_str_ws(a, 
         "0xDB7C2ABF62E35E668076BEAD208B",
         "0xDB7C2ABF62E35E668076BEAD2088",
         "0x659EF8BA043916EEDE8911702B22",
@@ -76,7 +77,7 @@ START_TEST(test_mpECurve_cmp)
 //    n: 0xDB7C_2ABF62E3_5E7628DF_AC6561C5,
 //    h: 1
 
-    mpECurve_set_str(a, 
+    mpECurve_set_str_ws(a, 
         "0xDB7C2ABF62E35E668076BEAD208B",
         "0xDB7C2ABF62E35E668076BEAD2088",
         "0x659EF8BA043916EEDE8911702B22",
@@ -95,7 +96,7 @@ START_TEST(test_mpECurve_cmp)
 //    n: 0x36DF_0AAFD8B8_D7597CA1_0520D04B,
 //    h: 4
 
-    mpECurve_set_str(b, 
+    mpECurve_set_str_ws(b, 
         "0xDB7C2ABF62E35E668076BEAD208B",
         "0x6127C24C05F38A0AAAF65C0EF02C",
         "0x51DEF1815DB5ED74FCC34C85D709",
@@ -105,7 +106,7 @@ START_TEST(test_mpECurve_cmp)
         "0xADCD46F5882E3747DEF36E956E97",
         112);
 
-    mpECurve_set_str(c, 
+    mpECurve_set_str_ws(c, 
         "0xDB7C2ABF62E35E668076BEAD208B",
         "0xDB7C2ABF62E35E668076BEAD2088",
         "0x659EF8BA043916EEDE8911702B22",
@@ -129,6 +130,39 @@ START_TEST(test_mpECurve_cmp)
     mpECurve_clear(a);
 END_TEST
 
+START_TEST(test_mpECurve_named)
+    int error;
+    mpECurve_t a;
+    mpECurve_init(a);
+
+    error = mpECurve_set_named(a,"secp128r2");
+    assert(error == 0);
+    error = mpECurve_set_named(a,"thisisnotthenameofacurve");
+    assert(error != 0);
+
+    mpECurve_clear(a);
+END_TEST
+
+START_TEST(test_mpECurve_all_named)
+    int i, error;
+    mpECurve_t a;
+    char **clist;
+    mpECurve_init(a);
+
+    clist = _mpECurve_list_standard_curves();
+    i = 0;
+    while(clist[i] != NULL) {
+        printf("TEST: mpECurve found curve %s\n", clist[i]);
+        error = mpECurve_set_named(a,clist[i]);
+        assert(error == 0);
+        free(clist[i]);
+        i += 1;
+    }
+    free(clist);
+
+    mpECurve_clear(a);
+END_TEST
+
 static Suite *mpECurve_test_suite(void) {
     Suite *s;
     TCase *tc;
@@ -138,6 +172,8 @@ static Suite *mpECurve_test_suite(void) {
 
     tcase_add_test(tc, test_mpECurve_create);
     tcase_add_test(tc, test_mpECurve_cmp);
+    tcase_add_test(tc, test_mpECurve_named);
+    tcase_add_test(tc, test_mpECurve_all_named);
     suite_add_tcase(s, tc);
     return s;
 }
