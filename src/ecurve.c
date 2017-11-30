@@ -29,7 +29,7 @@
 //OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <assert.h>
-#include <curve.h>
+#include <ecurve.h>
 #include <field.h>
 #include <gmp.h>
 #include <string.h>
