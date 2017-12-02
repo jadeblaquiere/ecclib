@@ -32,6 +32,7 @@
 #include <field.h>
 #include <gmp.h>
 #include <check.h>
+#include <stdio.h>
 #include <stdlib.h>
 
 static char p25519[] = "57896044618658097711785492504343953926634992332820282019728792003956564819949";
@@ -295,6 +296,42 @@ START_TEST(test_mpFp_swap_cswap)
     mpFp_clear(a);
 END_TEST
 
+START_TEST(test_mpFp_sqrt)
+    int i, j, error, bb, cc;
+    int primes[] = {11, 13, 17, 19, 23, 29, 31};
+    mpFp_t a, b, c;
+    mpz_t p;
+    mpFp_init(a);
+    mpFp_init(b);
+    mpFp_init(c);
+    mpz_init(p);
+
+    for (j = 0 ; j < (sizeof(primes)/sizeof(primes[0])); j++) {
+        mpz_set_ui(p, primes[j]);
+        for (i = 0; i < primes[j]; i++) {
+            mpFp_set_ui(a, i, p);
+            error = mpFp_sqrt(b, a);
+            if (error != 0) {
+                printf("%d is not a quadratic residue\n", i);
+                continue;
+            }
+            mpFp_neg(c, b);
+            bb = mpz_get_ui(b->i);
+            cc = mpz_get_ui(c->i);
+            mpFp_pow_ui(b, b, 2);
+            assert(mpFp_cmp(a, b) == 0);
+            mpFp_pow_ui(c, c, 2);
+            assert(mpFp_cmp(a, c) == 0);
+            printf("Square roots of %d (mod %d) are %d, %d\n", i, primes[j], bb, cc);
+        }
+    }
+    
+    mpz_clear(p);
+    mpFp_clear(c);
+    mpFp_clear(b);
+    mpFp_clear(a);
+END_TEST
+
 static Suite *mpFp_test_suite(void) {
     Suite *s;
     TCase *tc;
@@ -307,6 +344,7 @@ static Suite *mpFp_test_suite(void) {
     tcase_add_test(tc, test_mpFp_mul);
     tcase_add_test(tc, test_mpFp_pow);
     tcase_add_test(tc, test_mpFp_inv);
+    tcase_add_test(tc, test_mpFp_sqrt);
     tcase_add_test(tc, test_mpFp_swap_cswap);
     suite_add_tcase(s, tc);
     return s;

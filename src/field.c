@@ -278,6 +278,110 @@ void mpFp_inv(mpFp_t rop, mpFp_t op) {
     return;
 }
 
+// python from RosettaCode
+//def tonelli(n, p):
+//    assert legendre(n, p) == 1, "not a square (mod p)"
+//    q = p - 1
+//    s = 0
+//    while q % 2 == 0:
+//        q //= 2
+//        s += 1
+//    if s == 1:
+//        return pow(n, (p + 1) // 4, p)
+//    for z in range(2, p):
+//        if p - 1 == legendre(z, p):
+//            break
+//    c = pow(z, q, p)
+//    r = pow(n, (q + 1) // 2, p)
+//    t = pow(n, q, p)
+//    m = s
+//    t2 = 0
+//    while (t - 1) % p != 0:
+//        t2 = (t * t) % p
+//        for i in range(1, m):
+//            if (t2 - 1) % p == 0:
+//                break
+//            t2 = (t2 * t2) % p
+//        b = pow(c, 1 << (m - i - 1), p)
+//        r = (r * b) % p
+//        c = (b * b) % p
+//        t = (t * c) % p
+//        m = i
+//    return r
+
+/* modular square root - return nonzero if not quadratic residue */ 
+
+int mpFp_sqrt(mpFp_t rop, mpFp_t op) {
+    int s;
+    mpz_t t, q;
+    // determine whether i is a quadratic residue (mod p)
+    if (mpz_legendre(op->i, op->p) != 1) return -1;
+    mpz_init(t);
+    mpz_init(q);
+    // tonelli shanks algorithm
+    mpz_sub_ui(q, op->p, 1);
+    s = 0;
+    while (mpz_tstbit(q, 0) == 0) {
+        mpz_tdiv_q_ui(q, q, 2);
+        s += 1;
+    }
+    if (s == 1) {
+        // p = 3 mod 4 case, sqrt by exponentiation
+        mpz_add_ui(t, op->p, 1);
+        mpz_tdiv_q_ui(t, t, 4);
+        mpz_powm(rop->i, op->i, t, op->p);
+        mpz_set(rop->p, op->p);
+    } else {
+        int m, i;
+        mpz_t z, c, r, b;
+        mpz_init(z);
+        mpz_init(c);
+        mpz_init(r);
+        mpz_init(b);
+        mpz_set_ui(z, 2);
+        while(mpz_legendre(z, op->p) != -1) {
+            mpz_add_ui(z, z, 1);
+            assert (mpz_cmp(z, op->p) < 0);
+        }
+        mpz_powm(c, z, q, op->p);
+        mpz_add_ui(t, q, 1);
+        mpz_tdiv_q_ui(t, t, 2);
+        mpz_powm(r, op->i, t, op->p);
+        mpz_powm(t, op->i, q, op->p);
+        m = s;
+        while (1) {
+            if (mpz_cmp_ui(t, 1) == 0) {
+                break;
+            }
+            mpz_set(z, t);
+            for (i = 0; i < (m-1); i++) {
+                if (mpz_cmp_ui(z, 1) == 0) {
+                    break;
+                }
+                mpz_powm_ui(z, z, 2, op->p);
+                //mpz_add_ui(i, i, 1); 
+            }
+            mpz_powm_ui(b, c, 1 << (m - i - 1), op->p);
+            mpz_mul(r, r, b);
+            mpz_mod(r, r, op->p);
+            mpz_powm_ui(c, b, 2, op->p);
+            mpz_mul(t, t, c);
+            mpz_mod(t, t, op->p);
+            //mpz_set(m, i);
+            m = i;
+        }
+        mpz_set(rop->i, r);
+        mpz_set(rop->p, op->p);
+        mpz_clear(b);
+        mpz_clear(r);
+        mpz_clear(c);
+        mpz_clear(z);
+    }
+    mpz_clear(q);
+    mpz_clear(t);
+    return 0;
+}
+
 /* comparison */
 
 int mpFp_cmp(mpFp_t op1, mpFp_t op2) {

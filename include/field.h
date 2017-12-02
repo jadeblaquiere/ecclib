@@ -82,6 +82,10 @@ void mpFp_neg(mpFp_t rop, mpFp_t op);
 
 void mpFp_inv(mpFp_t rop, mpFp_t op);
 
+/* modular square root - return nonzero if not quadratic residue */ 
+
+int  mpFp_sqrt(mpFp_t rop, mpFp_t op);
+
 /* comparison */
 
 int mpFp_cmp(mpFp_t op1, mpFp_t op2);
