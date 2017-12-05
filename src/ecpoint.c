@@ -159,7 +159,7 @@ void mpFp_set_mpECP_affine_y(mpFp_t y, mpECP_t pt) {
             break;
         case EQTypeMontgomery: {
                 // y coordinate is not preserved, can calculate if you insist
-                // (please don't insist)
+                // (please don't insist, you shouldn't need this value)
                 // B * y**2 = x**3 + A * x**2 + x
                 mpFp_t Binv, A, t;
                 mpFp_init(Binv);
@@ -222,7 +222,12 @@ static inline int _bytelen(int bits) {
 
 int mpECP_set_str(mpECP_t rpt, char *s, mpECurve_t cv) {
     int bytes;
+    char *buffer;
+    
     bytes = _bytelen(cv->bits);
+    buffer = (char *)malloc((strlen(s) + 1) * sizeof(char));
+    assert(buffer != NULL);
+    strcpy(buffer, s);
     switch (cv->type) {
         case EQTypeShortWeierstrass:
         case EQTypeEdwards:
@@ -238,8 +243,8 @@ int mpECP_set_str(mpECP_t rpt, char *s, mpECurve_t cv) {
                         mpz_init(x);
                         mpz_init(y);
                         gmp_sscanf(&s[2+(2*bytes)],"%ZX", y);
-                        s[2+(2*bytes)] = 0;
-                        gmp_sscanf(&s[2],"%ZX", x);
+                        buffer[2+(2*bytes)] = 0;
+                        gmp_sscanf(&buffer[2],"%ZX", x);
                         mpECP_set_mpz(rpt, x, y, cv);
                         mpz_clear(y);
                         mpz_clear(x);
@@ -437,6 +442,7 @@ void mpECP_neg(mpECP_t rpt, mpECP_t pt) {
             break;
         case EQTypeMontgomery:
             // negation is not relevant in XZ projective representation
+            assert(0);
             break;
         default:
             assert((pt->cv->type == EQTypeShortWeierstrass) || (pt->cv->type == EQTypeEdwards) || (pt->cv->type == EQTypeMontgomery));
@@ -503,4 +509,365 @@ int mpECP_cmp(mpECP_t pt1, mpECP_t pt2) {
             assert((pt1->cv->type == EQTypeShortWeierstrass) || (pt1->cv->type == EQTypeEdwards) || (pt1->cv->type == EQTypeMontgomery));
     }
     return 0;
+}
+
+void mpECP_add(mpECP_t rpt, mpECP_t pt1, mpECP_t pt2) {
+    assert(mpECurve_cmp(pt1->cv, pt2->cv) == 0);
+    if (pt1->is_infinite != 0) {
+        if (pt2->is_infinite != 0) {
+            mpECP_set_infinite(rpt, pt1->cv);
+            return;
+        } else {
+            mpECP_set(rpt, pt2);
+            return;
+        }
+    } else if (pt2->is_infinite != 0) {
+        mpECP_set(rpt, pt1);
+        return;
+    }
+    switch (pt1->cv->type) {
+        case EQTypeShortWeierstrass: {
+                // 2007 Bernstein-Lange formula
+                // from : http://www.hyperelliptic.org/EFD/g1p/auto-shortw-jacobian.html#addition-add-2007-bl
+                // Z1Z1 = Z1**2
+                // Z2Z2 = Z2**2
+                // U1 = X1*Z2Z2
+                // U2 = X2*Z1Z1
+                // S1 = Y1*Z2*Z2Z2
+                // S2 = Y2*Z1*Z1Z1
+                // H = U2-U1
+                // I = (2*H)**2
+                // J = H*I
+                // r = 2*(S2-S1) - use S2 as temp in place of r
+                // V = U1*I 
+                // X3 = r**2-J-2*V
+                // Y3 = r*(V-X3)-2*S1*J
+                // Z3 = ((Z1+Z2)**2-Z1Z1-Z2Z2)*H
+                mpFp_t Z1Z1, Z2Z2, U1, U2, S1, S2, H, I, J, V;
+                mpFp_init(Z1Z1);
+                mpFp_init(Z2Z2);
+                mpFp_init(U1);
+                mpFp_init(U2);
+                mpFp_init(S1);
+                mpFp_init(S2);
+                mpFp_init(H);
+                mpFp_init(I);
+                mpFp_init(J);
+                mpFp_init(V);
+                // Z1Z1 = Z1**2
+                mpFp_pow_ui(Z1Z1, pt2->z, 2);
+                // Z2Z2 = Z2**2
+                mpFp_pow_ui(Z2Z2, pt1->z, 2);
+                // U1 = X1*Z2Z2
+                mpFp_mul(U1, Z1Z1, pt1->x);
+                // U2 = X2*Z1Z1
+                mpFp_mul(U2, Z2Z2, pt2->x);
+                // S1 = Y1*Z2*Z2Z2
+                mpFp_mul(S1, pt2->z, Z2Z2);
+                mpFp_mul(S1, S1, pt1->y);
+                // S2 = Y2*Z1*Z1Z1
+                mpFp_mul(S2, pt1->z, Z1Z1);
+                mpFp_mul(S2, S2, pt2->y);
+                if (mpFp_cmp(U1, U2) == 0) {
+                    if (mpFp_cmp(S1, S2) == 0) {
+                        // pt1 == pt2, so use doubling formula
+                        mpECP_double(rpt, pt1);
+                    } else {
+                        // pt1 == -pt2 ? validate, return is_infinite
+                        mpFp_neg(I, S2);
+                        assert(mpFp_cmp(I, S1) == 0);
+                        mpECP_set_infinite(rpt, pt1->cv);
+                    }
+                } else {
+                    // H = U2-U1
+                    mpFp_sub(H, U2, U1);
+                    // I = (2*H)**2
+                    mpFp_mul_ui(I, H, 2);
+                    mpFp_pow_ui(I, I, 2);
+                    // J = H*I
+                    mpFp_mul(J, H, I);
+                    // S2 is used as r below here
+                    // S2_r = 2*(S2-S1) - use S2 as temp in place of r
+                    mpFp_sub(S2, S2, S1);
+                    mpFp_mul_ui(S2, S2, 2);
+                    // V = U1*I 
+                    mpFp_mul(V, U1, I);
+                    // I, U2 is used as temp below here
+                    // X3 = S2_r**2-J-2*V
+                    mpFp_pow_ui(U2, S2, 2);
+                    mpFp_sub(U2, U2, J);
+                    mpFp_mul_ui(I, V, 2);
+                    mpFp_sub(rpt->x, U2, I);
+                    // Y3 = S2_r*(V-X3)-2*S1*J
+                    mpFp_sub(I, V, rpt->x);
+                    mpFp_mul(I, I, S2);
+                    mpFp_mul(S1, S1, J);
+                    mpFp_mul_ui(S1, S1, 2);
+                    mpFp_sub(rpt->y, I, S1);
+                    // Z3 = ((Z1+Z2)**2-Z1Z1-Z2Z2)*H
+                    mpFp_add(I, pt1->z, pt2->z);
+                    mpFp_pow_ui(I, I, 2);
+                    mpFp_sub(I, I, Z1Z1);
+                    mpFp_sub(I, I, Z2Z2);
+                    mpFp_mul(rpt->z, I, H);
+                    mpECurve_set(rpt->cv, pt1->cv);
+                    rpt->is_infinite = 0;
+                }
+                // done... clean up temporary variables
+                mpFp_clear(V);
+                mpFp_clear(J);
+                mpFp_clear(I);
+                mpFp_clear(H);
+                mpFp_clear(S2);
+                mpFp_clear(S1);
+                mpFp_clear(U2);
+                mpFp_clear(U1);
+                mpFp_clear(Z2Z2);
+                mpFp_clear(Z1Z1);
+                return;
+            }
+            break;
+        case EQTypeEdwards: {
+                // 2007 Bernstein-Lange formula
+                // http://www.hyperelliptic.org/EFD/g1p/auto-edwards-projective.html#addition-add-2007-bl
+                // A = Z1*Z2
+                // B = A**2
+                // C = X1*X2
+                // D = Y1*Y2
+                // E = d*C*D
+                // F = B-E
+                // G = B+E
+                // X3 = A*F*((X1+Y1)*(X2+Y2)-C-D)
+                // Y3 = A*G*(D-C)
+                // Z3 = c*F*G
+                mpFp_t A, B, C, D, E, F, G;
+                mpFp_init(A);
+                mpFp_init(B);
+                mpFp_init(C);
+                mpFp_init(D);
+                mpFp_init(E);
+                mpFp_init(F);
+                mpFp_init(G);
+                
+                // A = Z1*Z2
+                mpFp_mul(A, pt1->z, pt2->z);
+                // B = A**2
+                mpFp_pow_ui(B, A, 2);
+                // C = X1*X2
+                mpFp_mul(C, pt1->x, pt2->x);
+                // D = Y1*Y2
+                mpFp_mul(D, pt1->y, pt2->y);
+                // E = d*C*D
+                mpFp_set_mpz(E, pt1->cv->coeff.ed.d, pt1->cv->p);
+                mpFp_mul(E, E, C);
+                mpFp_mul(E, E, D);
+                // F = B-E
+                mpFp_sub(F, B, E);
+                // G = B+E
+                mpFp_add(G, B, E);
+                // B, E used as temp below here
+                // X3 = A*F*((X1+Y1)*(X2+Y2)-C-D)
+                mpFp_add(B, pt1->x, pt1->y);
+                mpFp_add(E, pt2->x, pt2->y);
+                mpFp_mul(B, B, E);
+                mpFp_sub(B, B, C);
+                mpFp_sub(B, B, D);
+                mpFp_mul(B, B, F);
+                mpFp_mul(rpt->x, B, A);
+                // Y3 = A*G*(D-C)
+                mpFp_sub(B, D, C);
+                mpFp_mul(B, B, G);
+                mpFp_mul(rpt->y, B, A);
+                // Z3 = c*F*G
+                mpFp_set_mpz(B, pt1->cv->coeff.ed.c, pt1->cv->p);
+                mpFp_mul(B, B, G);
+                mpFp_mul(rpt->z, B, F);
+                mpECurve_set(rpt->cv, pt1->cv);
+                rpt->is_infinite = 0;
+                
+                mpFp_clear(G);
+                mpFp_clear(F);
+                mpFp_clear(E);
+                mpFp_clear(D);
+                mpFp_clear(C);
+                mpFp_clear(B);
+                mpFp_clear(A);
+                return;
+            }
+            break;
+        case EQTypeMontgomery:
+            break;
+        default:
+            assert((pt1->cv->type == EQTypeShortWeierstrass) || (pt1->cv->type == EQTypeEdwards) || (pt1->cv->type == EQTypeMontgomery));
+    }
+    assert(0);
+}
+
+void mpECP_double(mpECP_t rpt, mpECP_t pt) {
+    if (pt->is_infinite != 0) {
+        mpECP_set_infinite(rpt, pt->cv);
+    }
+    switch (pt->cv->type) {
+        case EQTypeShortWeierstrass: {
+                // 2007 Bernstein-Lange formula
+                // from : http://www.hyperelliptic.org/EFD/g1p/auto-shortw-jacobian.html#doubling-dbl-2007-bl
+                // XX = X1**2
+                // YY = Y1**2
+                // YYYY = YY**2
+                // ZZ = Z1**2
+                // S = 2*((X1+YY)**2-XX-YYYY)
+                // M = 3*XX+a*ZZ**2
+                // T = M**2-2*S
+                // X3 = T
+                // Y3 = M*(S-T)-8*YYYY
+                // Z3 = (Y1+Z1)**2-YY-ZZ
+                mpFp_t XX, YY, YYYY, ZZ, S, M, T;
+                mpFp_init(XX);
+                mpFp_init(YY);
+                mpFp_init(YYYY);
+                mpFp_init(ZZ);
+                mpFp_init(S);
+                mpFp_init(M);
+                mpFp_init(T);
+                // XX = X1**2
+                mpFp_pow_ui(XX, pt->x, 2);
+                // YY = Y1**2
+                mpFp_pow_ui(YY, pt->y, 2);
+                // YYYY = YY**2
+                mpFp_pow_ui(YYYY, YY, 2);
+                // ZZ = Z1**2
+                mpFp_pow_ui(ZZ, pt->z, 2);
+                // S = 2*((X1+YY)**2-XX-YYYY)
+                mpFp_add(S, pt->x, YY);
+                mpFp_pow_ui(S, S, 2);
+                mpFp_sub(S, S, XX);
+                mpFp_sub(S, S, YYYY);
+                mpFp_mul_ui(S, S, 2);
+                // M = 3*XX+a*ZZ**2
+                mpFp_pow_ui(M, ZZ, 2);
+                mpFp_set_mpz(T, pt->cv->coeff.ws.a, pt->cv->p);
+                mpFp_mul(M, M, T);
+                mpFp_mul_ui(XX, XX, 3);
+                mpFp_add(M, M, XX);
+                // T = M**2-2*S, XX is temp var from here down
+                mpFp_pow_ui(T, M, 2);
+                mpFp_mul_ui(XX, S, 2);
+                mpFp_sub(T, T, XX);
+                // X3 = T
+                mpFp_set(rpt->x, T);
+                // Y3 = M*(S-T)-8*YYYY
+                mpFp_mul_ui(YYYY, YYYY, 8);
+                mpFp_sub(S, S, T);
+                mpFp_mul(M, M, S);
+                mpFp_sub(rpt->y, M, YYYY);
+                // Z3 = (Y1+Z1)**2-YY-ZZ
+                mpFp_add(M, pt->y, pt->z);
+                mpFp_pow_ui(M, M, 2);
+                mpFp_sub(M, M, YY);
+                mpFp_sub(rpt->z, M, ZZ);
+                //
+                // done... clean up temporary variables
+                mpFp_clear(T);
+                mpFp_clear(M);
+                mpFp_clear(S);
+                mpFp_clear(ZZ);
+                mpFp_clear(YYYY);
+                mpFp_clear(YY);
+                mpFp_clear(XX);
+                mpECurve_set(rpt->cv, pt->cv);
+                rpt->is_infinite = 0;
+                return;
+            }
+            break;
+        case EQTypeEdwards: {
+                // 2007 Bernstein-Lange formula
+                // http://www.hyperelliptic.org/EFD/g1p/auto-edwards-projective.html#doubling-dbl-2007-bl
+                // B = (X1+Y1)**2
+                // C = X1**2
+                // D = Y1**2
+                // E = C+D
+                // H = (c*Z1)**2
+                // J = E-2*H
+                // X3 = c*(B-E)*J
+                // Y3 = c*E*(C-D)
+                // Z3 = E*J
+                mpFp_t B, C, D, E, H, J;
+                mpFp_init(B);
+                mpFp_init(C);
+                mpFp_init(D);
+                mpFp_init(E);
+                mpFp_init(H);
+                mpFp_init(J);
+                // B = (X1+Y1)**2
+                mpFp_add(B,pt->x, pt->y);
+                mpFp_pow_ui(B, B, 2);
+                // C = X1**2
+                mpFp_pow_ui(C, pt->x, 2);
+                // D = Y1**2
+                mpFp_pow_ui(D, pt->y, 2);
+                // E = C+D
+                mpFp_add(E, C, D);
+                // H = (c*Z1)**2
+                mpFp_set_mpz(H, pt->cv->coeff.ed.c, pt->cv->p);
+                mpFp_mul(H, H, pt->z);
+                mpFp_pow_ui(H, H, 2);
+                // J = E-2*H
+                mpFp_mul_ui(H, H, 2);
+                mpFp_sub(J, E, H);
+                // H is a temp var from here down
+                // X3 = c*(B-E)*J
+                mpFp_sub(B, B, E);
+                mpFp_set_mpz(H, pt->cv->coeff.ed.c, pt->cv->p);
+                mpFp_mul(B, B, H);
+                mpFp_mul(rpt->x, B, J);
+                // Y3 = c*E*(C-D)
+                mpFp_sub(B, C, D);
+                mpFp_mul(B, B, E);
+                mpFp_mul(rpt->y, B, H);
+                // Z3 = E*J
+                mpFp_mul(rpt->z, E, J);
+                mpECurve_set(rpt->cv, pt->cv);
+                rpt->is_infinite = 0;
+                
+                mpFp_clear(J);
+                mpFp_clear(H);
+                mpFp_clear(E);
+                mpFp_clear(D);
+                mpFp_clear(C);
+                mpFp_clear(B);
+                return;
+            }
+            break;
+        case EQTypeMontgomery:
+            break;
+        default:
+            assert((pt->cv->type == EQTypeShortWeierstrass) || (pt->cv->type == EQTypeEdwards) || (pt->cv->type == EQTypeMontgomery));
+    }
+    assert(0);
+}
+
+void mpECP_sub(mpECP_t rpt, mpECP_t pt1, mpECP_t pt2) {
+    assert(mpECurve_cmp(pt1->cv, pt2->cv) == 0);
+    if (pt2->is_infinite != 0) {
+        if (pt1->is_infinite != 0) {
+            mpECP_set_infinite(rpt, pt1->cv);
+        } else {
+            mpECP_set(rpt, pt1);
+        }
+    } else {
+        mpECP_t n;
+        mpECP_init(n);
+        mpECP_neg(n, pt2);
+        mpECP_add(rpt, pt1, n);
+        mpECP_clear(n);
+    }
+    return;
+}
+
+void mpECP_scalar_mul(mpECP_t rpt, mpECP_t pt1, mpFp_t pt2) {
+    assert(0);
+}
+
+void mpECP_scalar_mul_mpz(mpECP_t rpt, mpECP_t pt1, mpz_t pt2) {
+    assert(0);
 }
