@@ -31,6 +31,7 @@
 #include <assert.h>
 #include <field.h>
 #include <gmp.h>
+#include <math.h>
 #include <check.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -332,6 +333,38 @@ START_TEST(test_mpFp_sqrt)
     mpFp_clear(a);
 END_TEST
 
+START_TEST(test_mpFp_tstbit)
+    int i, j, k, bit;
+    int primes[] = {11, 13, 17, 19, 23, 29, 31};
+    mpFp_t a, b, c;
+    mpz_t p;
+    mpFp_init(a);
+    mpFp_init(b);
+    mpFp_init(c);
+    mpz_init(p);
+
+    for (j = 0 ; j < (sizeof(primes)/sizeof(primes[0])); j++) {
+        mpz_set_ui(p, primes[j]);
+        for (i = 0; i < primes[j]; i++) {
+            mpFp_set_ui(a, i, p);
+            mpFp_set_ui(b, 0, p);
+            for (k = 0; pow(2,k) <= primes[j]; k++) {
+                mpFp_set_ui(c, 2, p);
+                mpFp_pow_ui(c, c, k);
+                bit = mpFp_tstbit(a, k);
+                mpFp_mul_ui(c, c, bit);
+                mpFp_add(b, b, c);
+            }
+            assert(mpFp_cmp(a, b) == 0);
+        }
+    }
+    
+    mpz_clear(p);
+    mpFp_clear(c);
+    mpFp_clear(b);
+    mpFp_clear(a);
+END_TEST
+
 static Suite *mpFp_test_suite(void) {
     Suite *s;
     TCase *tc;
@@ -346,6 +379,7 @@ static Suite *mpFp_test_suite(void) {
     tcase_add_test(tc, test_mpFp_inv);
     tcase_add_test(tc, test_mpFp_sqrt);
     tcase_add_test(tc, test_mpFp_swap_cswap);
+    tcase_add_test(tc, test_mpFp_tstbit);
     suite_add_tcase(s, tc);
     return s;
 }

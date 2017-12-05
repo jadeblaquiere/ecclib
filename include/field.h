@@ -86,6 +86,10 @@ void mpFp_inv(mpFp_t rop, mpFp_t op);
 
 int  mpFp_sqrt(mpFp_t rop, mpFp_t op);
 
+/* bit operations */ 
+
+int  mpFp_tstbit(mpFp_t op, int bit);
+
 /* comparison */
 
 int mpFp_cmp(mpFp_t op1, mpFp_t op2);
