@@ -69,6 +69,9 @@ int  mpECP_set_str(mpECP_t rpt, char *s, mpECurve_t cv);
 int  mpECP_out_strlen(mpECP_t pt, int compress);
 void mpECP_out_str(char *s, mpECP_t pt, int compress);
 
+void mpECP_swap(mpECP_t rop, mpECP_t op);
+void mpECP_cswap(mpECP_t rop, mpECP_t op, int swap);
+
 void mpECP_add(mpECP_t rpt, mpECP_t pt1, mpECP_t pt2);
 void mpECP_double(mpECP_t rpt, mpECP_t pt);
 void mpECP_sub(mpECP_t rpt, mpECP_t pt1, mpECP_t pt2);

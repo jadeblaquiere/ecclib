@@ -385,7 +385,7 @@ int mpFp_sqrt(mpFp_t rop, mpFp_t op) {
 /* bit operations */ 
 
 int  mpFp_tstbit(mpFp_t op, int bit) {
-    return mpz_tstbit(op, bit);
+    return mpz_tstbit(op->i, bit);
 }
 
 /* comparison */

@@ -510,6 +510,44 @@ int mpECP_cmp(mpECP_t pt1, mpECP_t pt2) {
     return 0;
 }
 
+void mpECP_swap(mpECP_t pt2, mpECP_t pt1) {
+    int t;
+    assert(mpECurve_cmp(pt1->cv, pt2->cv) == 0);
+    mpFp_swap(pt2->x, pt1->x);
+    mpFp_swap(pt2->y, pt1->y);
+    mpFp_swap(pt2->z, pt1->z);
+    t = pt2->is_infinite;
+    pt2->is_infinite = pt1->is_infinite;
+    pt1->is_infinite = t;
+    return;
+}
+
+void mpECP_cswap(mpECP_t pt2, mpECP_t pt1, int swap) {
+    volatile unsigned long s, ns;
+    int a, b;
+    assert(mpECurve_cmp(pt1->cv, pt2->cv) == 0);
+    
+    if (swap != 0) {
+        s = 1;
+        ns = 0;
+    } else {
+        s = 0;
+        ns = 1;
+    }
+    
+    mpFp_cswap(pt2->x, pt1->x, swap);
+    mpFp_cswap(pt2->y, pt1->y, swap);
+    mpFp_cswap(pt2->z, pt1->z, swap);
+    
+    a = (s * pt1->is_infinite) + (ns * pt2->is_infinite);
+    b = (ns * pt1->is_infinite) + (s * pt2->is_infinite);
+    
+    pt2->is_infinite = a;
+    pt1->is_infinite = b;
+
+    return;
+}
+
 void mpECP_add(mpECP_t rpt, mpECP_t pt1, mpECP_t pt2) {
     assert(mpECurve_cmp(pt1->cv, pt2->cv) == 0);
     if (pt1->is_infinite != 0) {
@@ -554,13 +592,13 @@ void mpECP_add(mpECP_t rpt, mpECP_t pt1, mpECP_t pt2) {
                 mpFp_init(J);
                 mpFp_init(V);
                 // Z1Z1 = Z1**2
-                mpFp_pow_ui(Z1Z1, pt2->z, 2);
+                mpFp_pow_ui(Z1Z1, pt1->z, 2);
                 // Z2Z2 = Z2**2
-                mpFp_pow_ui(Z2Z2, pt1->z, 2);
+                mpFp_pow_ui(Z2Z2, pt2->z, 2);
                 // U1 = X1*Z2Z2
-                mpFp_mul(U1, Z1Z1, pt1->x);
+                mpFp_mul(U1, Z2Z2, pt1->x);
                 // U2 = X2*Z1Z1
-                mpFp_mul(U2, Z2Z2, pt2->x);
+                mpFp_mul(U2, Z1Z1, pt2->x);
                 // S1 = Y1*Z2*Z2Z2
                 mpFp_mul(S1, pt2->z, Z2Z2);
                 mpFp_mul(S1, S1, pt1->y);
@@ -705,6 +743,7 @@ void mpECP_add(mpECP_t rpt, mpECP_t pt1, mpECP_t pt2) {
 void mpECP_double(mpECP_t rpt, mpECP_t pt) {
     if (pt->is_infinite != 0) {
         mpECP_set_infinite(rpt, pt->cv);
+        return;
     }
     switch (pt->cv->type) {
         case EQTypeShortWeierstrass: {
@@ -746,8 +785,8 @@ void mpECP_double(mpECP_t rpt, mpECP_t pt) {
                 mpFp_pow_ui(M, ZZ, 2);
                 mpFp_set_mpz(T, pt->cv->coeff.ws.a, pt->cv->p);
                 mpFp_mul(M, M, T);
-                mpFp_mul_ui(XX, XX, 3);
-                mpFp_add(M, M, XX);
+                mpFp_mul_ui(T, XX, 3);
+                mpFp_add(M, M, T);
                 // T = M**2-2*S, XX is temp var from here down
                 mpFp_pow_ui(T, M, 2);
                 mpFp_mul_ui(XX, S, 2);
@@ -758,12 +797,13 @@ void mpECP_double(mpECP_t rpt, mpECP_t pt) {
                 mpFp_mul_ui(YYYY, YYYY, 8);
                 mpFp_sub(S, S, T);
                 mpFp_mul(M, M, S);
-                mpFp_sub(rpt->y, M, YYYY);
+                mpFp_sub(S, M, YYYY);
                 // Z3 = (Y1+Z1)**2-YY-ZZ
                 mpFp_add(M, pt->y, pt->z);
                 mpFp_pow_ui(M, M, 2);
                 mpFp_sub(M, M, YY);
                 mpFp_sub(rpt->z, M, ZZ);
+                mpFp_set(rpt->y, S);
                 //
                 // done... clean up temporary variables
                 mpFp_clear(T);
@@ -864,9 +904,33 @@ void mpECP_sub(mpECP_t rpt, mpECP_t pt1, mpECP_t pt2) {
 }
 
 void mpECP_scalar_mul(mpECP_t rpt, mpECP_t pt, mpFp_t sc) {
-    assert(0);
+    int i, b;
+    mpECP_t R0, R1;
+    mpECP_init(R0);
+    mpECP_init(R1);
+    mpECP_set_infinite(R0, pt->cv);
+    mpECP_set(R1, pt);
+    // scalar should be modulo the order of the curve
+    assert(mpz_cmp(sc->p, pt->cv->n) == 0);
+    for (i = pt->cv->bits - 1; i >= 0 ; i--) {
+        b = mpFp_tstbit(sc, i);
+        //printf("bit %d = %d\n", i, b);
+        mpECP_cswap(R0, R1, b);
+        mpECP_add(R1, R1, R0);
+        mpECP_double(R0, R0);
+        mpECP_cswap(R0, R1, b);
+    }
+    mpECP_set(rpt, R0);
+    mpECP_clear(R1);
+    mpECP_clear(R0);
+    return;
 }
 
 void mpECP_scalar_mul_mpz(mpECP_t rpt, mpECP_t pt, mpz_t sc) {
-    assert(0);
+    mpFp_t s;
+    mpFp_init(s);
+    mpFp_set_mpz(s, sc, pt->cv->n);
+    mpECP_scalar_mul(rpt, pt, s);
+    mpFp_clear(s);
+    return;
 }
