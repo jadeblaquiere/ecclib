@@ -450,7 +450,6 @@ void mpECP_neg(mpECP_t rpt, mpECP_t pt) {
     return;
 }
 
-
 int mpECP_cmp(mpECP_t pt1, mpECP_t pt2) {
     if (mpECurve_cmp(pt1->cv, pt2->cv) != 0) return -1;
     if (pt1->is_infinite != 0) {
@@ -864,10 +863,10 @@ void mpECP_sub(mpECP_t rpt, mpECP_t pt1, mpECP_t pt2) {
     return;
 }
 
-void mpECP_scalar_mul(mpECP_t rpt, mpECP_t pt1, mpFp_t pt2) {
+void mpECP_scalar_mul(mpECP_t rpt, mpECP_t pt, mpFp_t sc) {
     assert(0);
 }
 
-void mpECP_scalar_mul_mpz(mpECP_t rpt, mpECP_t pt1, mpz_t pt2) {
+void mpECP_scalar_mul_mpz(mpECP_t rpt, mpECP_t pt, mpz_t sc) {
     assert(0);
 }

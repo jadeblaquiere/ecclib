@@ -73,8 +73,8 @@ void mpECP_add(mpECP_t rpt, mpECP_t pt1, mpECP_t pt2);
 void mpECP_double(mpECP_t rpt, mpECP_t pt);
 void mpECP_sub(mpECP_t rpt, mpECP_t pt1, mpECP_t pt2);
 
-void mpECP_scalar_mul(mpECP_t rpt, mpECP_t pt1, mpFp_t pt2);
-void mpECP_scalar_mul_mpz(mpECP_t rpt, mpECP_t pt1, mpz_t pt2);
+void mpECP_scalar_mul(mpECP_t rpt, mpECP_t pt, mpFp_t sc);
+void mpECP_scalar_mul_mpz(mpECP_t rpt, mpECP_t pt, mpz_t sc);
 
 void mpECP_neg(mpECP_t rpt, mpECP_t pt);
 
