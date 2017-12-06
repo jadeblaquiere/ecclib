@@ -7,6 +7,8 @@ ecclib provides basic handling of math within the multiplicative field of
 integers modulo an odd prime p (i.e. the ring Z/pZ, also denoted Zp) and extends that
 capability to elliptic curve points over that ring, i.e. E(Fp).
 
+## capabilities
+
 Basic operations:
 * import/export
 * element (x,y) composition/decomposition
@@ -32,3 +34,19 @@ Supported elliptic curve types:
 * short Weierstrass
 * Edwards
 * Montgomery (partial)
+
+## build and install
+
+libecc follows the traditional GNU autotools build process so it _should_
+build without issue on most platforms where autotools is present. GMP is the
+only dependency. 
+
+Example build and install sequence:
+
+```
+$ autoreconf --install
+$ ./configure --prefix=/usr
+$ make
+$ make check
+$ sudo make install
+```
