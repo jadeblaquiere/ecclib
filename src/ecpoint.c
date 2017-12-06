@@ -29,22 +29,52 @@
 //OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <assert.h>
+#include <ecpoint.h>
 #include <ecurve.h>
 #include <field.h>
 #include <gmp.h>
-#include <ecpoint.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
+
+#define _MPECP_BASE_BITS    (8)
+
+static inline int _mpECP_n_base_pt_levels(mpECP_t pt) {
+    return (pt->cv->bits + pt->base_bits - 1) / pt->base_bits;
+}
+
+static inline int _mpECP_n_base_pt_level_size(mpECP_t pt) {
+    return (1 << pt->base_bits);
+}
+
+static inline int _mpECP_n_base_pts(mpECP_t pt) {
+    return _mpECP_n_base_pt_levels(pt) * _mpECP_n_base_pt_level_size(pt);
+}
+
+static void _mpECP_base_pts_cleanup(mpECP_t pt) {
+    int i, npts;
+    assert(pt->base_pt != NULL);
+    npts = _mpECP_n_base_pts(pt);
+    for (i = 0; i < npts; i++) {
+        mpECP_clear(&(pt->base_pt[i]));
+    }
+    free(pt->base_pt);
+    pt->base_pt = NULL;
+    pt->base_bits = 0;
+}
 
 void mpECP_init(mpECP_t pt) {
     mpFp_init(pt->x);
     mpFp_init(pt->y);
     mpFp_init(pt->z);
     mpECurve_init(pt->cv);
+    pt->base_bits = 0;
+    pt->base_pt = NULL;
     return;
 }
 
 void mpECP_clear(mpECP_t pt) {
+    if (pt->base_bits != 0) _mpECP_base_pts_cleanup(pt);
     mpFp_clear(pt->x);
     mpFp_clear(pt->y);
     mpFp_clear(pt->z);
@@ -52,51 +82,55 @@ void mpECP_clear(mpECP_t pt) {
     return;
 }
 
-void mpECP_set(mpECP_t rop, mpECP_t op) {
-    mpECurve_set(rop->cv, op->cv);
-    rop->is_infinite = op->is_infinite;
-    mpFp_set(rop->x, op->x);
-    mpFp_set(rop->y, op->y);
-    mpFp_set(rop->z, op->z);
+void mpECP_set(mpECP_t rpt, mpECP_t pt) {
+    if (rpt->base_bits != 0) _mpECP_base_pts_cleanup(rpt);
+    mpECurve_set(rpt->cv, pt->cv);
+    rpt->is_neutral = pt->is_neutral;
+    mpFp_set(rpt->x, pt->x);
+    mpFp_set(rpt->y, pt->y);
+    mpFp_set(rpt->z, pt->z);
     return;
 }
 
-void mpECP_set_mpz(mpECP_t rop, mpz_t x, mpz_t y, mpECurve_t cv) {
-    mpECurve_set(rop->cv, cv);
-    rop->is_infinite = 0;
-    mpFp_set_mpz(rop->x, x, cv->p);
-    mpFp_set_mpz(rop->y, y, cv->p);
-    mpFp_set_ui(rop->z, 1, cv->p);
+void mpECP_set_mpz(mpECP_t rpt, mpz_t x, mpz_t y, mpECurve_t cv) {
+    if (rpt->base_bits != 0) _mpECP_base_pts_cleanup(rpt);
+    mpECurve_set(rpt->cv, cv);
+    rpt->is_neutral = 0;
+    mpFp_set_mpz(rpt->x, x, cv->p);
+    mpFp_set_mpz(rpt->y, y, cv->p);
+    mpFp_set_ui(rpt->z, 1, cv->p);
     return;
 }
 
-void mpECP_set_mpFp(mpECP_t rop, mpFp_t x, mpFp_t y, mpECurve_t cv) {
-    mpECurve_set(rop->cv, cv);
-    rop->is_infinite = 0;
-    mpFp_set(rop->x, x);
-    mpFp_set(rop->y, y);
-    mpFp_set_ui(rop->z, 1, cv->p);
+void mpECP_set_mpFp(mpECP_t rpt, mpFp_t x, mpFp_t y, mpECurve_t cv) {
+    if (rpt->base_bits != 0) _mpECP_base_pts_cleanup(rpt);
+    mpECurve_set(rpt->cv, cv);
+    rpt->is_neutral = 0;
+    mpFp_set(rpt->x, x);
+    mpFp_set(rpt->y, y);
+    mpFp_set_ui(rpt->z, 1, cv->p);
     return;
 }
 
-void mpECP_set_infinite(mpECP_t rpt, mpECurve_t cv) {
+void mpECP_set_neutral(mpECP_t rpt, mpECurve_t cv) {
+    if (rpt->base_bits != 0) _mpECP_base_pts_cleanup(rpt);
     mpECurve_set(rpt->cv, cv);
     switch (cv->type) {
     case EQTypeEdwards:
         // return the neutral element (which is a valid curve point 0,c)
-        rpt->is_infinite = 0;
+        rpt->is_neutral = 0;
         mpFp_set_ui(rpt->z, 1, cv->p);
         mpFp_set_ui(rpt->x, 0, cv->p);
         mpFp_set_mpz(rpt->y, cv->coeff.ed.c, cv->p);
         return;
     case EQTypeShortWeierstrass:
-        rpt->is_infinite = 1;
+        rpt->is_neutral = 1;
         mpFp_set_ui(rpt->x, 0, cv->p);
         mpFp_set_ui(rpt->y, 1, cv->p);
         mpFp_set_ui(rpt->z, 0, cv->p);
         return;
     case EQTypeMontgomery:
-        rpt->is_infinite = 1;
+        rpt->is_neutral = 1;
         mpFp_set_ui(rpt->x, 1, cv->p);
         mpFp_set_ui(rpt->z, 0, cv->p);
         return;
@@ -113,7 +147,7 @@ void _mpECP_to_affine(mpECP_t pt) {
     mpFp_init(zinv);
     switch (pt->cv->type) {
         case EQTypeShortWeierstrass:
-            if (pt->is_infinite != 0) break;
+            if (pt->is_neutral != 0) break;
             // Jacobian coords x = X/Z**2 y = Y/Z**3);
             mpFp_init(t);
             mpFp_inv(zinv, pt->z);
@@ -235,7 +269,7 @@ int mpECP_set_str(mpECP_t rpt, char *s, mpECurve_t cv) {
             if (s[0] != '0') return -1;
             switch (s[1]) {
                 case '0':
-                    mpECP_set_infinite(rpt, cv);
+                    mpECP_set_neutral(rpt, cv);
                     return 0;
                 case '4': {
                         if (strlen(s) != (2 + (4 * bytes))) return -1;
@@ -330,10 +364,10 @@ int mpECP_set_str(mpECP_t rpt, char *s, mpECurve_t cv) {
                 if (strlen(s) != (2* bytes)) return -1;
                 gmp_sscanf(s,"%ZX", x);
                 if (mpz_cmp_ui(x,0) == 0) {
-                    mpECP_set_infinite(rpt, cv);
+                    mpECP_set_neutral(rpt, cv);
                 } else {
                     mpECurve_set(rpt->cv, cv);
-                    rpt->is_infinite = 0; 
+                    rpt->is_neutral = 0; 
                     mpFp_set_mpz(rpt->x, x, cv->p);
                     mpFp_set_ui(rpt->z, 1, cv->p);
                 }
@@ -382,7 +416,7 @@ void mpECP_out_str(char *s, mpECP_t pt, int compress) {
         case EQTypeShortWeierstrass:
         case EQTypeEdwards:
             s[0] = '0';
-            if (pt->is_infinite) {
+            if (pt->is_neutral) {
                 if (compress == 0) bytes *= 2;
                 for (i = 1; i < ((2*bytes) + 2); i++) {
                     s[i] = '0';
@@ -427,8 +461,8 @@ void mpECP_out_str(char *s, mpECP_t pt, int compress) {
 }
 
 void mpECP_neg(mpECP_t rpt, mpECP_t pt) {
-    if (pt->is_infinite != 0) {
-        mpECP_set_infinite(rpt, pt->cv);
+    if (pt->is_neutral != 0) {
+        mpECP_set_neutral(rpt, pt->cv);
         return;
     }
     switch (pt->cv->type) {
@@ -452,12 +486,12 @@ void mpECP_neg(mpECP_t rpt, mpECP_t pt) {
 
 int mpECP_cmp(mpECP_t pt1, mpECP_t pt2) {
     if (mpECurve_cmp(pt1->cv, pt2->cv) != 0) return -1;
-    if (pt1->is_infinite != 0) {
-        if (pt2->is_infinite != 0) {
+    if (pt1->is_neutral != 0) {
+        if (pt2->is_neutral != 0) {
             return 0;
         }
         return -1;
-    } else if (pt2->is_infinite != 0) {
+    } else if (pt2->is_neutral != 0) {
         return -1;
     }
     switch (pt1->cv->type) {
@@ -512,13 +546,20 @@ int mpECP_cmp(mpECP_t pt1, mpECP_t pt2) {
 
 void mpECP_swap(mpECP_t pt2, mpECP_t pt1) {
     int t;
+    struct _p_mpECP_t *t_base_pt;
     assert(mpECurve_cmp(pt1->cv, pt2->cv) == 0);
     mpFp_swap(pt2->x, pt1->x);
     mpFp_swap(pt2->y, pt1->y);
     mpFp_swap(pt2->z, pt1->z);
-    t = pt2->is_infinite;
-    pt2->is_infinite = pt1->is_infinite;
-    pt1->is_infinite = t;
+    t = pt2->is_neutral;
+    pt2->is_neutral = pt1->is_neutral;
+    pt1->is_neutral = t;
+    t = pt2->base_bits;
+    pt2->base_bits = pt1->base_bits;
+    pt1->base_bits = t;
+    t_base_pt = pt2->base_pt;
+    pt2->base_pt = pt1->base_pt;
+    pt1->base_pt = t_base_pt;
     return;
 }
 
@@ -526,6 +567,8 @@ void mpECP_cswap(mpECP_t pt2, mpECP_t pt1, int swap) {
     volatile unsigned long s, ns;
     int a, b;
     assert(mpECurve_cmp(pt1->cv, pt2->cv) == 0);
+    assert(pt1->base_bits == 0);
+    assert(pt2->base_bits == 0);
     
     if (swap != 0) {
         s = 1;
@@ -539,29 +582,30 @@ void mpECP_cswap(mpECP_t pt2, mpECP_t pt1, int swap) {
     mpFp_cswap(pt2->y, pt1->y, swap);
     mpFp_cswap(pt2->z, pt1->z, swap);
     
-    a = (s * pt1->is_infinite) + (ns * pt2->is_infinite);
-    b = (ns * pt1->is_infinite) + (s * pt2->is_infinite);
+    a = (s * pt1->is_neutral) + (ns * pt2->is_neutral);
+    b = (ns * pt1->is_neutral) + (s * pt2->is_neutral);
     
-    pt2->is_infinite = a;
-    pt1->is_infinite = b;
+    pt2->is_neutral = a;
+    pt1->is_neutral = b;
 
     return;
 }
 
 void mpECP_add(mpECP_t rpt, mpECP_t pt1, mpECP_t pt2) {
     assert(mpECurve_cmp(pt1->cv, pt2->cv) == 0);
-    if (pt1->is_infinite != 0) {
-        if (pt2->is_infinite != 0) {
-            mpECP_set_infinite(rpt, pt1->cv);
+    if (pt1->is_neutral != 0) {
+        if (pt2->is_neutral != 0) {
+            mpECP_set_neutral(rpt, pt1->cv);
             return;
         } else {
             mpECP_set(rpt, pt2);
             return;
         }
-    } else if (pt2->is_infinite != 0) {
+    } else if (pt2->is_neutral != 0) {
         mpECP_set(rpt, pt1);
         return;
     }
+    if (rpt->base_bits != 0) _mpECP_base_pts_cleanup(rpt);
     switch (pt1->cv->type) {
         case EQTypeShortWeierstrass: {
                 // 2007 Bernstein-Lange formula
@@ -610,10 +654,10 @@ void mpECP_add(mpECP_t rpt, mpECP_t pt1, mpECP_t pt2) {
                         // pt1 == pt2, so use doubling formula
                         mpECP_double(rpt, pt1);
                     } else {
-                        // pt1 == -pt2 ? validate, return is_infinite
+                        // pt1 == -pt2 ? validate, return is_neutral
                         mpFp_neg(I, S2);
                         assert(mpFp_cmp(I, S1) == 0);
-                        mpECP_set_infinite(rpt, pt1->cv);
+                        mpECP_set_neutral(rpt, pt1->cv);
                     }
                 } else {
                     // H = U2-U1
@@ -648,7 +692,7 @@ void mpECP_add(mpECP_t rpt, mpECP_t pt1, mpECP_t pt2) {
                     mpFp_sub(I, I, Z2Z2);
                     mpFp_mul(rpt->z, I, H);
                     mpECurve_set(rpt->cv, pt1->cv);
-                    rpt->is_infinite = 0;
+                    rpt->is_neutral = 0;
                 }
                 // done... clean up temporary variables
                 mpFp_clear(V);
@@ -720,7 +764,7 @@ void mpECP_add(mpECP_t rpt, mpECP_t pt1, mpECP_t pt2) {
                 mpFp_mul(B, B, G);
                 mpFp_mul(rpt->z, B, F);
                 mpECurve_set(rpt->cv, pt1->cv);
-                rpt->is_infinite = 0;
+                rpt->is_neutral = 0;
                 
                 mpFp_clear(G);
                 mpFp_clear(F);
@@ -741,10 +785,11 @@ void mpECP_add(mpECP_t rpt, mpECP_t pt1, mpECP_t pt2) {
 }
 
 void mpECP_double(mpECP_t rpt, mpECP_t pt) {
-    if (pt->is_infinite != 0) {
-        mpECP_set_infinite(rpt, pt->cv);
+    if (pt->is_neutral != 0) {
+        mpECP_set_neutral(rpt, pt->cv);
         return;
     }
+    if (rpt->base_bits != 0) _mpECP_base_pts_cleanup(rpt);
     switch (pt->cv->type) {
         case EQTypeShortWeierstrass: {
                 // 2007 Bernstein-Lange formula
@@ -814,12 +859,12 @@ void mpECP_double(mpECP_t rpt, mpECP_t pt) {
                 mpFp_clear(YY);
                 mpFp_clear(XX);
                 mpECurve_set(rpt->cv, pt->cv);
-                rpt->is_infinite = 0;
+                rpt->is_neutral = 0;
                 return;
             }
             break;
         case EQTypeEdwards: {
-#if 0
+#if 1
                 // 2007 Bernstein-Lange formula
                 // http://www.hyperelliptic.org/EFD/g1p/auto-edwards-projective.html#doubling-dbl-2007-bl
                 // B = (X1+Y1)**2
@@ -867,7 +912,7 @@ void mpECP_double(mpECP_t rpt, mpECP_t pt) {
                 // Z3 = E*J
                 mpFp_mul(rpt->z, E, J);
                 mpECurve_set(rpt->cv, pt->cv);
-                rpt->is_infinite = 0;
+                rpt->is_neutral = 0;
                 
                 mpFp_clear(J);
                 mpFp_clear(H);
@@ -876,6 +921,7 @@ void mpECP_double(mpECP_t rpt, mpECP_t pt) {
                 mpFp_clear(C);
                 mpFp_clear(B);
 #else
+                // Edwards addition law is complete, so can use add for double
                 mpECP_add(rpt, pt, pt);
 #endif
                 return;
@@ -891,9 +937,9 @@ void mpECP_double(mpECP_t rpt, mpECP_t pt) {
 
 void mpECP_sub(mpECP_t rpt, mpECP_t pt1, mpECP_t pt2) {
     assert(mpECurve_cmp(pt1->cv, pt2->cv) == 0);
-    if (pt2->is_infinite != 0) {
-        if (pt1->is_infinite != 0) {
-            mpECP_set_infinite(rpt, pt1->cv);
+    if (pt2->is_neutral != 0) {
+        if (pt1->is_neutral != 0) {
+            mpECP_set_neutral(rpt, pt1->cv);
         } else {
             mpECP_set(rpt, pt1);
         }
@@ -912,7 +958,7 @@ void mpECP_scalar_mul(mpECP_t rpt, mpECP_t pt, mpFp_t sc) {
     mpECP_t R0, R1;
     mpECP_init(R0);
     mpECP_init(R1);
-    mpECP_set_infinite(R0, pt->cv);
+    mpECP_set_neutral(R0, pt->cv);
     mpECP_set(R1, pt);
     // scalar should be modulo the order of the curve
     assert(mpz_cmp(sc->p, pt->cv->n) == 0);
@@ -938,3 +984,86 @@ void mpECP_scalar_mul_mpz(mpECP_t rpt, mpECP_t pt, mpz_t sc) {
     mpFp_clear(s);
     return;
 }
+
+void mpECP_scalar_base_mul_setup(mpECP_t pt) {
+    int i, j, k, npts, nlevels, levelsz;
+    mpECP_t last, a, b;
+    struct _p_mpECP_t *base_pt;
+    if (pt->base_bits == _MPECP_BASE_BITS) {
+        // already set up... 
+        return;
+    }
+    mpECP_init(last);
+    mpECP_init(a);
+    mpECP_init(b);
+    assert(pt->base_bits == 0);
+    pt->base_bits = _MPECP_BASE_BITS;
+    npts = _mpECP_n_base_pts(pt);
+    base_pt = (struct _p_mpECP_t *)malloc(npts * sizeof(struct _p_mpECP_t));
+    for (i = 0; i < npts; i++) {
+        mpECP_init(&base_pt[i]);
+    }
+    nlevels = _mpECP_n_base_pt_levels(pt);
+    levelsz = _mpECP_n_base_pt_level_size(pt);
+    printf("setup: levels = %d, levelsz = %d\n", nlevels, levelsz);
+    mpECP_set(last, pt);
+    for (j = 0; j < nlevels; j++) {
+        for (i = 0; i < levelsz; i++) {
+            mpECP_set(a, last);
+            mpECP_set_neutral(b, pt->cv);
+            k = i;
+            while (k > 0) {
+                if ((k % 2) == 1) {
+                    mpECP_add(b, b, a);
+                }
+                mpECP_double(a, a);
+                k >>= 1;
+            }
+            mpECP_set(&base_pt[(j * levelsz) + i], b);
+        }
+        for (i = 0 ; i < pt->base_bits; i++) {
+            mpECP_double(last, last);
+        }
+    }
+    pt->base_pt = base_pt;
+    mpECP_clear(b);
+    mpECP_clear(a);
+    mpECP_clear(last);
+    return;
+}
+
+void mpECP_scalar_base_mul(mpECP_t rpt, mpECP_t pt, mpFp_t sc) {
+    int j, k, nlevels, levelsz;
+    mpz_t s, kmpz;
+    mpECP_t a;
+    assert (mpz_cmp(sc->p, pt->cv->n) == 0);
+    mpECP_scalar_base_mul_setup(pt);
+    mpz_init(s);
+    mpz_init(kmpz);
+    mpECP_init(a);
+    mpECP_set_neutral(a, pt->cv);
+    mpz_set_mpFp(s, sc);
+    nlevels = _mpECP_n_base_pt_levels(pt);
+    levelsz = _mpECP_n_base_pt_level_size(pt);
+    for (j = 0; j < nlevels; j++) {
+        mpz_mod_ui(kmpz, s, levelsz);
+        k = mpz_get_ui(kmpz);
+        mpECP_add(a, a, &pt->base_pt[(j * levelsz) + k]);
+        mpz_tdiv_q_ui(s, s, levelsz);
+    }
+    mpECP_set(rpt, a);
+    mpECP_clear(a);
+    mpz_clear(kmpz);
+    mpz_clear(s);
+    return;
+}
+
+void mpECP_scalar_base_mul_mpz(mpECP_t rpt, mpECP_t pt, mpz_t s) {
+    mpFp_t sc;
+    mpFp_init(sc);
+    mpFp_set_mpz(sc, s, pt->cv->n);
+    mpECP_scalar_base_mul(rpt, pt, sc);
+    mpFp_clear(sc);
+    return;
+}
+

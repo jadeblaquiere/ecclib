@@ -42,12 +42,14 @@ extern "C" {
 /* Implementation of Elliptic Curve math loosely following GNU GMP sytle */ 
 /* internal representation supports projective (e.g. Jacobian) coords */
 
-typedef struct {
+typedef struct _p_mpECP_t {
     mpFp_t x;
     mpFp_t y;
     mpFp_t z;
-    int is_infinite;
+    int is_neutral;
     mpECurve_t cv;
+    int base_bits;
+    struct _p_mpECP_t *base_pt;
 } _mpECP_t;
 
 typedef _mpECP_t mpECP_t[1];
@@ -58,7 +60,7 @@ void mpECP_clear(mpECP_t pt);
 void mpECP_set(mpECP_t rpt, mpECP_t op);
 void mpECP_set_mpz(mpECP_t rpt, mpz_t x, mpz_t y, mpECurve_t cv);
 void mpECP_set_mpFp(mpECP_t rpt, mpFp_t x, mpFp_t y, mpECurve_t cv);
-void mpECP_set_infinite(mpECP_t rpt, mpECurve_t cv);
+void mpECP_set_neutral(mpECP_t rpt, mpECurve_t cv);
 
 void mpFp_set_mpECP_affine_x(mpFp_t x, mpECP_t pt);
 void mpFp_set_mpECP_affine_y(mpFp_t y, mpECP_t pt);
@@ -80,8 +82,11 @@ void mpECP_scalar_mul(mpECP_t rpt, mpECP_t pt, mpFp_t sc);
 void mpECP_scalar_mul_mpz(mpECP_t rpt, mpECP_t pt, mpz_t sc);
 
 void mpECP_neg(mpECP_t rpt, mpECP_t pt);
+int  mpECP_cmp(mpECP_t pt1, mpECP_t pt2);
 
-int mpECP_cmp(mpECP_t pt1, mpECP_t pt2);
+void mpECP_scalar_base_mul_setup(mpECP_t pt);
+void mpECP_scalar_base_mul(mpECP_t rpt, mpECP_t pt, mpFp_t sc);
+void mpECP_scalar_base_mul_mpz(mpECP_t rpt, mpECP_t pt, mpz_t sc);
 
 #ifdef __cplusplus
 }
