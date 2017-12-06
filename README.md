@@ -1,7 +1,8 @@
 # ecclib
 
 ecclib provides basic Elliptic Curve math operations in a library which loosely
-follows the conventions of the GNU Multiple Precision (GMP) math library.
+follows the conventions of the GNU Multiple Precision (GMP) math library. For
+details on GMP, see: https://gmplib.org/.
 
 ecclib provides basic handling of math within the multiplicative field of
 integers modulo an odd prime p (i.e. the ring Z/pZ, also denoted Zp) and extends that
