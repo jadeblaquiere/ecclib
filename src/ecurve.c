@@ -330,7 +330,8 @@ static _std_ws_curve_t _std_ws_curve[] = {
     }
 };
 
-// Edwards curves from https://safecurves.cr.yp.to/
+// Edwards curves from https://safecurves.cr.yp.to/ and 
+// https://ed25519.cr.yp.to/software.html
 
 static _std_ed_curve_t _std_ed_curve[] = {
     {

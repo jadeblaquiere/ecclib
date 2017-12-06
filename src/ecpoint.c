@@ -84,7 +84,7 @@ void mpECP_set_infinite(mpECP_t rpt, mpECurve_t cv) {
     switch (cv->type) {
     case EQTypeEdwards:
         // return the neutral element (which is a valid curve point 0,c)
-        rpt->is_infinite = 1;
+        rpt->is_infinite = 0;
         mpFp_set_ui(rpt->z, 1, cv->p);
         mpFp_set_ui(rpt->x, 0, cv->p);
         mpFp_set_mpz(rpt->y, cv->coeff.ed.c, cv->p);
@@ -819,6 +819,7 @@ void mpECP_double(mpECP_t rpt, mpECP_t pt) {
             }
             break;
         case EQTypeEdwards: {
+#if 0
                 // 2007 Bernstein-Lange formula
                 // http://www.hyperelliptic.org/EFD/g1p/auto-edwards-projective.html#doubling-dbl-2007-bl
                 // B = (X1+Y1)**2
@@ -874,6 +875,9 @@ void mpECP_double(mpECP_t rpt, mpECP_t pt) {
                 mpFp_clear(D);
                 mpFp_clear(C);
                 mpFp_clear(B);
+#else
+                mpECP_add(rpt, pt, pt);
+#endif
                 return;
             }
             break;
