@@ -1,4 +1,4 @@
-#ecclib
+# ecclib
 
 ecclib provides basic Elliptic Curve math operations in a library which loosely
 follows the conventions of the GNU Multiple Precision (GMP) math library.
