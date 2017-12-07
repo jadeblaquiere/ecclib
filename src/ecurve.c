@@ -32,6 +32,7 @@
 #include <ecurve.h>
 #include <field.h>
 #include <gmp.h>
+#include <stdlib.h>
 #include <string.h>
 
 typedef struct {
