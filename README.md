@@ -13,7 +13,6 @@ capability to elliptic curve points over that ring, i.e. E(Fp).
 Basic operations:
 * import/export
 * element (x,y) composition/decomposition
-* modular inversion
 
 Supported multiplicative group operations:
 * addition
@@ -21,6 +20,7 @@ Supported multiplicative group operations:
 * negation
 * multiplication
 * exponentiation
+* modular inversion
 * square root
 
 Supported elliptic curve point mathematical operations:
@@ -34,6 +34,7 @@ Supported elliptic curve point mathematical operations:
 Supported elliptic curve types:
 * short Weierstrass
 * Edwards
+* Twisted Edwards
 * Montgomery (partial)
 
 ## build and install

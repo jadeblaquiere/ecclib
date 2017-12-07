@@ -47,12 +47,12 @@ if __name__ == '__main__':
     for i in range(0, 10):
         nq = i
         nQ = G * nq;
-        print("{\"0x%064X\", \"%s\"}," % (nq, nQ.compress().decode()))
+        print("{\"secp256k1\", \"0x%064X\", \"%s\"}," % (nq, nQ.compress().decode()))
     for i in range(0, 10):
         nq = random.randint(2, n-1)
         nQ = G * nq;
-        print("{\"0x%064X\", \"%s\"}," % (nq, nQ.compress().decode()))
+        print("{\"secp256k1\", \"0x%064X\", \"%s\"}," % (nq, nQ.compress().decode()))
     for i in range(0, 10):
         nq = n - i - 1
         nQ = G * nq;
-        print("{\"0x%064X\", \"%s\"}," % (nq, nQ.compress().decode()))
+        print("{\"secp256k1\", \"0x%064X\", \"%s\"}," % (nq, nQ.compress().decode()))

@@ -34,6 +34,13 @@
 #include <gmp.h>
 #include <string.h>
 
+static int _known_curve_type(mpECurve_t cv) {
+    return (cv->type == EQTypeShortWeierstrass) || 
+        (cv->type == EQTypeEdwards) ||
+        (cv->type == EQTypeMontgomery) ||
+        (cv->type == EQTypeTwistedEdwards);
+}
+
 typedef struct {
     _mpECurve_eq_type type;
     char *name;
@@ -73,10 +80,24 @@ typedef struct {
     int bits;
 } _std_mo_curve_t;
 
+typedef struct {
+    _mpECurve_eq_type type;
+    char *name;
+    char *p;
+    char *a;
+    char *d;
+    char *n;
+    char *h;
+    char *Gx;
+    char *Gy;
+    int bits;
+} _std_te_curve_t;
+
 typedef union {
     _std_ws_curve_t ws;
     _std_ed_curve_t ed;
     _std_mo_curve_t mo;
+    _std_te_curve_t te;
 } _std_curve_t;
 
 // curves from http://www.secg.org/collateral/sec2_final.pdf
@@ -477,6 +498,21 @@ static _std_mo_curve_t _std_mo_curve[] = {
     }
 };
 
+static _std_te_curve_t _std_te_curve[] = {
+    {
+        EQTypeTwistedEdwards,
+        "Ed25519",
+        "0x7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFED",
+        "0x7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEC",
+        "0x52036CEE2B6FFE738CC740797779E89800700A4D4141D8AB75EB4DCA135978A3",
+        "0x1000000000000000000000000000000014DEF9DEA2F79CD65812631A5CF5D3ED",
+        "8",
+        "0x216936D3CD6E53FEC0A4E231FDD6DC5C692CC7609525A7B2C9562D608F25D51A",
+        "0x6666666666666666666666666666666666666666666666666666666666666658",
+        255
+    }
+};
+
 static void _mpECurve_init_coeff(mpECurve_t cv) {
     switch (cv->type) {
         case EQTypeShortWeierstrass:
@@ -491,8 +527,12 @@ static void _mpECurve_init_coeff(mpECurve_t cv) {
             mpz_init(cv->coeff.mo.B);
             mpz_init(cv->coeff.mo.A);
             break;
+        case EQTypeTwistedEdwards:
+            mpz_init(cv->coeff.te.a);
+            mpz_init(cv->coeff.te.d);
+            break;
         default:
-            assert((cv->type == EQTypeShortWeierstrass) || (cv->type == EQTypeEdwards) || (cv->type == EQTypeMontgomery));
+            assert(_known_curve_type(cv));
     }
     return;
 }
@@ -511,8 +551,12 @@ static void _mpECurve_clear_coeff(mpECurve_t cv) {
             mpz_clear(cv->coeff.mo.B);
             mpz_clear(cv->coeff.mo.A);
             break;
+        case EQTypeTwistedEdwards:
+            mpz_clear(cv->coeff.te.a);
+            mpz_clear(cv->coeff.te.d);
+            break;
         default:
-            assert((cv->type == EQTypeShortWeierstrass) || (cv->type == EQTypeEdwards) || (cv->type == EQTypeMontgomery));
+            assert(_known_curve_type(cv));
     }
     return;
 }
@@ -560,8 +604,12 @@ void mpECurve_set(mpECurve_t rop, mpECurve_t op){
             mpz_set(rop->coeff.mo.B, op->coeff.mo.B);
             mpz_set(rop->coeff.mo.A, op->coeff.mo.A);
             break;
+        case EQTypeTwistedEdwards:
+            mpz_set(rop->coeff.te.a, op->coeff.te.a);
+            mpz_set(rop->coeff.te.d, op->coeff.te.d);
+            break;
         default:
-            assert((op->type == EQTypeShortWeierstrass) || (op->type == EQTypeEdwards) || (op->type == EQTypeMontgomery));
+            assert(_known_curve_type(op));
     }
     mpz_set(rop->n, op->n);
     mpz_set(rop->h, op->h);
@@ -628,6 +676,25 @@ char *h, char *Gx, char *Gy, unsigned int bits){
     return;
 }
 
+void mpECurve_set_str_te(mpECurve_t cv, char *p, char *a, char *d, char *n,
+char *h, char *Gx, char *Gy, unsigned int bits){
+    if (cv->type != EQTypeTwistedEdwards) {
+        _mpECurve_clear_coeff(cv);
+        cv->type = EQTypeTwistedEdwards;
+        _mpECurve_init_coeff(cv);
+    }
+    mpz_set_str(cv->p, p, 0);
+    mpz_set_str(cv->coeff.te.a, a, 0);
+    mpz_set_str(cv->coeff.te.d, d, 0);
+    mpz_set_str(cv->n, n, 0);
+    mpz_set_str(cv->h, h, 0);
+    mpz_set_str(cv->G[0], Gx, 0);
+    mpz_set_str(cv->G[1], Gy, 0);
+    cv->bits = bits;
+    assert(mpECurve_point_check(cv, cv->G[0], cv->G[1]));
+    return;
+}
+
 int mpECurve_set_named(mpECurve_t cv, char *name) {
     int i, ncurves;
     ncurves = sizeof(_std_ws_curve) / sizeof(_std_ws_curve[0]);
@@ -654,6 +721,15 @@ int mpECurve_set_named(mpECurve_t cv, char *name) {
             mpECurve_set_str_mo(cv, _std_mo_curve[i].p, _std_mo_curve[i].B,
                 _std_mo_curve[i].A,_std_mo_curve[i].n,_std_mo_curve[i].h,
                 _std_mo_curve[i].Gx,_std_mo_curve[i].Gy,_std_mo_curve[i].bits);
+            return 0;
+        }
+    }
+    ncurves = sizeof(_std_te_curve) / sizeof(_std_te_curve[0]);
+    for (i = 0 ; i < ncurves; i++) {
+        if (strcmp(_std_te_curve[i].name, name) == 0) {
+            mpECurve_set_str_te(cv, _std_te_curve[i].p, _std_te_curve[i].a,
+                _std_te_curve[i].d,_std_te_curve[i].n,_std_te_curve[i].h,
+                _std_te_curve[i].Gx,_std_te_curve[i].Gy,_std_te_curve[i].bits);
             return 0;
         }
     }
@@ -736,8 +812,28 @@ int mpECurve_point_check(mpECurve_t cv, mpz_t Px, mpz_t Py) {
             mpFp_clear(B);
             break;
         }
+        case EQTypeTwistedEdwards: {
+            // a * x**2 + y**2 = 1 + (d * x**2 * y**2)
+            mpFp_t a, d, t;
+            mpFp_init(a);
+            mpFp_init(d);
+            mpFp_init(t);
+            mpFp_set_mpz(a, cv->coeff.te.a, cv->p);
+            mpFp_set_mpz(d, cv->coeff.te.d, cv->p);
+            mpFp_pow_ui(l, x, 2);
+            mpFp_pow_ui(t, y, 2);
+            mpFp_mul(r, l, t);
+            mpFp_mul(l, l, a);
+            mpFp_add(l, l, t);
+            mpFp_mul(r, r, d);
+            mpFp_add_ui(r, r, 1);
+            mpFp_clear(t);
+            mpFp_clear(d);
+            mpFp_clear(a);
+            break;
+        }
         default:
-            assert((cv->type == EQTypeShortWeierstrass) || (cv->type == EQTypeEdwards) || (cv->type == EQTypeMontgomery));
+            assert(_known_curve_type(cv));
     }
     
     on_curve = (mpFp_cmp(l, r) == 0);
@@ -765,8 +861,12 @@ int mpECurve_cmp(mpECurve_t op1, mpECurve_t op2) {
             r = mpz_cmp(op1->coeff.mo.B, op2->coeff.mo.B) ; if (r != 0) return r;
             r = mpz_cmp(op1->coeff.mo.A, op2->coeff.mo.A) ; if (r != 0) return r;
             break;
+        case EQTypeTwistedEdwards:
+            r = mpz_cmp(op1->coeff.te.a, op2->coeff.te.a) ; if (r != 0) return r;
+            r = mpz_cmp(op1->coeff.te.d, op2->coeff.te.d) ; if (r != 0) return r;
+            break;
         default:
-            assert((op1->type == EQTypeShortWeierstrass) || (op1->type == EQTypeEdwards) || (op1->type == EQTypeMontgomery));
+            assert(_known_curve_type(op1));
     }
     r = mpz_cmp(op1->n, op2->n) ; if (r != 0) return r;
     r = mpz_cmp(op1->h, op2->h) ; if (r != 0) return r;
@@ -778,12 +878,13 @@ int mpECurve_cmp(mpECurve_t op1, mpECurve_t op2) {
 char **_mpECurve_list_standard_curves() {
     char **list;
     char *name;
-    int i, listws, listed, listmo, listsz;
+    int i, listws, listed, listmo, listte, listsz;
     
     listws = sizeof(_std_ws_curve) / sizeof(_std_ws_curve[0]);
     listed = sizeof(_std_ed_curve) / sizeof(_std_ed_curve[0]);
     listmo = sizeof(_std_mo_curve) / sizeof(_std_mo_curve[0]);
-    listsz = listws + listed + listmo;
+    listte = sizeof(_std_te_curve) / sizeof(_std_te_curve[0]);
+    listsz = listws + listed + listmo + listte;
     list = (char **)malloc((listsz+1) * sizeof(char *));
     assert (list != NULL);
     for (i = 0; i < listws; i++) {
@@ -796,11 +897,15 @@ char **_mpECurve_list_standard_curves() {
         strcpy(name, _std_ed_curve[i].name);
         list[i+listws] = name;
     }
-    
     for (i = 0; i < listmo; i++) {
         name = (char *)malloc(sizeof(char)*strlen(_std_mo_curve[i].name)+1);
         strcpy(name, _std_mo_curve[i].name);
         list[i+listws+listed] = name;
+    }
+    for (i = 0; i < listte; i++) {
+        name = (char *)malloc(sizeof(char)*strlen(_std_te_curve[i].name)+1);
+        strcpy(name, _std_te_curve[i].name);
+        list[i+listws+listed+listmo] = name;
     }
     list[listsz] = (char *)NULL;
     return list;

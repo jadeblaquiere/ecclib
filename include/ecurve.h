@@ -40,7 +40,7 @@ extern "C" {
 // Implementation of Elliptic Curve math following GNU GMP sytle
 // internal representation supports projective (e.g. Jacobian) coords
 
-typedef enum {EQTypeNone, EQTypeShortWeierstrass, EQTypeEdwards, EQTypeMontgomery} _mpECurve_eq_type;
+typedef enum {EQTypeNone, EQTypeShortWeierstrass, EQTypeEdwards, EQTypeMontgomery, EQTypeTwistedEdwards} _mpECurve_eq_type;
 
 // short Weierstrass curve defined as y**2 = x**3 + ax + b
 
@@ -63,10 +63,18 @@ typedef struct {
     mpz_t A; // coefficient of equation
 } _mpECurve_mo_curve_coeff_t;
 
+// Twisted Edwards : a * x**2 + y**2 = 1 + (d * x**2 * y**2)
+
+typedef struct {
+    mpz_t a; // coefficient of equation
+    mpz_t d; // coefficient of equation
+} _mpECurve_te_curve_coeff_t;
+
 typedef union {
     _mpECurve_ws_curve_coeff_t ws;
     _mpECurve_ed_curve_coeff_t ed;
     _mpECurve_mo_curve_coeff_t mo;
+    _mpECurve_te_curve_coeff_t te;
 } _mpECurve_coeff_t;
 
 typedef struct {
@@ -90,6 +98,8 @@ void mpECurve_set_str_ws(mpECurve_t cv, char *p, char *a, char *b, char *n,
 void mpECurve_set_str_ed(mpECurve_t cv, char *p, char *c, char *d, char *n,
                       char *h, char *Gx, char *Gy, unsigned int bits);
 void mpECurve_set_str_mo(mpECurve_t cv, char *p, char *B, char *A, char *n,
+                      char *h, char *Gx, char *Gy, unsigned int bits);
+void mpECurve_set_str_te(mpECurve_t cv, char *p, char *a, char *d, char *n,
                       char *h, char *Gx, char *Gy, unsigned int bits);
 int mpECurve_set_named(mpECurve_t c, char *name);
 
