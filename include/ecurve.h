@@ -31,6 +31,7 @@
 #ifndef _EC_CURVE_H_INCLUDED_
 #define _EC_CURVE_H_INCLUDED_
 
+#include <field.h>
 #include <gmp.h>
 
 #ifdef __cplusplus
@@ -45,29 +46,42 @@ typedef enum {EQTypeNone, EQTypeShortWeierstrass, EQTypeEdwards, EQTypeMontgomer
 // short Weierstrass curve defined as y**2 = x**3 + ax + b
 
 typedef struct {
-    mpz_t a; // coefficient of equation
-    mpz_t b; // coefficient of equation
+    mpFp_t a; // coefficient of equation
+    mpFp_t b; // coefficient of equation
 } _mpECurve_ws_curve_coeff_t;
 
 // Edwards curve defined as x**2 + y**2 = c**2 * (1 + (d * x**2 * y**2))
 
 typedef struct {
-    mpz_t c; // coefficient of equation
-    mpz_t d; // coefficient of equation
+    mpFp_t c; // coefficient of equation
+    mpFp_t d; // coefficient of equation
 } _mpECurve_ed_curve_coeff_t;
 
 // Montgomery curve defined as B * y**2 = x**3 + A * x**2 + x
 
 typedef struct {
-    mpz_t B; // coefficient of equation
-    mpz_t A; // coefficient of equation
+    mpFp_t B; // coefficient of equation
+    mpFp_t A; // coefficient of equation
+    // internal representation of Montgomery curve points is ws
+    // to facilitate add/double (not differential)
+    // transform is :
+    // x = Bu-A/3, y = Bv
+    // ws_a = (3-A^2)/(3B^2) and ws_b = (2A^3-9A)/(27B^3)
+    // resulting equation:
+    // v^2 = u^3 + ws_a * u + ws_b
+    // reverse transform:
+    // u = Binv * x + A/3, v = Binv * y
+    mpFp_t ws_a; // coefficient of transformed equation
+    mpFp_t ws_b; // coefficient of transformed equation
+    mpFp_t Binv; // coefficient of transform
+    mpFp_t Adiv3; // coefficient of transform
 } _mpECurve_mo_curve_coeff_t;
 
 // Twisted Edwards : a * x**2 + y**2 = 1 + (d * x**2 * y**2)
 
 typedef struct {
-    mpz_t a; // coefficient of equation
-    mpz_t d; // coefficient of equation
+    mpFp_t a; // coefficient of equation
+    mpFp_t d; // coefficient of equation
 } _mpECurve_te_curve_coeff_t;
 
 typedef union {

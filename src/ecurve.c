@@ -517,20 +517,24 @@ static _std_te_curve_t _std_te_curve[] = {
 static void _mpECurve_init_coeff(mpECurve_t cv) {
     switch (cv->type) {
         case EQTypeShortWeierstrass:
-            mpz_init(cv->coeff.ws.a);
-            mpz_init(cv->coeff.ws.b);
+            mpFp_init(cv->coeff.ws.a);
+            mpFp_init(cv->coeff.ws.b);
             break;
         case EQTypeEdwards:
-            mpz_init(cv->coeff.ed.c);
-            mpz_init(cv->coeff.ed.d);
+            mpFp_init(cv->coeff.ed.c);
+            mpFp_init(cv->coeff.ed.d);
             break;
         case EQTypeMontgomery:
-            mpz_init(cv->coeff.mo.B);
-            mpz_init(cv->coeff.mo.A);
+            mpFp_init(cv->coeff.mo.B);
+            mpFp_init(cv->coeff.mo.A);
+            mpFp_init(cv->coeff.mo.ws_a);
+            mpFp_init(cv->coeff.mo.ws_b);
+            mpFp_init(cv->coeff.mo.Binv);
+            mpFp_init(cv->coeff.mo.Adiv3);
             break;
         case EQTypeTwistedEdwards:
-            mpz_init(cv->coeff.te.a);
-            mpz_init(cv->coeff.te.d);
+            mpFp_init(cv->coeff.te.a);
+            mpFp_init(cv->coeff.te.d);
             break;
         default:
             assert(_known_curve_type(cv));
@@ -541,20 +545,24 @@ static void _mpECurve_init_coeff(mpECurve_t cv) {
 static void _mpECurve_clear_coeff(mpECurve_t cv) {
     switch (cv->type) {
         case EQTypeShortWeierstrass:
-            mpz_clear(cv->coeff.ws.a);
-            mpz_clear(cv->coeff.ws.b);
+            mpFp_clear(cv->coeff.ws.a);
+            mpFp_clear(cv->coeff.ws.b);
             break;
         case EQTypeEdwards:
-            mpz_clear(cv->coeff.ed.c);
-            mpz_clear(cv->coeff.ed.d);
+            mpFp_clear(cv->coeff.ed.c);
+            mpFp_clear(cv->coeff.ed.d);
             break;
         case EQTypeMontgomery:
-            mpz_clear(cv->coeff.mo.B);
-            mpz_clear(cv->coeff.mo.A);
+            mpFp_clear(cv->coeff.mo.B);
+            mpFp_clear(cv->coeff.mo.A);
+            mpFp_clear(cv->coeff.mo.ws_a);
+            mpFp_clear(cv->coeff.mo.ws_b);
+            mpFp_clear(cv->coeff.mo.Binv);
+            mpFp_clear(cv->coeff.mo.Adiv3);
             break;
         case EQTypeTwistedEdwards:
-            mpz_clear(cv->coeff.te.a);
-            mpz_clear(cv->coeff.te.d);
+            mpFp_clear(cv->coeff.te.a);
+            mpFp_clear(cv->coeff.te.d);
             break;
         default:
             assert(_known_curve_type(cv));
@@ -594,20 +602,24 @@ void mpECurve_set(mpECurve_t rop, mpECurve_t op){
     mpz_set(rop->p, op->p);
     switch (op->type) {
         case EQTypeShortWeierstrass:
-            mpz_set(rop->coeff.ws.a, op->coeff.ws.a);
-            mpz_set(rop->coeff.ws.b, op->coeff.ws.b);
+            mpFp_set(rop->coeff.ws.a, op->coeff.ws.a);
+            mpFp_set(rop->coeff.ws.b, op->coeff.ws.b);
             break;
         case EQTypeEdwards:
-            mpz_set(rop->coeff.ed.c, op->coeff.ed.c);
-            mpz_set(rop->coeff.ed.d, op->coeff.ed.d);
+            mpFp_set(rop->coeff.ed.c, op->coeff.ed.c);
+            mpFp_set(rop->coeff.ed.d, op->coeff.ed.d);
             break;
         case EQTypeMontgomery:
-            mpz_set(rop->coeff.mo.B, op->coeff.mo.B);
-            mpz_set(rop->coeff.mo.A, op->coeff.mo.A);
+            mpFp_set(rop->coeff.mo.B, op->coeff.mo.B);
+            mpFp_set(rop->coeff.mo.A, op->coeff.mo.A);
+            mpFp_set(rop->coeff.mo.ws_a, op->coeff.mo.ws_a);
+            mpFp_set(rop->coeff.mo.ws_b, op->coeff.mo.ws_b);
+            mpFp_set(rop->coeff.mo.Binv, op->coeff.mo.Binv);
+            mpFp_set(rop->coeff.mo.Adiv3, op->coeff.mo.Adiv3);
             break;
         case EQTypeTwistedEdwards:
-            mpz_set(rop->coeff.te.a, op->coeff.te.a);
-            mpz_set(rop->coeff.te.d, op->coeff.te.d);
+            mpFp_set(rop->coeff.te.a, op->coeff.te.a);
+            mpFp_set(rop->coeff.te.d, op->coeff.te.d);
             break;
         default:
             assert(_known_curve_type(op));
@@ -622,77 +634,106 @@ void mpECurve_set(mpECurve_t rop, mpECurve_t op){
 
 void mpECurve_set_str_ws(mpECurve_t cv, char *p, char *a, char *b, char *n,
 char *h, char *Gx, char *Gy, unsigned int bits){
+    mpz_t t;
     if (cv->type != EQTypeShortWeierstrass) {
         _mpECurve_clear_coeff(cv);
         cv->type = EQTypeShortWeierstrass;
         _mpECurve_init_coeff(cv);
     }
+    mpz_init(t);
     mpz_set_str(cv->p, p, 0);
-    mpz_set_str(cv->coeff.ws.a, a, 0);
-    mpz_set_str(cv->coeff.ws.b, b, 0);
+    mpz_set_str(t, a, 0);
+    mpFp_set_mpz(cv->coeff.ws.a, t, cv->p);
+    mpz_set_str(t, b, 0);
+    mpFp_set_mpz(cv->coeff.ws.b, t, cv->p);
     mpz_set_str(cv->n, n, 0);
     mpz_set_str(cv->h, h, 0);
     mpz_set_str(cv->G[0], Gx, 0);
     mpz_set_str(cv->G[1], Gy, 0);
     cv->bits = bits;
     assert(mpECurve_point_check(cv, cv->G[0], cv->G[1]));
+    mpz_clear(t);
     return;
 }
 
 void mpECurve_set_str_ed(mpECurve_t cv, char *p, char *c, char *d, char *n,
 char *h, char *Gx, char *Gy, unsigned int bits){
+    mpz_t t;
     if (cv->type != EQTypeEdwards) {
         _mpECurve_clear_coeff(cv);
         cv->type = EQTypeEdwards;
         _mpECurve_init_coeff(cv);
     }
+    mpz_init(t);
     mpz_set_str(cv->p, p, 0);
-    mpz_set_str(cv->coeff.ed.c, c, 0);
-    mpz_set_str(cv->coeff.ed.d, d, 0);
+    mpz_set_str(t, c, 0);
+    mpFp_set_mpz(cv->coeff.ed.c, t, cv->p);
+    mpz_set_str(t, d, 0);
+    mpFp_set_mpz(cv->coeff.ed.d, t, cv->p);
     mpz_set_str(cv->n, n, 0);
     mpz_set_str(cv->h, h, 0);
     mpz_set_str(cv->G[0], Gx, 0);
     mpz_set_str(cv->G[1], Gy, 0);
     cv->bits = bits;
     assert(mpECurve_point_check(cv, cv->G[0], cv->G[1]));
+    mpz_clear(t);
     return;
 }
 
 void mpECurve_set_str_mo(mpECurve_t cv, char *p, char *B, char *A, char *n,
 char *h, char *Gx, char *Gy, unsigned int bits){
+    mpz_t t;
     if (cv->type != EQTypeMontgomery) {
         _mpECurve_clear_coeff(cv);
         cv->type = EQTypeMontgomery;
         _mpECurve_init_coeff(cv);
     }
+    mpz_init(t);
     mpz_set_str(cv->p, p, 0);
-    mpz_set_str(cv->coeff.mo.B, B, 0);
-    mpz_set_str(cv->coeff.mo.A, A, 0);
+    mpz_set_str(t, B, 0);
+    mpFp_set_mpz(cv->coeff.mo.B, t, cv->p);
+    mpz_set_str(t, A, 0);
+    mpFp_set_mpz(cv->coeff.mo.A, t, cv->p);
+    // internal representation of Montgomery curve points is ws
+    // to facilitate add/double (not differential)
+    // transform is :
+    // x = Bu-A/3, y = Bv
+    // ws_a = (3-A^2)/(3B^2) and ws_b = (2A^3-9A)/(27B^3)
+    // resulting equation:
+    // v^2 = u^3 + ws_a * u + ws_b
+    // reverse transform:
+    // u = Binv * x + A/3, v = Binv * y
     mpz_set_str(cv->n, n, 0);
     mpz_set_str(cv->h, h, 0);
     mpz_set_str(cv->G[0], Gx, 0);
     mpz_set_str(cv->G[1], Gy, 0);
     cv->bits = bits;
     assert(mpECurve_point_check(cv, cv->G[0], cv->G[1]));
+    mpz_clear(t);
     return;
 }
 
 void mpECurve_set_str_te(mpECurve_t cv, char *p, char *a, char *d, char *n,
 char *h, char *Gx, char *Gy, unsigned int bits){
+    mpz_t t;
     if (cv->type != EQTypeTwistedEdwards) {
         _mpECurve_clear_coeff(cv);
         cv->type = EQTypeTwistedEdwards;
         _mpECurve_init_coeff(cv);
     }
+    mpz_init(t);
     mpz_set_str(cv->p, p, 0);
-    mpz_set_str(cv->coeff.te.a, a, 0);
-    mpz_set_str(cv->coeff.te.d, d, 0);
+    mpz_set_str(t, a, 0);
+    mpFp_set_mpz(cv->coeff.te.a, t, cv->p);
+    mpz_set_str(t, d, 0);
+    mpFp_set_mpz(cv->coeff.te.d, t, cv->p);
     mpz_set_str(cv->n, n, 0);
     mpz_set_str(cv->h, h, 0);
     mpz_set_str(cv->G[0], Gx, 0);
     mpz_set_str(cv->G[1], Gy, 0);
     cv->bits = bits;
     assert(mpECurve_point_check(cv, cv->G[0], cv->G[1]));
+    mpz_clear(t);
     return;
 }
 
@@ -753,84 +794,54 @@ int mpECurve_point_check(mpECurve_t cv, mpz_t Px, mpz_t Py) {
     switch (cv->type) {
         case EQTypeShortWeierstrass: {
             // y**2 = x**3 + ax + b
-            mpFp_t a, b;
-            mpFp_init(a);
-            mpFp_init(b);
-            mpFp_set_mpz(a, cv->coeff.ws.a, cv->p);
-            mpFp_set_mpz(b, cv->coeff.ws.b, cv->p);
             mpFp_pow_ui(r, x, 3);
-            mpFp_mul(l, a, x);
+            mpFp_mul(l, cv->coeff.ws.a, x);
             mpFp_add(r, r, l);
-            mpFp_add(r, r, b);
+            mpFp_add(r, r, cv->coeff.ws.b);
             mpFp_pow_ui(l, y, 2);
-            mpFp_clear(b);
-            mpFp_clear(a);
             break;
         }
         case EQTypeEdwards: {
             // x**2 + y**2 = c**2 * (1 + (d * x**2 * y**2))
-            mpFp_t c, d, t;
-            mpFp_init(c);
-            mpFp_init(d);
+            mpFp_t t;
             mpFp_init(t);
-            mpFp_set_mpz(c, cv->coeff.ed.c, cv->p);
-            mpFp_set_mpz(d, cv->coeff.ed.d, cv->p);
             mpFp_pow_ui(r, x, 2);
             mpFp_pow_ui(t, y, 2);
             mpFp_add(l, t, r);
             mpFp_mul(r, r, t);
-            mpFp_mul(r, r, d);
+            mpFp_mul(r, r, cv->coeff.ed.d);
             mpFp_add_ui(r, r, 1);
-            mpFp_pow_ui(t, c, 2);
+            mpFp_pow_ui(t, cv->coeff.ed.c, 2);
             mpFp_mul(r, r, t);
             mpFp_clear(t);
-            mpFp_clear(d);
-            mpFp_clear(c);
             break;
         }
         case EQTypeMontgomery: {
             // B * y**2 = x**3 + A * x**2 + x
-            mpFp_t B, A, t;
-            mpz_t left, right;
-            mpz_init(left);
-            mpz_init(right);
-            mpFp_init(B);
-            mpFp_init(A);
+            mpFp_t t;
             mpFp_init(t);
-            mpFp_set_mpz(B, cv->coeff.mo.B, cv->p);
-            mpFp_set_mpz(A, cv->coeff.mo.A, cv->p);
             mpFp_pow_ui(l, y, 2);
-            mpFp_mul(l, l, B);
+            mpFp_mul(l, l, cv->coeff.mo.B);
             mpFp_pow_ui(r, x, 3);
             mpFp_add(r, r, x);
             mpFp_pow_ui(t, x, 2);
-            mpFp_mul(t, t, A);
+            mpFp_mul(t, t, cv->coeff.mo.A);
             mpFp_add(r, r, t);
-            mpz_set_mpFp(left, l);
-            mpz_set_mpFp(right, r);
             mpFp_clear(t);
-            mpFp_clear(A);
-            mpFp_clear(B);
             break;
         }
         case EQTypeTwistedEdwards: {
             // a * x**2 + y**2 = 1 + (d * x**2 * y**2)
-            mpFp_t a, d, t;
-            mpFp_init(a);
-            mpFp_init(d);
+            mpFp_t t;
             mpFp_init(t);
-            mpFp_set_mpz(a, cv->coeff.te.a, cv->p);
-            mpFp_set_mpz(d, cv->coeff.te.d, cv->p);
             mpFp_pow_ui(l, x, 2);
             mpFp_pow_ui(t, y, 2);
             mpFp_mul(r, l, t);
-            mpFp_mul(l, l, a);
+            mpFp_mul(l, l, cv->coeff.te.a);
             mpFp_add(l, l, t);
-            mpFp_mul(r, r, d);
+            mpFp_mul(r, r, cv->coeff.te.d);
             mpFp_add_ui(r, r, 1);
             mpFp_clear(t);
-            mpFp_clear(d);
-            mpFp_clear(a);
             break;
         }
         default:
@@ -851,20 +862,20 @@ int mpECurve_cmp(mpECurve_t op1, mpECurve_t op2) {
     r = mpz_cmp(op1->p, op2->p) ; if (r != 0) return r;
     switch (op1->type) {
         case EQTypeShortWeierstrass:
-            r = mpz_cmp(op1->coeff.ws.a, op2->coeff.ws.a) ; if (r != 0) return r;
-            r = mpz_cmp(op1->coeff.ws.b, op2->coeff.ws.b) ; if (r != 0) return r;
+            r = mpFp_cmp(op1->coeff.ws.a, op2->coeff.ws.a) ; if (r != 0) return r;
+            r = mpFp_cmp(op1->coeff.ws.b, op2->coeff.ws.b) ; if (r != 0) return r;
             break;
         case EQTypeEdwards:
-            r = mpz_cmp(op1->coeff.ed.c, op2->coeff.ed.c) ; if (r != 0) return r;
-            r = mpz_cmp(op1->coeff.ed.d, op2->coeff.ed.d) ; if (r != 0) return r;
+            r = mpFp_cmp(op1->coeff.ed.c, op2->coeff.ed.c) ; if (r != 0) return r;
+            r = mpFp_cmp(op1->coeff.ed.d, op2->coeff.ed.d) ; if (r != 0) return r;
             break;
         case EQTypeMontgomery:
-            r = mpz_cmp(op1->coeff.mo.B, op2->coeff.mo.B) ; if (r != 0) return r;
-            r = mpz_cmp(op1->coeff.mo.A, op2->coeff.mo.A) ; if (r != 0) return r;
+            r = mpFp_cmp(op1->coeff.mo.B, op2->coeff.mo.B) ; if (r != 0) return r;
+            r = mpFp_cmp(op1->coeff.mo.A, op2->coeff.mo.A) ; if (r != 0) return r;
             break;
         case EQTypeTwistedEdwards:
-            r = mpz_cmp(op1->coeff.te.a, op2->coeff.te.a) ; if (r != 0) return r;
-            r = mpz_cmp(op1->coeff.te.d, op2->coeff.te.d) ; if (r != 0) return r;
+            r = mpFp_cmp(op1->coeff.te.a, op2->coeff.te.a) ; if (r != 0) return r;
+            r = mpFp_cmp(op1->coeff.te.d, op2->coeff.te.d) ; if (r != 0) return r;
             break;
         default:
             assert(_known_curve_type(op1));

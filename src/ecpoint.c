@@ -134,7 +134,7 @@ void mpECP_set_neutral(mpECP_t rpt, mpECurve_t cv) {
         rpt->is_neutral = 0;
         mpFp_set_ui(rpt->z, 1, cv->p);
         mpFp_set_ui(rpt->x, 0, cv->p);
-        mpFp_set_mpz(rpt->y, cv->coeff.ed.c, cv->p);
+        mpFp_set(rpt->y, cv->coeff.ed.c);
         return;
     case EQTypeMontgomery:
         rpt->is_neutral = 1;
@@ -224,13 +224,11 @@ void mpFp_set_mpECP_affine_y(mpFp_t y, mpECP_t pt) {
                 // right side of curve equation
                 mpFp_pow_ui(t, pt->x, 3);
                 mpFp_pow_ui(A, pt->x, 2);
-                mpFp_set_mpz(Binv, pt->cv->coeff.mo.A, pt->cv->p);
-                mpFp_mul(A, A, Binv);
+                mpFp_mul(A, A, pt->cv->coeff.mo.A);
                 mpFp_add(t, t, A);
                 mpFp_add(t, t, pt->x);
                 // divide by B
-                mpFp_set_mpz(Binv, pt->cv->coeff.mo.B, pt->cv->p);
-                mpFp_inv(Binv, Binv);
+                mpFp_inv(Binv, pt->cv->coeff.mo.B);
                 mpFp_mul(t, t, Binv);
                 // take square root - ignore +/-
                 mpFp_sqrt(y, t);
@@ -323,10 +321,8 @@ int mpECP_set_str(mpECP_t rpt, char *s, mpECurve_t cv) {
                         mpFp_set_mpz(x, xz, cv->p);
                         if (cv->type == EQTypeShortWeierstrass) {
                             // y**2 = x**3 + ax + b
-                            mpFp_set_mpz(y, cv->coeff.ws.b, cv->p);
-                            mpFp_set_mpz(t, cv->coeff.ws.a, cv->p);
-                            mpFp_mul(t, t, x);
-                            mpFp_add(y, y, t);
+                            mpFp_mul(t, cv->coeff.ws.a, x);
+                            mpFp_add(y, cv->coeff.ws.b, t);
                             mpFp_pow_ui(t, x, 3);
                             mpFp_add(y, y, t);
                             error = mpFp_sqrt(y, y);
@@ -344,10 +340,8 @@ int mpECP_set_str(mpECP_t rpt, char *s, mpECurve_t cv) {
                             // x**2 + y**2 = c**2 (1 + d * x**2 * y**2)
                             // y**2 - C**2 * d * x**2 * y**2 = c**2 - x**2
                             // y**2 = (c**2 - x**2) / (1 - c**2 * d * x**2)
-                            mpFp_set_mpz(c2, cv->coeff.ed.c, cv->p);
-                            mpFp_pow_ui(c2, c2, 2);
-                            mpFp_set_mpz(t, cv->coeff.ed.d, cv->p);
-                            mpFp_mul(t, t, c2);
+                            mpFp_mul(c2, cv->coeff.ed.c, cv->coeff.ed.c);
+                            mpFp_mul(t, cv->coeff.ed.d, c2);
                             mpFp_pow_ui(x2, x, 2);
                             mpFp_mul(t, t, x2);
                             mpFp_set_ui(y, 1, cv->p);
@@ -372,8 +366,8 @@ int mpECP_set_str(mpECP_t rpt, char *s, mpECurve_t cv) {
                             // a * x**2 + y**2 = 1 + d * x**2 * y**2
                             // y**2 - d * x**2 * y**2 = 1 - a * x**2
                             // y**2 = (1 - a * x**2) / (1 - d * x**2)
-                            mpFp_set_mpz(a, cv->coeff.te.a, cv->p);
-                            mpFp_set_mpz(t, cv->coeff.te.d, cv->p);
+                            mpFp_set(a, cv->coeff.te.a);
+                            mpFp_set(t, cv->coeff.te.d);
                             mpFp_pow_ui(x2, x, 2);
                             mpFp_mul(t, t, x2);
                             mpFp_set_ui(y, 1, cv->p);
@@ -795,8 +789,7 @@ void mpECP_add(mpECP_t rpt, mpECP_t pt1, mpECP_t pt2) {
                 // D = Y1*Y2
                 mpFp_mul(D, pt1->y, pt2->y);
                 // E = d*C*D
-                mpFp_set_mpz(E, pt1->cv->coeff.ed.d, pt1->cv->p);
-                mpFp_mul(E, E, C);
+                mpFp_mul(E, pt1->cv->coeff.ed.d, C);
                 mpFp_mul(E, E, D);
                 // F = B-E
                 mpFp_sub(F, B, E);
@@ -816,8 +809,7 @@ void mpECP_add(mpECP_t rpt, mpECP_t pt1, mpECP_t pt2) {
                 mpFp_mul(B, B, G);
                 mpFp_mul(rpt->y, B, A);
                 // Z3 = c*F*G
-                mpFp_set_mpz(B, pt1->cv->coeff.ed.c, pt1->cv->p);
-                mpFp_mul(B, B, G);
+                mpFp_mul(B, pt1->cv->coeff.ed.c, G);
                 mpFp_mul(rpt->z, B, F);
                 mpECurve_set(rpt->cv, pt1->cv);
                 rpt->is_neutral = 0;
@@ -863,8 +855,7 @@ void mpECP_add(mpECP_t rpt, mpECP_t pt1, mpECP_t pt2) {
                 // D = Y1*Y2
                 mpFp_mul(D, pt1->y, pt2->y);
                 // E = d*C*D
-                mpFp_set_mpz(E, pt1->cv->coeff.te.d, pt1->cv->p);
-                mpFp_mul(E, E, C);
+                mpFp_mul(E, pt1->cv->coeff.te.d, C);
                 mpFp_mul(E, E, D);
                 // F = B-E
                 mpFp_sub(F, B, E);
@@ -880,8 +871,7 @@ void mpECP_add(mpECP_t rpt, mpECP_t pt1, mpECP_t pt2) {
                 mpFp_mul(B, B, F);
                 mpFp_mul(rpt->x, B, A);
                 // Y3 = A*G*(D-a*C)
-                mpFp_set_mpz(E, pt1->cv->coeff.te.a, pt1->cv->p);
-                mpFp_mul(C, C, E);
+                mpFp_mul(C, C, pt1->cv->coeff.te.a);
                 mpFp_sub(B, D, C);
                 mpFp_mul(B, B, G);
                 mpFp_mul(rpt->y, B, A);
@@ -952,8 +942,7 @@ void mpECP_double(mpECP_t rpt, mpECP_t pt) {
                 mpFp_mul_ui(S, S, 2);
                 // M = 3*XX+a*ZZ**2
                 mpFp_pow_ui(M, ZZ, 2);
-                mpFp_set_mpz(T, pt->cv->coeff.ws.a, pt->cv->p);
-                mpFp_mul(M, M, T);
+                mpFp_mul(M, M, pt->cv->coeff.ws.a);
                 mpFp_mul_ui(T, XX, 3);
                 mpFp_add(M, M, T);
                 // T = M**2-2*S, XX is temp var from here down
