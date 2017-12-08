@@ -53,7 +53,7 @@ END_TEST
 
 START_TEST(test_mpECP_str_out)
     int error, i, ncurves;
-    char *test_curve[] = {"secp256k1", "Curve25519", "Curve41417"};
+    char *test_curve[] = {"secp256k1", "Curve25519", "Curve41417", "Ed25519"};
     mpECurve_t cv;
     mpECP_t a;
     mpECurve_init(cv);
@@ -87,7 +87,7 @@ END_TEST
 
 START_TEST(test_mpECP_affine)
     int error, i, ncurves;
-    char *test_curve[] = {"secp256k1", "Curve25519", "Curve41417"};
+    char *test_curve[] = {"secp256k1", "Curve25519", "Curve41417", "Ed25519"};
     mpECurve_t cv;
     mpECP_t a, b, c;
     mpECurve_init(cv);
@@ -122,7 +122,7 @@ END_TEST
 
 START_TEST(test_mpECP_infinity)
     int error, i, ncurves;
-    char *test_curve[] = {"secp256k1", "Curve25519", "Curve41417"};
+    char *test_curve[] = {"secp256k1", "Curve25519", "Curve41417", "Ed25519"};
     mpECurve_t cv;
     mpECP_t a;
     mpECurve_init(cv);
@@ -150,6 +150,51 @@ START_TEST(test_mpECP_infinity)
         printf("Uncompressed : %s\n", buffer);
     }
 
+    mpECP_clear(a);
+    mpECurve_clear(cv);
+END_TEST
+
+START_TEST(test_mpECP_urandom)
+    int error, i, j, ncurves;
+    char *test_curve[] = {"secp256k1", "Curve41417", "Ed25519"};
+    mpECurve_t cv;
+    mpECP_t a;
+    mpz_t x, y;
+    mpECurve_init(cv);
+    mpECP_init(a);
+    mpz_init(x);
+    mpz_init(y);
+    
+    ncurves = sizeof(test_curve) / sizeof(test_curve[0]);
+    for (i = 0 ; i < ncurves; i++) {
+        int slen;
+        char *buffer;
+        error = mpECurve_set_named(cv, test_curve[i]);
+        assert(error == 0);
+        mpECP_set_neutral(a, cv);
+        slen = mpECP_out_strlen(a, 0);
+        buffer = malloc((slen + 1)* sizeof(char));
+        assert(buffer != NULL);
+        for (j = 0; j < 100; j++) {
+            mpECP_urandom(a, cv);
+            mpz_set_mpECP_affine_x(x, a);
+            mpz_set_mpECP_affine_y(y, a);
+            assert(mpECurve_point_check(cv, x, y));
+            printf("Exporting random point for curve %s:\n", test_curve[i]);
+            mpECP_out_str(buffer, a, 1);
+            slen = mpECP_out_strlen(a, 1);
+            assert(strlen(buffer) == slen);
+            printf("Compressed   : %s\n", buffer);
+            mpECP_out_str(buffer, a, 0);
+            slen = mpECP_out_strlen(a, 0);
+            assert(strlen(buffer) == slen);
+            printf("Uncompressed : %s\n", buffer);
+        }
+        free(buffer);
+    }
+
+    mpz_clear(y);
+    mpz_clear(x);
     mpECP_clear(a);
     mpECurve_clear(cv);
 END_TEST
@@ -551,6 +596,7 @@ static Suite *mpECP_test_suite(void) {
     tcase_add_test(tc, test_mpECP_str_out);
     tcase_add_test(tc, test_mpECP_affine);
     tcase_add_test(tc, test_mpECP_infinity);
+    tcase_add_test(tc, test_mpECP_urandom);
     tcase_add_test(tc, test_mpECP_export_import);
     tcase_add_test(tc, test_mpECP_add);
     tcase_add_test(tc, test_mpECP_double);

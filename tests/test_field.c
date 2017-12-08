@@ -365,6 +365,29 @@ START_TEST(test_mpFp_tstbit)
     mpFp_clear(a);
 END_TEST
 
+START_TEST(test_mpFp_urandom)
+    int i;
+    mpz_t a;
+    mpFp_t b;
+    mpz_init(a);
+    mpFp_init(b);
+
+    mpz_set_ui(a, 251);
+    
+    for (i = 0; i < 1000; i++) {
+        mpFp_urandom(b, a);
+        //gmp_printf("A: %ZX\n", a);
+        //gmp_printf("B: %ZX\n\n", b->i);
+        assert (mpz_cmp(b->p, a) == 0);
+        assert (mpz_cmp_ui(b->i, 0) >= 0);
+        assert (mpz_cmp(a,b->i) >= 0);
+        mpz_add(a, a, b->i);
+    }
+
+    mpFp_clear(b);
+    mpz_clear(a);
+END_TEST
+
 static Suite *mpFp_test_suite(void) {
     Suite *s;
     TCase *tc;
@@ -380,6 +403,7 @@ static Suite *mpFp_test_suite(void) {
     tcase_add_test(tc, test_mpFp_sqrt);
     tcase_add_test(tc, test_mpFp_swap_cswap);
     tcase_add_test(tc, test_mpFp_tstbit);
+    tcase_add_test(tc, test_mpFp_urandom);
     suite_add_tcase(s, tc);
     return s;
 }

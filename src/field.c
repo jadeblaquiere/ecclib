@@ -31,6 +31,7 @@
 #include <assert.h>
 #include <field.h>
 #include <gmp.h>
+#include <mpzurandom.h>
 
 void mpFp_init(mpFp_t i) {
     mpz_init(i->i);
@@ -398,4 +399,10 @@ int mpFp_cmp(mpFp_t op1, mpFp_t op2) {
 
 int mpFp_cmp_ui(mpFp_t op1, unsigned long op2) {
     return mpz_cmp_ui(op1->i, op2);
+}
+
+void mpFp_urandom(mpFp_t rop, mpz_t p) {
+    mpz_set(rop->p, p);
+    mpz_urandom(rop->i, p);
+    return;
 }

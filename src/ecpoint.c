@@ -1134,3 +1134,16 @@ void mpECP_scalar_base_mul_mpz(mpECP_t rpt, mpECP_t pt, mpz_t s) {
     return;
 }
 
+
+void mpECP_urandom(mpECP_t rpt, mpECurve_t cv) {
+    mpFp_t a;
+    mpECP_t g;
+    mpFp_init(a);
+    mpECP_init(g);
+    mpECP_set_mpz(g, cv->G[0], cv->G[1], cv);
+    mpFp_urandom(a, cv->n);
+    mpECP_scalar_mul(rpt, g, a);
+    mpECP_clear(g);
+    mpFp_clear(a);
+    return;
+}

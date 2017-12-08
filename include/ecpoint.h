@@ -88,6 +88,8 @@ void mpECP_scalar_base_mul_setup(mpECP_t pt);
 void mpECP_scalar_base_mul(mpECP_t rpt, mpECP_t pt, mpFp_t sc);
 void mpECP_scalar_base_mul_mpz(mpECP_t rpt, mpECP_t pt, mpz_t sc);
 
+void mpECP_urandom(mpECP_t rpt, mpECurve_t cv);
+
 #ifdef __cplusplus
 }
 #endif
