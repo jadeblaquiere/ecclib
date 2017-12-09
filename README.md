@@ -35,7 +35,7 @@ Supported elliptic curve types:
 * short Weierstrass
 * Edwards
 * Twisted Edwards
-* Montgomery (partial)
+* Montgomery (implemented internally via transform to short Weierstrass form)
 
 ## build and install
 
