@@ -71,14 +71,14 @@ START_TEST(test_mpECP_str_out)
         buffer = malloc((slen + 1)* sizeof(char));
         assert(buffer != NULL);
         mpECP_out_str(buffer, a, 1);
-        assert(strlen(buffer) == slen);
         printf("Compressed   : %s\n", buffer);
+        assert(strlen(buffer) == slen);
         slen = mpECP_out_strlen(a, 0);
         buffer = malloc((slen + 1)* sizeof(char));
         assert(buffer != NULL);
         mpECP_out_str(buffer, a, 0);
-        assert(strlen(buffer) == slen);
         printf("Uncompressed : %s\n", buffer);
+        assert(strlen(buffer) == slen);
     }
 
     mpECP_clear(a);
@@ -106,7 +106,8 @@ START_TEST(test_mpECP_affine)
         printf("Exporting affine base point for curve %s:\n", test_curve[i]);
         mpz_set_mpECP_affine_x(x, a);
         mpz_set_mpECP_affine_y(y, a);
-        gmp_printf("(0x%ZX, 0x%ZX)\n", x, y);
+        //gmp_printf("G (0x%ZX, 0x%ZX)\n", cv->G[0], cv->G[1]);
+        gmp_printf("a (0x%ZX, 0x%ZX)\n", x, y);
         //gmp_printf("(0x%ZX, y)\n", x);
         mpECP_set_mpz(b, x, y, cv);
         assert(mpECP_cmp(a,b) == 0);

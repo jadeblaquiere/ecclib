@@ -702,7 +702,41 @@ char *h, char *Gx, char *Gy, unsigned int bits){
     // resulting equation:
     // v^2 = u^3 + ws_a * u + ws_b
     // reverse transform:
-    // u = Binv * x + A/3, v = Binv * y
+    // u = x/B + A/3, v = y/B
+    {
+        mpFp_t a, b, s, t;
+        mpFp_init(a);
+        mpFp_init(b);
+        mpFp_init(s);
+        mpFp_init(t);
+        // precalculate A/3 and 1/B
+        mpFp_set_ui(t, 3, cv->p);
+        mpFp_inv(t, t);
+        mpFp_mul(cv->coeff.mo.Adiv3, cv->coeff.mo.A, t);
+        mpFp_inv(cv->coeff.mo.Binv, cv->coeff.mo.B);
+        // calculate short Weierstrass curve coefficients
+        // ws_a
+        mpFp_mul(b, cv->coeff.mo.B, cv->coeff.mo.B);
+        mpFp_mul_ui(s, b, 3);
+        mpFp_inv(s, s);
+        mpFp_mul(a, cv->coeff.mo.A, cv->coeff.mo.A);
+        mpFp_set_ui(t, 3, cv->p);
+        mpFp_sub(t, t, a);
+        mpFp_mul(cv->coeff.mo.ws_a, s, s);
+        // ws_b
+        mpFp_mul(b, b, cv->coeff.mo.B);
+        mpFp_mul_ui(b, b, 27);
+        mpFp_inv(b, b);
+        mpFp_mul(a, a, cv->coeff.mo.A);
+        mpFp_mul_ui(a, a, 2);
+        mpFp_mul_ui(s, cv->coeff.mo.A, 9);
+        mpFp_sub(s, a, s);
+        mpFp_mul(cv->coeff.mo.ws_b, s, b);
+        mpFp_clear(t);
+        mpFp_clear(s);
+        mpFp_clear(b);
+        mpFp_clear(a);
+    }
     mpz_set_str(cv->n, n, 0);
     mpz_set_str(cv->h, h, 0);
     mpz_set_str(cv->G[0], Gx, 0);
