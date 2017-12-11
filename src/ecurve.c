@@ -722,7 +722,7 @@ char *h, char *Gx, char *Gy, unsigned int bits){
         mpFp_mul(a, cv->coeff.mo.A, cv->coeff.mo.A);
         mpFp_set_ui(t, 3, cv->p);
         mpFp_sub(t, t, a);
-        mpFp_mul(cv->coeff.mo.ws_a, s, s);
+        mpFp_mul(cv->coeff.mo.ws_a, t, s);
         // ws_b
         mpFp_mul(b, b, cv->coeff.mo.B);
         mpFp_mul_ui(b, b, 27);
