@@ -152,10 +152,34 @@ START_TEST(test_mpECurve_all_named)
     clist = _mpECurve_list_standard_curves();
     i = 0;
     while(clist[i] != NULL) {
+        mpECurve_t b;
+        mpECurve_init(b);
         printf("TEST: mpECurve found curve %s\n", clist[i]);
         error = mpECurve_set_named(a,clist[i]);
         assert(error == 0);
+        switch(a->type) {
+            case EQTypeShortWeierstrass:
+                    mpECurve_set_mpz_ws(b, a->p, a->coeff.ws.a->i, a->coeff.ws.b->i,
+                        a->n, a->h, a->G[0], a->G[1], a->bits);
+                break;
+            case EQTypeEdwards:
+                    mpECurve_set_mpz_ed(b, a->p, a->coeff.ed.c->i, a->coeff.ed.d->i,
+                        a->n, a->h, a->G[0], a->G[1], a->bits);
+                break;
+            case EQTypeMontgomery:
+                    mpECurve_set_mpz_mo(b, a->p, a->coeff.mo.B->i, a->coeff.mo.A->i,
+                        a->n, a->h, a->G[0], a->G[1], a->bits);
+                break;
+            case EQTypeTwistedEdwards:
+                    mpECurve_set_mpz_te(b, a->p, a->coeff.te.a->i, a->coeff.te.d->i,
+                        a->n, a->h, a->G[0], a->G[1], a->bits);
+                break;
+            default:
+                assert(0);
+        }
+        assert(mpECurve_cmp(a, b) == 0);
         free(clist[i]);
+        mpECurve_clear(b);
         i += 1;
     }
     free(clist);

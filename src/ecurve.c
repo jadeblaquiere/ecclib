@@ -682,6 +682,109 @@ char *h, char *Gx, char *Gy, unsigned int bits){
 
 void mpECurve_set_str_mo(mpECurve_t cv, char *p, char *B, char *A, char *n,
 char *h, char *Gx, char *Gy, unsigned int bits){
+    mpz_t zp, zB, zA, zn, zh, zGx, zGy;
+    mpz_init(zp);
+    mpz_init(zB);
+    mpz_init(zA);
+    mpz_init(zn);
+    mpz_init(zh);
+    mpz_init(zGx);
+    mpz_init(zGy);
+
+    mpz_set_str(zp, p, 0);
+    mpz_set_str(zB, B, 0);
+    mpz_set_str(zA, A, 0);
+    mpz_set_str(zn, n, 0);
+    mpz_set_str(zh, h, 0);
+    mpz_set_str(zGx, Gx, 0);
+    mpz_set_str(zGy, Gy, 0);
+
+    mpECurve_set_mpz_mo(cv, zp, zB, zA, zn, zh, zGx, zGy, bits);
+
+    mpz_clear(zGy);
+    mpz_clear(zGx);
+    mpz_clear(zh);
+    mpz_clear(zn);
+    mpz_clear(zA);
+    mpz_clear(zB);
+    mpz_clear(zp);
+    return;
+}
+
+void mpECurve_set_str_te(mpECurve_t cv, char *p, char *a, char *d, char *n,
+char *h, char *Gx, char *Gy, unsigned int bits){
+    mpz_t t;
+    if (cv->type != EQTypeTwistedEdwards) {
+        _mpECurve_clear_coeff(cv);
+        cv->type = EQTypeTwistedEdwards;
+        _mpECurve_init_coeff(cv);
+    }
+    mpz_init(t);
+    mpz_set_str(cv->p, p, 0);
+    mpz_set_str(t, a, 0);
+    mpFp_set_mpz(cv->coeff.te.a, t, cv->p);
+    mpz_set_str(t, d, 0);
+    mpFp_set_mpz(cv->coeff.te.d, t, cv->p);
+    mpz_set_str(cv->n, n, 0);
+    mpz_set_str(cv->h, h, 0);
+    mpz_set_str(cv->G[0], Gx, 0);
+    mpz_set_str(cv->G[1], Gy, 0);
+    cv->bits = bits;
+    assert(mpECurve_point_check(cv, cv->G[0], cv->G[1]));
+    mpz_clear(t);
+    return;
+}
+
+void mpECurve_set_mpz_ws(mpECurve_t cv, mpz_t p, mpz_t a, mpz_t b, mpz_t n,
+mpz_t h, mpz_t Gx, mpz_t Gy, unsigned int bits){
+    mpz_t t;
+    if (cv->type != EQTypeShortWeierstrass) {
+        _mpECurve_clear_coeff(cv);
+        cv->type = EQTypeShortWeierstrass;
+        _mpECurve_init_coeff(cv);
+    }
+    mpz_init(t);
+    mpz_set(cv->p, p);
+    mpz_set(t, a);
+    mpFp_set_mpz(cv->coeff.ws.a, t, cv->p);
+    mpz_set(t, b);
+    mpFp_set_mpz(cv->coeff.ws.b, t, cv->p);
+    mpz_set(cv->n, n);
+    mpz_set(cv->h, h);
+    mpz_set(cv->G[0], Gx);
+    mpz_set(cv->G[1], Gy);
+    cv->bits = bits;
+    assert(mpECurve_point_check(cv, cv->G[0], cv->G[1]));
+    mpz_clear(t);
+    return;
+}
+
+void mpECurve_set_mpz_ed(mpECurve_t cv, mpz_t p, mpz_t c, mpz_t d, mpz_t n,
+mpz_t h, mpz_t Gx, mpz_t Gy, unsigned int bits){
+    mpz_t t;
+    if (cv->type != EQTypeEdwards) {
+        _mpECurve_clear_coeff(cv);
+        cv->type = EQTypeEdwards;
+        _mpECurve_init_coeff(cv);
+    }
+    mpz_init(t);
+    mpz_set(cv->p, p);
+    mpz_set(t, c);
+    mpFp_set_mpz(cv->coeff.ed.c, t, cv->p);
+    mpz_set(t, d);
+    mpFp_set_mpz(cv->coeff.ed.d, t, cv->p);
+    mpz_set(cv->n, n);
+    mpz_set(cv->h, h);
+    mpz_set(cv->G[0], Gx);
+    mpz_set(cv->G[1], Gy);
+    cv->bits = bits;
+    assert(mpECurve_point_check(cv, cv->G[0], cv->G[1]));
+    mpz_clear(t);
+    return;
+}
+
+void mpECurve_set_mpz_mo(mpECurve_t cv, mpz_t p, mpz_t B, mpz_t A, mpz_t n,
+mpz_t h, mpz_t Gx, mpz_t Gy, unsigned int bits){
     mpz_t t;
     if (cv->type != EQTypeMontgomery) {
         _mpECurve_clear_coeff(cv);
@@ -689,10 +792,10 @@ char *h, char *Gx, char *Gy, unsigned int bits){
         _mpECurve_init_coeff(cv);
     }
     mpz_init(t);
-    mpz_set_str(cv->p, p, 0);
-    mpz_set_str(t, B, 0);
+    mpz_set(cv->p, p);
+    mpz_set(t, B);
     mpFp_set_mpz(cv->coeff.mo.B, t, cv->p);
-    mpz_set_str(t, A, 0);
+    mpz_set(t, A);
     mpFp_set_mpz(cv->coeff.mo.A, t, cv->p);
     // internal representation of Montgomery curve points is ws
     // to facilitate add/double (not differential)
@@ -737,18 +840,18 @@ char *h, char *Gx, char *Gy, unsigned int bits){
         mpFp_clear(b);
         mpFp_clear(a);
     }
-    mpz_set_str(cv->n, n, 0);
-    mpz_set_str(cv->h, h, 0);
-    mpz_set_str(cv->G[0], Gx, 0);
-    mpz_set_str(cv->G[1], Gy, 0);
+    mpz_set(cv->n, n);
+    mpz_set(cv->h, h);
+    mpz_set(cv->G[0], Gx);
+    mpz_set(cv->G[1], Gy);
     cv->bits = bits;
     assert(mpECurve_point_check(cv, cv->G[0], cv->G[1]));
     mpz_clear(t);
     return;
 }
 
-void mpECurve_set_str_te(mpECurve_t cv, char *p, char *a, char *d, char *n,
-char *h, char *Gx, char *Gy, unsigned int bits){
+void mpECurve_set_mpz_te(mpECurve_t cv, mpz_t p, mpz_t a, mpz_t d, mpz_t n,
+mpz_t h, mpz_t Gx, mpz_t Gy, unsigned int bits){
     mpz_t t;
     if (cv->type != EQTypeTwistedEdwards) {
         _mpECurve_clear_coeff(cv);
@@ -756,15 +859,15 @@ char *h, char *Gx, char *Gy, unsigned int bits){
         _mpECurve_init_coeff(cv);
     }
     mpz_init(t);
-    mpz_set_str(cv->p, p, 0);
-    mpz_set_str(t, a, 0);
+    mpz_set(cv->p, p);
+    mpz_set(t, a);
     mpFp_set_mpz(cv->coeff.te.a, t, cv->p);
-    mpz_set_str(t, d, 0);
+    mpz_set(t, d);
     mpFp_set_mpz(cv->coeff.te.d, t, cv->p);
-    mpz_set_str(cv->n, n, 0);
-    mpz_set_str(cv->h, h, 0);
-    mpz_set_str(cv->G[0], Gx, 0);
-    mpz_set_str(cv->G[1], Gy, 0);
+    mpz_set(cv->n, n);
+    mpz_set(cv->h, h);
+    mpz_set(cv->G[0], Gx);
+    mpz_set(cv->G[1], Gy);
     cv->bits = bits;
     assert(mpECurve_point_check(cv, cv->G[0], cv->G[1]));
     mpz_clear(t);
