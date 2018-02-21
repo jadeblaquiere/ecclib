@@ -94,35 +94,23 @@ void mpFp_swap(mpFp_t rop, mpFp_t op) {
 /* constant time conditional swap algorithm */ 
 
 void mpFp_cswap(mpFp_t rop, mpFp_t op, int swap) {
-    volatile unsigned long s, ns;
-    mpz_t a, b, c, d;
+    mpz_t a, b;
 
     mpz_init(a);
     mpz_init(b);
-    mpz_init(c);
-    mpz_init(d);
     
     assert(mpz_cmp(rop->p, op->p) == 0);
 
+    mpz_set(a, op->i);
+    mpz_set(b, rop->i);
     if (swap != 0) {
-        s = 1;
-        ns = 0;
+        mpz_set(op->i, b);
+        mpz_set(rop->i, a);
     } else {
-        s = 0;
-        ns = 1;
+        mpz_set(op->i, a);
+        mpz_set(rop->i, b);
     }
-    
-    mpz_mul_ui(a, op->i, s);
-    mpz_mul_ui(b, rop->i, ns);
-    
-    mpz_mul_ui(c, op->i, ns);
-    mpz_mul_ui(d, rop->i, s);
-    
-    mpz_add(rop->i, a, b);
-    mpz_add(op->i, c, d);
 
-    mpz_clear(d);
-    mpz_clear(c);
     mpz_clear(b);
     mpz_clear(a);
     return;
