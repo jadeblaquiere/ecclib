@@ -37,6 +37,9 @@
 #include <stdlib.h>
 #include <string.h>
 
+// use Renes-Costello-Batina Complete Addition for short-WS curves
+#define USE_RCB (1)
+
 #define _MPECP_BASE_BITS    (8)
 
 static inline int _mpECP_n_base_pt_levels(mpECP_t pt) {
@@ -165,7 +168,7 @@ void mpECP_set_neutral(mpECP_t rpt, mpECurve_t cv) {
 }
 
 void _mpECP_to_affine(mpECP_t pt) {
-    mpFp_t zinv, t;
+    mpFp_t zinv;
     if (mpFp_cmp_ui(pt->z, 1) == 0) {
         return;
     }
@@ -174,24 +177,25 @@ void _mpECP_to_affine(mpECP_t pt) {
         case EQTypeMontgomery:
             // Montgomery curve point internal representation is short-WS
         case EQTypeShortWeierstrass:
-            if (pt->is_neutral != 0) break;
-            // Jacobian coords x = X/Z**2 y = Y/Z**3);
-            mpFp_init(t);
-            mpFp_inv(zinv, pt->z);
-            mpFp_pow_ui(t, zinv, 2);
-            mpFp_mul(pt->x, pt->x, t);
-            mpFp_pow_ui(t, zinv, 3);
-            mpFp_mul(pt->y, pt->y, t);
-            mpFp_set_ui(pt->z, 1, pt->cv->p);
-            mpFp_clear(t);
+            // RCB uses projective coords, so fall through to same xform as Ed
+#ifndef USE_RCB
+            {
+                mpFp_t t;
+                if (pt->is_neutral != 0) break;
+                // Jacobian coords x = X/Z**2 y = Y/Z**3);
+                mpFp_init(t);
+                mpFp_inv(zinv, pt->z);
+                mpFp_pow_ui(t, zinv, 2);
+                mpFp_mul(pt->x, pt->x, t);
+                mpFp_pow_ui(t, zinv, 3);
+                mpFp_mul(pt->y, pt->y, t);
+                mpFp_set_ui(pt->z, 1, pt->cv->p);
+                mpFp_clear(t);
+            }
             break;
+#endif
         case EQTypeEdwards:
             // Projective x = X/Z y = Y/Z
-            mpFp_inv(zinv, pt->z);
-            mpFp_mul(pt->x, pt->x, zinv);
-            mpFp_mul(pt->y, pt->y, zinv);
-            mpFp_set_ui(pt->z, 1, pt->cv->p);
-            break;
         case EQTypeTwistedEdwards:
             // Projective x = X/Z y = Y/Z
             mpFp_inv(zinv, pt->z);
@@ -475,6 +479,11 @@ void mpECP_out_str(char *s, mpECP_t pt, int compress) {
         mpz_clear(odd);
     } else {
         s[1] = '4';
+//#ifdef USE_RCB
+//        if ((mpFp_cmp_ui(pt->x, 0) == 0) && (mpFp_cmp_ui(pt->y, 0) == 0)) {
+//            s[1] = '0';
+//        }
+//#endif
     }
     //s[2] = 0;
     //printf("prefix = %s\n", s);
@@ -544,7 +553,10 @@ int mpECP_cmp(mpECP_t pt1, mpECP_t pt2) {
     switch (pt1->cv->type) {
         case EQTypeMontgomery:
             // Montgomery curve point internal representation is short-WS
-        case EQTypeShortWeierstrass: {
+        case EQTypeShortWeierstrass:
+            // RCB uses projective coords, so fall through to same xform as Ed
+#ifndef USE_RCB
+            {
                 mpFp_t U1, U2;
                 mpFp_init(U1);
                 mpFp_init(U2);
@@ -562,6 +574,7 @@ int mpECP_cmp(mpECP_t pt1, mpECP_t pt2) {
                 mpFp_clear(U1);
             }
             break;
+#endif
         case EQTypeEdwards:
         case EQTypeTwistedEdwards: {
                 mpFp_t U1, U2;
@@ -631,6 +644,9 @@ void mpECP_cswap(mpECP_t pt2, mpECP_t pt1, int swap) {
 }
 
 void mpECP_add(mpECP_t rpt, mpECP_t pt1, mpECP_t pt2) {
+#ifdef USE_RCB
+    _mpFp_t *aa, *bb;
+#endif
     assert(mpECurve_cmp(pt1->cv, pt2->cv) == 0);
     if (pt1->is_neutral != 0) {
         if (pt2->is_neutral != 0) {
@@ -645,10 +661,172 @@ void mpECP_add(mpECP_t rpt, mpECP_t pt1, mpECP_t pt2) {
         return;
     }
     if (rpt->base_bits != 0) _mpECP_base_pts_cleanup(rpt);
+#ifdef USE_RCB
+    aa = pt1->cv->coeff.ws.a;
+    bb = pt1->cv->coeff.ws.b;
+#endif
     switch (pt1->cv->type) {
         case EQTypeMontgomery:
             // Montgomery curve point internal representation is short-WS
+#ifdef USE_RCB
+            aa = pt1->cv->coeff.mo.ws_a;
+            bb = pt1->cv->coeff.mo.ws_b;
+#endif
         case EQTypeShortWeierstrass: {
+            // RCB uses projective coords, so fall through to same xform as Ed
+#ifdef USE_RCB
+                //assert(0); // might want to implement something here ;)
+                // 2015 Renes-Costello-Batina "Algorithm 1"
+                // from https://eprint.iacr.org/2015/1060.pdf
+                mpFp_t t0, t1, t2, t3, t4, t5, b3;
+                mpFp_init(t0);
+                mpFp_init(t1);
+                mpFp_init(t2);
+                mpFp_init(t3);
+                mpFp_init(t4);
+                mpFp_init(t5);
+                mpFp_init(b3);
+                // TODO: Precalculate b3 and store in coeff.ws.b3
+                mpFp_add(b3, bb, bb);
+                mpFp_add(b3, b3, bb);
+
+                // 1. t0 <- X1 * X2
+                // 2. t1 <- Y1 * Y2
+                // 3. t2 <- Z1 * Z2
+                // 4. t3 <- X1 + Y1
+                // 5. t4 <- X2 + Y2
+                // 6. t3 <- t3 * t4
+                // 7. t4 <- t0 + t1
+                // 8. t3 <- t3 - t4
+                // 9. t4 <- X1 + Z1
+                //10. t5 <- X2 + Z2
+                //11. t4 <- t4 * t5
+                //12. t5 <- t0 + t2
+                //13. t4 <- t4 - t5
+                //14. t5 <- Y1 + Z1
+                //15. X3 <- Y2 + Z2
+                //16. t5 <- t5 * X3
+                //17. X3 <- t1 + t2
+                //18. t5 <- t5 - X3
+                //19. Z3 <-  a * t4
+                //20. X3 <- b3 * t2
+                //21. Z3 <- X3 + Z3
+                //22. X3 <- t1 - Z3
+                //23. Z3 <- t1 + Z3
+                //24. Y3 <- X3 * Z3
+                //25. t1 <- t0 + t0
+                //26. t1 <- t1 + t0
+                //27. t2 <-  a * t2
+                //28. t4 <- b3 * t4
+                //29. t1 <- t1 + t2
+                //30. t2 <- t0 - t2
+                //31. t2 <-  a * t2
+                //32. t4 <- t4 + t2
+                //33. t0 <- t1 * t4
+                //34. Y3 <- Y3 + t0
+                //35. t0 <- t5 * t4
+                //36. X3 <- t3 * X3
+                //37. X3 <- X3 - t0
+                //38. t0 <- t3 * t1
+                //39. Z3 <- t5 * Z3
+                //40. Z3 <- Z3 + t0
+
+                // 1. t0 <- X1 * X2
+                mpFp_mul(t0, pt1->x, pt2->x);
+                // 2. t1 <- Y1 * Y2
+                mpFp_mul(t1, pt1->y, pt2->y);
+                // 3. t2 <- Z1 * Z2
+                mpFp_mul(t2, pt1->z, pt2->z);
+                // 4. t3 <- X1 + Y1
+                mpFp_add(t3, pt1->x, pt1->y);
+                // 5. t4 <- X2 + Y2
+                mpFp_add(t4, pt2->x, pt2->y);
+                // 6. t3 <- t3 * t4
+                mpFp_mul(t3, t3, t4);
+                // 7. t4 <- t0 + t1
+                mpFp_add(t4, t0, t1);
+                // 8. t3 <- t3 - t4
+                mpFp_sub(t3, t3, t4);
+                // 9. t4 <- X1 + Z1
+                mpFp_add(t4, pt1->x, pt1->z);
+                //10. t5 <- X2 + Z2
+                mpFp_add(t5, pt2->x, pt2->z);
+                //11. t4 <- t4 * t5
+                mpFp_mul(t4, t4, t5);
+                //12. t5 <- t0 + t2
+                mpFp_add(t5, t0, t2);
+                //13. t4 <- t4 - t5
+                mpFp_sub(t4, t4, t5);
+                //14. t5 <- Y1 + Z1
+                mpFp_add(t5, pt1->y, pt1->z);
+                //15. X3 <- Y2 + Z2
+                mpFp_add(rpt->x, pt2->y, pt2->z);
+                //16. t5 <- t5 * X3
+                mpFp_mul(t5, t5, rpt->x);
+                //17. X3 <- t1 + t2
+                mpFp_add(rpt->x, t1, t2);
+                //18. t5 <- t5 - X3
+                mpFp_sub(t5, t5, rpt->x);
+                //19. Z3 <-  a * t4
+                mpFp_mul(rpt->z, aa, t4);
+                //20. X3 <- b3 * t2
+                mpFp_mul(rpt->x, b3, t2);
+                //21. Z3 <- X3 + Z3
+                mpFp_add(rpt->z, rpt->x, rpt->z);
+                //22. X3 <- t1 - Z3
+                mpFp_sub(rpt->x, t1, rpt->z);
+                //23. Z3 <- t1 + Z3
+                mpFp_add(rpt->z, t1, rpt->z);
+                //24. Y3 <- X3 * Z3
+                mpFp_mul(rpt->y, rpt->x, rpt->z);
+                //25. t1 <- t0 + t0
+                mpFp_add(t1, t0, t0);
+                //26. t1 <- t1 + t0
+                mpFp_add(t1, t1, t0);
+                //27. t2 <-  a * t2
+                mpFp_mul(t2, aa, t2);
+                //28. t4 <- b3 * t4
+                mpFp_mul(t4, b3, t4);
+                //29. t1 <- t1 + t2
+                mpFp_add(t1, t1, t2);
+                //30. t2 <- t0 - t2
+                mpFp_sub(t2, t0, t2);
+                //31. t2 <-  a * t2
+                mpFp_mul(t2, aa, t2);
+                //32. t4 <- t4 + t2
+                mpFp_add(t4, t4, t2);
+                //33. t0 <- t1 * t4
+                mpFp_mul(t0, t1, t4);
+                //34. Y3 <- Y3 + t0
+                mpFp_add(rpt->y, rpt->y, t0);
+                //35. t0 <- t5 * t4
+                mpFp_mul(t0, t5, t4);
+                //36. X3 <- t3 * X3
+                mpFp_mul(rpt->x, t3, rpt->x);
+                //37. X3 <- X3 - t0
+                mpFp_sub(rpt->x, rpt->x, t0);
+                //38. t0 <- t3 * t1
+                mpFp_mul(t0, t3, t1);
+                //39. Z3 <- t5 * Z3
+                mpFp_mul(rpt->z, t5, rpt->z);
+                //40. Z3 <- Z3 + t0
+                mpFp_add(rpt->z, rpt->z, t0);
+
+                if (mpFp_cmp_ui(rpt->z, 0) == 0) {
+                    printf("ZERO\n");
+                    mpECP_set_neutral(rpt, pt1->cv);
+                } else {
+                    rpt->is_neutral = 0;
+                }
+
+                mpFp_clear(b3);
+                mpFp_clear(t5);
+                mpFp_clear(t4);
+                mpFp_clear(t3);
+                mpFp_clear(t2);
+                mpFp_clear(t1);
+                mpFp_clear(t0);
+#else
                 // 2007 Bernstein-Lange formula
                 // from : http://www.hyperelliptic.org/EFD/g1p/auto-shortw-jacobian.html#addition-add-2007-bl
                 // Z1Z1 = Z1**2
@@ -746,6 +924,7 @@ void mpECP_add(mpECP_t rpt, mpECP_t pt1, mpECP_t pt2) {
                 mpFp_clear(U1);
                 mpFp_clear(Z2Z2);
                 mpFp_clear(Z1Z1);
+#endif
                 return;
             }
             break;
@@ -896,7 +1075,10 @@ void mpECP_double(mpECP_t rpt, mpECP_t pt) {
     switch (pt->cv->type) {
         case EQTypeMontgomery:
             // Montgomery curve point internal representation is short-WS
-        case EQTypeShortWeierstrass: {
+        case EQTypeShortWeierstrass:
+            // RCB add is complete... fall through and call add
+#ifndef USE_RCB
+            {
                 // 2007 Bernstein-Lange formula
                 // from : http://www.hyperelliptic.org/EFD/g1p/auto-shortw-jacobian.html#doubling-dbl-2007-bl
                 // XX = X1**2
@@ -971,6 +1153,7 @@ void mpECP_double(mpECP_t rpt, mpECP_t pt) {
                 return;
             }
             break;
+#endif
         case EQTypeEdwards:
         case EQTypeTwistedEdwards: {
                // Edwards addition law is complete, so can use add for double
