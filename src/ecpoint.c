@@ -1218,14 +1218,14 @@ void mpECP_scalar_mul_mpz(mpECP_t rpt, mpECP_t pt, mpz_t sc) {
 }
 
 void mpECP_scalar_base_mul_setup(mpECP_t pt) {
-    int i, j, k, npts, nlevels, levelsz;
-    mpECP_t last, a, b;
+    int i, j, npts, nlevels, levelsz;
+    mpECP_t a, b;
+    struct _p_mpECP_t *level_pt;
     struct _p_mpECP_t *base_pt;
     if (pt->base_bits != 0) {
         // already set up... 
         return;
     }
-    mpECP_init(last);
     mpECP_init(a);
     mpECP_init(b);
     assert(pt->base_bits == 0);
@@ -1235,32 +1235,25 @@ void mpECP_scalar_base_mul_setup(mpECP_t pt) {
     for (i = 0; i < npts; i++) {
         mpECP_init(&base_pt[i]);
     }
+    level_pt = (struct _p_mpECP_t *)malloc(pt->base_bits * sizeof(struct _p_mpECP_t));
+    for (i = 0; i < pt->base_bits; i++) {
+        mpECP_init(&(level_pt[i]));
+    }
     nlevels = _mpECP_n_base_pt_levels(pt);
     levelsz = _mpECP_n_base_pt_level_size(pt);
     // printf("setup: levels = %d, levelsz = %d\n", nlevels, levelsz);
-    mpECP_set(last, pt);
+    mpECP_set(a, pt);
     for (j = 0; j < nlevels; j++) {
+        mpECP_set_neutral(b, pt->cv);
         for (i = 0; i < levelsz; i++) {
-            mpECP_set(a, last);
-            mpECP_set_neutral(b, pt->cv);
-            k = i;
-            while (k > 0) {
-                if ((k % 2) == 1) {
-                    mpECP_add(b, b, a);
-                }
-                mpECP_double(a, a);
-                k >>= 1;
-            }
             mpECP_set(&base_pt[(j * levelsz) + i], b);
+            mpECP_add(b, b, a);
         }
-        for (i = 0 ; i < pt->base_bits; i++) {
-            mpECP_double(last, last);
-        }
+        mpECP_set(a, b);
     }
     pt->base_pt = base_pt;
     mpECP_clear(b);
     mpECP_clear(a);
-    mpECP_clear(last);
     return;
 }
 
