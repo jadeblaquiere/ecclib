@@ -59,8 +59,8 @@ int main(int argc, char** argv) {
         mpz_init(n[i]);
         mpECP_init(pt[i]);
     }
-    
-    printf("\"curve\", \"time\", \"rate\",\n");
+
+    printf("\"curve\", \"num_iter\", \"time\", \"rate\",\n");
 
     clist = _mpECurve_list_standard_curves();
     i = 0;
@@ -73,27 +73,19 @@ int main(int argc, char** argv) {
             mpECP_scalar_base_mul_setup(pt[j]);
             mpz_urandom(n[j], cv->p);
         }
-        
-        //printf("timing multiplications\n");
-        
+
         start_time = clock();
-        
         for (j = 0; j < BENCH_SZ; j++) {
             for (k = 0; k < BENCH_SZ; k++) {
                 mpECP_scalar_base_mul_mpz(rpt, pt[j], n[k]);
             }
         }
-        
         stop_time = clock();
-        
+
         cpu_time = (double)(stop_time - start_time) / ((double)CLOCKS_PER_SEC);  
-        
-        //printf("start, stop = %ld, %ld\n", start_time, stop_time);
-        
         mul_rate = (double)(BENCH_SZ * BENCH_SZ) / cpu_time;
-        
-        printf("\"%s,\", %lf, %lf,\n", clist[i], cpu_time, mul_rate);
-        
+        printf("\"%s\", %d, %lf, %lf,\n", clist[i], (int)(BENCH_SZ*BENCH_SZ),cpu_time, mul_rate);
+
         i += 1;
     }
     return 0;

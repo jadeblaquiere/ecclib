@@ -4,6 +4,14 @@ AM_INIT_AUTOMAKE([foreign -Wall -Werror])
 AC_PROG_CC
 AM_PROG_AR
 LT_INIT
+AC_ARG_ENABLE([benchmarks],
+[  --enable-benchmarks       build benchmarks @<:@default=no@:>@],
+[case "${enableval}" in
+  yes) benchmarks=true ;;
+  no)  benchmarks=false ;;
+  *) AC_MSG_ERROR([bad value ${enableval} for --enable-benchmarks]) ;;
+esac],[debug=false])
+AM_CONDITIONAL([COND_BENCHMARKS], [test "x$benchmarks" = xtrue])
 AC_CHECK_LIB(gmp, mpz_init)
 PKG_CHECK_MODULES([CHECK], [check])
 AC_CONFIG_HEADERS([config.h])

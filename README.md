@@ -25,7 +25,7 @@ Supported multiplicative group operations:
 
 Supported elliptic curve point mathematical operations:
 * addition
-* substraction
+* subtraction
 * doubling
 * negation
 * scalar multiplication
@@ -52,3 +52,6 @@ $ make
 $ make check
 $ sudo make install
 ```
+
+Note: if you want to run the benchmarks you'll need to install libsodium and
+also pass the `--enable-benchmarks` option to configure

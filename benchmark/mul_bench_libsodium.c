@@ -29,63 +29,50 @@
 //OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <assert.h>
-#include <ecpoint.h>
-#include <ecurve.h>
-#include <field.h>
 #include <gmp.h>
 #include <mpzurandom.h>
+#include <sodium.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
 
-#define BENCH_SZ    (10)
+#define BENCH_SZ    (50)
+
+// standard size libsodium vector - privkeys, pubkeys follow this format
+typedef unsigned char    svector[32];
 
 int main(int argc, char** argv) {
     int i, j, k;
     int status;
-    mpz_t n[BENCH_SZ];
-    mpECP_t pt[BENCH_SZ];
-    mpECP_t rpt;
+    svector n[BENCH_SZ];
+    svector pt[BENCH_SZ];
+    svector rpt;
     double cpu_time;
     double mul_rate;
-    mpECurve_t cv;
-    char **clist;
     int64_t start_time, stop_time;
-
-    mpECurve_init(cv);
-    mpECP_init(rpt);
-    for (i = 0; i < BENCH_SZ; i++) {
-        mpz_init(n[i]);
-        mpECP_init(pt[i]);
-    }
 
     printf("\"curve\", \"num_iter\", \"time\", \"rate\",\n");
 
-    clist = _mpECurve_list_standard_curves();
-    i = 0;
-    while (clist[i] != NULL) {
-        status = mpECurve_set_named(cv, clist[i]);
-        assert(status == 0);
-        //printf("initializing test vectors\n");
-        for (j = 0; j < BENCH_SZ; j++) {
-            mpECP_urandom(pt[j], cv);
-            mpz_urandom(n[j], cv->p);
-        }
-
-        start_time = clock();
-        for (j = 0; j < BENCH_SZ; j++) {
-            for (k = 0; k < BENCH_SZ; k++) {
-                mpECP_scalar_mul_mpz(rpt, pt[j], n[k]);
-            }
-        }
-        stop_time = clock();
-
-        cpu_time = (double)(stop_time - start_time) / ((double)CLOCKS_PER_SEC);  
-        mul_rate = (double)(BENCH_SZ * BENCH_SZ) / cpu_time;
-        printf("\"%s\", %d, %lf, %lf,\n", clist[i], (int)(BENCH_SZ*BENCH_SZ),cpu_time, mul_rate);
-
-        i += 1;
+    for (i = 0; i < BENCH_SZ; i++) {
+        svector t;
+        randombytes_buf(n[i], 32);
+        randombytes_buf(t, 32);
+        crypto_core_ed25519_from_uniform(pt[i], t);
     }
+
+    start_time = clock();
+    for (j = 0; j < BENCH_SZ; j++) {
+        for (k = 0; k < BENCH_SZ; k++) {
+            status = crypto_scalarmult_ed25519(rpt, n[k], pt[j]);
+            assert(status == 0);
+        }
+    }
+    stop_time = clock();
+
+    cpu_time = (double)(stop_time - start_time) / ((double)CLOCKS_PER_SEC);  
+    mul_rate = (double)(BENCH_SZ * BENCH_SZ) / cpu_time;
+    printf("\"ed25519\", %d, %lf, %lf,\n", (int)(BENCH_SZ*BENCH_SZ), cpu_time, mul_rate);
+
     return 0;
 }
