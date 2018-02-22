@@ -812,8 +812,9 @@ void mpECP_add(mpECP_t rpt, mpECP_t pt1, mpECP_t pt2) {
                 //40. Z3 <- Z3 + t0
                 mpFp_add(rpt->z, rpt->z, t0);
 
+                mpECurve_set(rpt->cv, pt1->cv);
+
                 if (mpFp_cmp_ui(rpt->z, 0) == 0) {
-                    printf("ZERO\n");
                     mpECP_set_neutral(rpt, pt1->cv);
                 } else {
                     rpt->is_neutral = 0;
