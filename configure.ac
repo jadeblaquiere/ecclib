@@ -12,7 +12,11 @@ AC_ARG_ENABLE([benchmarks],
   *) AC_MSG_ERROR([bad value ${enableval} for --enable-benchmarks]) ;;
 esac],[debug=false])
 AM_CONDITIONAL([COND_BENCHMARKS], [test "x$benchmarks" = xtrue])
-AC_CHECK_LIB(gmp, mpz_init)
+AC_CHECK_LIB([gmp], [__gmpz_realloc])
+AC_CHECK_LIB([sodium], [crypto_scalarmult_ed25519])
+AM_CONDITIONAL([HAVE_LIBSODIUM], [test "x$ac_cv_lib_sodium_crypto_scalarmult_ed25519" = xyes])
+AC_CHECK_LIB([relic], [ep_curve_set_plain])
+AM_CONDITIONAL([HAVE_LIBRELIC], [test "x$ac_cv_lib_relic_ep_curve_set_plain" = xyes])
 PKG_CHECK_MODULES([CHECK], [check])
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_MACRO_DIR([m4])

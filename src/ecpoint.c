@@ -73,6 +73,12 @@ static int _known_curve_type(mpECurve_t cv) {
         (cv->type == EQTypeTwistedEdwards);
 }
 
+static inline void mpFp_set_ui_nomod(mpFp_t rop, unsigned long i, mpz_t p) {
+    mpz_set(rop->p, p);
+    mpz_set_ui(rop->i, i);
+    return;
+}
+
 void mpECP_init(mpECP_t pt) {
     mpFp_init(pt->x);
     mpFp_init(pt->y);
@@ -116,7 +122,7 @@ void mpECP_set_mpz(mpECP_t rpt, mpz_t x, mpz_t y, mpECurve_t cv) {
     rpt->is_neutral = 0;
     mpFp_set_mpz(rpt->x, x, cv->p);
     mpFp_set_mpz(rpt->y, y, cv->p);
-    mpFp_set_ui(rpt->z, 1, cv->p);
+    mpFp_set_ui_nomod(rpt->z, 1, cv->p);
     if (cv->type == EQTypeMontgomery) _transform_mo_to_ws(rpt);
     return;
 }
@@ -127,7 +133,7 @@ void mpECP_set_mpFp(mpECP_t rpt, mpFp_t x, mpFp_t y, mpECurve_t cv) {
     rpt->is_neutral = 0;
     mpFp_set(rpt->x, x);
     mpFp_set(rpt->y, y);
-    mpFp_set_ui(rpt->z, 1, cv->p);
+    mpFp_set_ui_nomod(rpt->z, 1, cv->p);
     if (cv->type == EQTypeMontgomery) _transform_mo_to_ws(rpt);
     return;
 }
@@ -138,29 +144,29 @@ void mpECP_set_neutral(mpECP_t rpt, mpECurve_t cv) {
     switch (cv->type) {
     case EQTypeShortWeierstrass:
         rpt->is_neutral = 1;
-        mpFp_set_ui(rpt->x, 0, cv->p);
-        mpFp_set_ui(rpt->y, 1, cv->p);
-        mpFp_set_ui(rpt->z, 0, cv->p);
+        mpFp_set_ui_nomod(rpt->x, 0, cv->p);
+        mpFp_set_ui_nomod(rpt->y, 1, cv->p);
+        mpFp_set_ui_nomod(rpt->z, 0, cv->p);
         return;
     case EQTypeEdwards:
         // return the neutral element (which is a valid curve point 0,c)
         rpt->is_neutral = 0;
-        mpFp_set_ui(rpt->z, 1, cv->p);
-        mpFp_set_ui(rpt->x, 0, cv->p);
+        mpFp_set_ui_nomod(rpt->z, 1, cv->p);
+        mpFp_set_ui_nomod(rpt->x, 0, cv->p);
         mpFp_set(rpt->y, cv->coeff.ed.c);
         return;
     case EQTypeMontgomery:
         rpt->is_neutral = 1;
-        mpFp_set_ui(rpt->x, 0, cv->p);
-        mpFp_set_ui(rpt->y, 1, cv->p);
-        mpFp_set_ui(rpt->z, 0, cv->p);
+        mpFp_set_ui_nomod(rpt->x, 0, cv->p);
+        mpFp_set_ui_nomod(rpt->y, 1, cv->p);
+        mpFp_set_ui_nomod(rpt->z, 0, cv->p);
         return;
     case EQTypeTwistedEdwards:
         // return the neutral element (which is a valid curve point 0,1)
         rpt->is_neutral = 0;
-        mpFp_set_ui(rpt->x, 0, cv->p);
-        mpFp_set_ui(rpt->y, 1, cv->p);
-        mpFp_set_ui(rpt->z, 1, cv->p);
+        mpFp_set_ui_nomod(rpt->x, 0, cv->p);
+        mpFp_set_ui_nomod(rpt->y, 1, cv->p);
+        mpFp_set_ui_nomod(rpt->z, 1, cv->p);
         return;
     default:
         assert(_known_curve_type(cv));
@@ -189,7 +195,7 @@ void _mpECP_to_affine(mpECP_t pt) {
                 mpFp_mul(pt->x, pt->x, t);
                 mpFp_pow_ui(t, zinv, 3);
                 mpFp_mul(pt->y, pt->y, t);
-                mpFp_set_ui(pt->z, 1, pt->cv->p);
+                mpFp_set_ui_nomod(pt->z, 1, pt->cv->p);
                 mpFp_clear(t);
             }
             break;
@@ -201,7 +207,7 @@ void _mpECP_to_affine(mpECP_t pt) {
             mpFp_inv(zinv, pt->z);
             mpFp_mul(pt->x, pt->x, zinv);
             mpFp_mul(pt->y, pt->y, zinv);
-            mpFp_set_ui(pt->z, 1, pt->cv->p);
+            mpFp_set_ui_nomod(pt->z, 1, pt->cv->p);
             break;
         default:
             assert(_known_curve_type(pt->cv));
@@ -349,7 +355,7 @@ int mpECP_set_str(mpECP_t rpt, char *s, mpECurve_t cv) {
                             mpFp_mul(t, cv->coeff.ed.d, c2);
                             mpFp_pow_ui(x2, x, 2);
                             mpFp_mul(t, t, x2);
-                            mpFp_set_ui(y, 1, cv->p);
+                            mpFp_set_ui_nomod(y, 1, cv->p);
                             mpFp_sub(t, y, t);
                             mpFp_sub(y, c2, x2);
                             mpFp_inv(t, t);
@@ -377,7 +383,7 @@ int mpECP_set_str(mpECP_t rpt, char *s, mpECurve_t cv) {
                             mpFp_set(t, cv->coeff.te.d);
                             mpFp_pow_ui(x2, x, 2);
                             mpFp_mul(t, t, x2);
-                            mpFp_set_ui(y, 1, cv->p);
+                            mpFp_set_ui_nomod(y, 1, cv->p);
                             mpFp_sub(t, y, t);
                             mpFp_mul(x2, x2, a);
                             mpFp_sub(y, y, x2);
@@ -615,32 +621,32 @@ void mpECP_swap(mpECP_t pt2, mpECP_t pt1) {
     return;
 }
 
-void mpECP_cswap(mpECP_t pt2, mpECP_t pt1, int swap) {
-    volatile unsigned long s, ns;
+static void _mpECP_cswap_safe(mpECP_t pt2, mpECP_t pt1, int swap) {
     int a, b;
-    assert(mpECurve_cmp(pt1->cv, pt2->cv) == 0);
-    assert(pt1->base_bits == 0);
-    assert(pt2->base_bits == 0);
-    
-    if (swap != 0) {
-        s = 1;
-        ns = 0;
-    } else {
-        s = 0;
-        ns = 1;
-    }
     
     mpFp_cswap(pt2->x, pt1->x, swap);
     mpFp_cswap(pt2->y, pt1->y, swap);
     mpFp_cswap(pt2->z, pt1->z, swap);
     
-    a = (s * pt1->is_neutral) + (ns * pt2->is_neutral);
-    b = (ns * pt1->is_neutral) + (s * pt2->is_neutral);
+    a = pt1->is_neutral;
+    b = pt2->is_neutral;
     
-    pt2->is_neutral = a;
-    pt1->is_neutral = b;
+    if (swap != 0) {
+        pt2->is_neutral = a;
+        pt1->is_neutral = b;
+    } else {
+        pt2->is_neutral = b;
+        pt1->is_neutral = a;
+    }
 
     return;
+}
+
+void mpECP_cswap(mpECP_t pt2, mpECP_t pt1, int swap) {
+    assert(mpECurve_cmp(pt1->cv, pt2->cv) == 0);
+    assert(pt1->base_bits == 0);
+    assert(pt2->base_bits == 0);
+    _mpECP_cswap_safe(pt2, pt1, swap);
 }
 
 void mpECP_add(mpECP_t rpt, mpECP_t pt1, mpECP_t pt2) {
@@ -1198,10 +1204,10 @@ void mpECP_scalar_mul(mpECP_t rpt, mpECP_t pt, mpFp_t sc) {
     for (i = pt->cv->bits - 1; i >= 0 ; i--) {
         b = mpFp_tstbit(sc, i);
         //printf("bit %d = %d\n", i, b);
-        mpECP_cswap(R0, R1, b);
+        _mpECP_cswap_safe(R0, R1, b);
         mpECP_add(R1, R1, R0);
         mpECP_double(R0, R0);
-        mpECP_cswap(R0, R1, b);
+        _mpECP_cswap_safe(R0, R1, b);
     }
     mpECP_set(rpt, R0);
     mpECP_clear(R1);

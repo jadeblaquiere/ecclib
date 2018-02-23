@@ -58,15 +58,15 @@ void mpFp_set_mpz(mpFp_t rop, mpz_t i, mpz_t p) {
 }
 
 void mpFp_set_ui(mpFp_t rop, unsigned long i, mpz_t p) {
-    mpz_t t;
-    mpz_init(t);
+    //mpz_t t;
+    //mpz_init(t);
     
     mpz_set(rop->p, p);
-    mpz_set_ui(t, i);
-    mpz_mod(rop->i, t, p);
+    mpz_set_ui(rop->i, i);
+    mpz_mod(rop->i, rop->i, p);
     //mpz_set_ui(rop->i, i);
     
-    mpz_clear(t);
+    //mpz_clear(t);
     return;
 }
 
@@ -99,7 +99,9 @@ void mpFp_cswap(mpFp_t rop, mpFp_t op, int swap) {
     mpz_init(a);
     mpz_init(b);
     
+#ifndef _EC_FIELD_ASSUME_FIELD_EQUAL
     assert(mpz_cmp(rop->p, op->p) == 0);
+#endif
 
     mpz_set(a, op->i);
     mpz_set(b, rop->i);
@@ -116,105 +118,82 @@ void mpFp_cswap(mpFp_t rop, mpFp_t op, int swap) {
     return;
 }
 
+#ifndef _EC_FIELD_H_INLINE_MATH
+
 /* basic arithmetic */
 
 void mpFp_add(mpFp_t rop, mpFp_t op1, mpFp_t op2) {
-    mpz_t t;
+#ifndef _EC_FIELD_ASSUME_FIELD_EQUAL
     assert (mpz_cmp(op1->p, op2->p) == 0);
+#endif
     mpz_set(rop->p, op1->p);
-    mpz_init(t);
 
-    mpz_add(t, op1->i, op2->i);
-    mpz_mod(rop->i, t, op1->p);
-
-    mpz_clear(t);
+    mpz_add(rop->i, op1->i, op2->i);
+    if (mpz_cmp(rop->i, rop->p) >= 0) {
+        mpz_sub(rop->i, rop->i, rop->p);
+    }
     return;
 }
 
 void mpFp_add_ui(mpFp_t rop, mpFp_t op1, unsigned long op2) {
-    mpz_t t;
     mpz_set(rop->p, op1->p);
-    mpz_init(t);
 
-    mpz_add_ui(t, op1->i, op2);
-    mpz_mod(rop->i, t, op1->p);
-
-    mpz_clear(t);
+    mpz_add_ui(rop->i, op1->i, op2);
+    if (mpz_cmp(rop->i, rop->p) >= 0) {
+        mpz_sub(rop->i, rop->i, rop->p);
+    }
     return;
 }
 
 void mpFp_sub(mpFp_t rop, mpFp_t op1, mpFp_t op2) {
-    mpz_t t;
-
+#ifndef _EC_FIELD_ASSUME_FIELD_EQUAL
     assert (mpz_cmp(op1->p, op2->p) == 0);
+#endif
     mpz_set(rop->p, op1->p);
-    mpz_init(t);
 
-    mpz_sub(t, op1->i, op2->i);
-    mpz_mod(rop->i, t, op1->p);
-
-    mpz_clear(t);
+    mpz_sub(rop->i, op1->i, op2->i);
+    if (mpz_cmp_ui(rop->i, 0) < 0) {
+        mpz_add(rop->i, rop->i, rop->p);
+    }
     return;
 }
 
 void mpFp_sub_ui(mpFp_t rop, mpFp_t op1, unsigned long op2) {
-    mpz_t t;
     mpz_set(rop->p, op1->p);
-    mpz_init(t);
 
-    mpz_sub_ui(t, op1->i, op2);
-    mpz_mod(rop->i, t, op1->p);
-
-    mpz_clear(t);
+    mpz_sub_ui(rop->i, op1->i, op2);
+    if (mpz_cmp_ui(rop->i, 0) < 0) {
+        mpz_add(rop->i, rop->i, rop->p);
+    }
     return;
 }
 
 void mpFp_mul(mpFp_t rop, mpFp_t op1, mpFp_t op2) {
-    mpz_t t;
+#ifndef _EC_FIELD_ASSUME_FIELD_EQUAL
     assert (mpz_cmp(op1->p, op2->p) == 0);
+#endif
     mpz_set(rop->p, op1->p);
-    mpz_init(t);
-
-    mpz_mul(t, op1->i, op2->i);
-    mpz_mod(rop->i, t, op1->p);
-
-    mpz_clear(t);
+    mpz_mul(rop->i, op1->i, op2->i);
+    mpz_mod(rop->i, rop->i, op1->p);
     return;
 }
 
 void mpFp_mul_ui(mpFp_t rop, mpFp_t op1, unsigned long op2) {
-    mpz_t t;
     mpz_set(rop->p, op1->p);
-    mpz_init(t);
-
-    mpz_mul_ui(t, op1->i, op2);
-    mpz_mod(rop->i, t, op1->p);
-
-    mpz_clear(t);
+    mpz_mul_ui(rop->i, op1->i, op2);
+    mpz_mod(rop->i, rop->i, op1->p);
     return;
 }
 
 void mpFp_pow(mpFp_t rop, mpFp_t op1, mpz_t op2) {
-    mpz_t t;
     mpz_set(rop->p, op1->p);
-    mpz_init(t);
-
-    mpz_powm(t, op1->i, op2, op1->p);
-    mpz_mod(rop->i, t, op1->p);
-
-    mpz_clear(t);
+    mpz_powm(rop->i, op1->i, op2, op1->p);
     return;
 }
 
 void mpFp_pow_ui(mpFp_t rop, mpFp_t op1, unsigned long op2) {
-    mpz_t t;
     mpz_set(rop->p, op1->p);
-    mpz_init(t);
-
-    mpz_powm_ui(t, op1->i, op2, op1->p);
-    mpz_mod(rop->i, t, op1->p);
-
-    mpz_clear(t);
+    mpz_powm_ui(rop->i, op1->i, op2, op1->p);
     return;
 }
 
@@ -224,48 +203,12 @@ void mpFp_neg(mpFp_t rop, mpFp_t op) {
     return;
 }
 
-// modular inversion 
-// translated from python public domain version:
-// def _modinv(a, m):
-//     lastr, r, x, lastx = a, m, 0, 1
-//     while r:
-//         lastr, (q, r) = r, divmod(lastr, r)
-//         x, lastx = lastx - q*x, x
-//     return lastx % m
-
 void mpFp_inv(mpFp_t rop, mpFp_t op) {
-    mpz_t lastr, lastx, r, x, y, q;
-    mpz_init(lastr);
-    mpz_init(lastx);
-    mpz_init(r);
-    mpz_init(x);
-    mpz_init(y);
-    mpz_init(q);
-    
-    mpz_set(lastr, op->i);
-    mpz_set(r, op->p);
-    mpz_set_ui(x, 0);
-    mpz_set_ui(lastx, 1);
-
-    while (mpz_cmp_ui(r, 0) != 0) {
-        mpz_set(y, r);
-        mpz_tdiv_qr(q, r, lastr, y);
-        mpz_set(lastr, y);
-        mpz_set(y, x);
-        mpz_mul(q, q, x);
-        mpz_sub(x, lastx, q);
-        mpz_set(lastx, y);
-    }
-    mpz_mod(rop->i, lastx, op->p);
     mpz_set(rop->p, op->p);
-    mpz_clear(q);
-    mpz_clear(y);
-    mpz_clear(x);
-    mpz_clear(r);
-    mpz_clear(lastx);
-    mpz_clear(lastr);
-    return;
+    mpz_invert(rop->i, op->i, op->p);
 }
+
+#endif // _EC_FIELD_H_INLINE_MATH
 
 // python from RosettaCode
 //def tonelli(n, p):
@@ -379,15 +322,21 @@ int  mpFp_tstbit(mpFp_t op, int bit) {
 
 /* comparison */
 
+#ifndef _EC_FIELD_H_INLINE_MATH
+
 int mpFp_cmp(mpFp_t op1, mpFp_t op2) {
+#ifndef _EC_FIELD_ASSUME_FIELD_EQUAL
     assert (mpz_cmp(op1->p, op2->p) == 0);
-    
+#endif
+
     return mpz_cmp(op1->i, op2->i);
 }
 
 int mpFp_cmp_ui(mpFp_t op1, unsigned long op2) {
     return mpz_cmp_ui(op1->i, op2);
 }
+
+#endif
 
 void mpFp_urandom(mpFp_t rop, mpz_t p) {
     mpz_set(rop->p, p);

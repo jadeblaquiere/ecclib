@@ -31,6 +31,9 @@
 #ifndef _EC_FIELD_H_INCLUDED_
 #define _EC_FIELD_H_INCLUDED_
 
+#define _EC_FIELD_ASSUME_FIELD_EQUAL
+#define _EC_FIELD_H_INLINE_MATH
+
 #include <gmp.h>
 
 #ifdef __cplusplus
@@ -64,6 +67,8 @@ void mpFp_cswap(mpFp_t rop, mpFp_t op, int swap);
 
 /* basic arithmetic */
 
+#ifndef _EC_FIELD_H_INLINE_MATH
+
 void mpFp_add(mpFp_t rop, mpFp_t op1, mpFp_t op2);
 void mpFp_add_ui(mpFp_t rop, mpFp_t op1, unsigned long op2);
 
@@ -82,6 +87,13 @@ void mpFp_neg(mpFp_t rop, mpFp_t op);
 
 void mpFp_inv(mpFp_t rop, mpFp_t op);
 
+/* comparison */
+
+int mpFp_cmp(mpFp_t op1, mpFp_t op2);
+int mpFp_cmp_ui(mpFp_t op1, unsigned long op2);
+
+#endif
+
 /* modular square root - return nonzero if not quadratic residue */ 
 
 int  mpFp_sqrt(mpFp_t rop, mpFp_t op);
@@ -94,10 +106,107 @@ int  mpFp_tstbit(mpFp_t op, int bit);
 
 void mpFp_urandom(mpFp_t rop, mpz_t p);
 
-/* comparison */
+#ifdef _EC_FIELD_H_INLINE_MATH
 
-int mpFp_cmp(mpFp_t op1, mpFp_t op2);
-int mpFp_cmp_ui(mpFp_t op1, unsigned long op2);
+static inline void mpFp_add(mpFp_t rop, mpFp_t op1, mpFp_t op2) {
+#ifndef _EC_FIELD_ASSUME_FIELD_EQUAL
+    assert (mpz_cmp(op1->p, op2->p) == 0);
+#endif
+    mpz_set(rop->p, op1->p);
+
+    mpz_add(rop->i, op1->i, op2->i);
+    if (mpz_cmp(rop->i, rop->p) >= 0) {
+        mpz_sub(rop->i, rop->i, rop->p);
+    }
+    return;
+}
+
+static inline void mpFp_add_ui(mpFp_t rop, mpFp_t op1, unsigned long op2) {
+    mpz_set(rop->p, op1->p);
+
+    mpz_add_ui(rop->i, op1->i, op2);
+    if (mpz_cmp(rop->i, rop->p) >= 0) {
+        mpz_sub(rop->i, rop->i, rop->p);
+    }
+    return;
+}
+
+static inline void mpFp_sub(mpFp_t rop, mpFp_t op1, mpFp_t op2) {
+#ifndef _EC_FIELD_ASSUME_FIELD_EQUAL
+    assert (mpz_cmp(op1->p, op2->p) == 0);
+#endif
+    mpz_set(rop->p, op1->p);
+
+    mpz_sub(rop->i, op1->i, op2->i);
+    if (mpz_cmp_ui(rop->i, 0) < 0) {
+        mpz_add(rop->i, rop->i, rop->p);
+    }
+    return;
+}
+
+static inline void mpFp_sub_ui(mpFp_t rop, mpFp_t op1, unsigned long op2) {
+    mpz_set(rop->p, op1->p);
+
+    mpz_sub_ui(rop->i, op1->i, op2);
+    if (mpz_cmp_ui(rop->i, 0) < 0) {
+        mpz_add(rop->i, rop->i, rop->p);
+    }
+    return;
+}
+
+static inline void mpFp_mul(mpFp_t rop, mpFp_t op1, mpFp_t op2) {
+#ifndef _EC_FIELD_ASSUME_FIELD_EQUAL
+    assert (mpz_cmp(op1->p, op2->p) == 0);
+#endif
+    mpz_set(rop->p, op1->p);
+    mpz_mul(rop->i, op1->i, op2->i);
+    mpz_mod(rop->i, rop->i, op1->p);
+    return;
+}
+
+static inline void mpFp_mul_ui(mpFp_t rop, mpFp_t op1, unsigned long op2) {
+    mpz_set(rop->p, op1->p);
+    mpz_mul_ui(rop->i, op1->i, op2);
+    mpz_mod(rop->i, rop->i, op1->p);
+    return;
+}
+
+static inline void mpFp_pow(mpFp_t rop, mpFp_t op1, mpz_t op2) {
+    mpz_set(rop->p, op1->p);
+    mpz_powm(rop->i, op1->i, op2, op1->p);
+    return;
+}
+
+static inline void mpFp_pow_ui(mpFp_t rop, mpFp_t op1, unsigned long op2) {
+    mpz_set(rop->p, op1->p);
+    mpz_powm_ui(rop->i, op1->i, op2, op1->p);
+    return;
+}
+
+static inline void mpFp_neg(mpFp_t rop, mpFp_t op) {
+    mpz_set(rop->p, op->p);
+    mpz_sub(rop->i, op->p, op->i);
+    return;
+}
+
+static inline void mpFp_inv(mpFp_t rop, mpFp_t op) {
+    mpz_set(rop->p, op->p);
+    mpz_invert(rop->i, op->i, op->p);
+}
+
+static inline int mpFp_cmp(mpFp_t op1, mpFp_t op2) {
+#ifndef _EC_FIELD_ASSUME_FIELD_EQUAL
+    assert (mpz_cmp(op1->p, op2->p) == 0);
+#endif
+
+    return mpz_cmp(op1->i, op2->i);
+}
+
+static inline int mpFp_cmp_ui(mpFp_t op1, unsigned long op2) {
+    return mpz_cmp_ui(op1->i, op2);
+}
+
+#endif // _EC_FIELD_H_INLINE_MATH
 
 #ifdef __cplusplus
 }
