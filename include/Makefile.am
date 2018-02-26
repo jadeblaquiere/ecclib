@@ -1,1 +1,1 @@
-include_HEADERS = field.h ecurve.h ecpoint.h mpzurandom.h
+include_HEADERS = field.h ecurve.h ecpoint.h mpzurandom.h mpzmod.h
