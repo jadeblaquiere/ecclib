@@ -31,6 +31,9 @@
 #ifndef _EC_POINT_H_INCLUDED_
 #define _EC_POINT_H_INCLUDED_
 
+// use Renes-Costello-Batina Complete Addition for short-WS curves
+#define _MPECP_USE_RCB (1)
+
 #include <gmp.h>
 #include <field.h>
 #include <ecurve.h>

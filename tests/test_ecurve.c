@@ -156,6 +156,7 @@ START_TEST(test_mpECurve_all_named)
         mpECurve_init(b);
         printf("TEST: mpECurve found curve %s\n", clist[i]);
         error = mpECurve_set_named(a,clist[i]);
+        printf("testing mpz_import\n");
         assert(error == 0);
         switch(a->type) {
             case EQTypeShortWeierstrass:

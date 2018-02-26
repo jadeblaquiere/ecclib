@@ -37,9 +37,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-// use Renes-Costello-Batina Complete Addition for short-WS curves
-#define USE_RCB (1)
-
 #define _MPECP_BASE_BITS    (8)
 
 static inline int _mpECP_n_base_pt_levels(mpECP_t pt) {
@@ -184,7 +181,7 @@ void _mpECP_to_affine(mpECP_t pt) {
             // Montgomery curve point internal representation is short-WS
         case EQTypeShortWeierstrass:
             // RCB uses projective coords, so fall through to same xform as Ed
-#ifndef USE_RCB
+#ifndef _MPECP_USE_RCB
             {
                 mpFp_t t;
                 if (pt->is_neutral != 0) break;
@@ -485,7 +482,7 @@ void mpECP_out_str(char *s, mpECP_t pt, int compress) {
         mpz_clear(odd);
     } else {
         s[1] = '4';
-//#ifdef USE_RCB
+//#ifdef _MPECP_USE_RCB
 //        if ((mpFp_cmp_ui(pt->x, 0) == 0) && (mpFp_cmp_ui(pt->y, 0) == 0)) {
 //            s[1] = '0';
 //        }
@@ -561,7 +558,7 @@ int mpECP_cmp(mpECP_t pt1, mpECP_t pt2) {
             // Montgomery curve point internal representation is short-WS
         case EQTypeShortWeierstrass:
             // RCB uses projective coords, so fall through to same xform as Ed
-#ifndef USE_RCB
+#ifndef _MPECP_USE_RCB
             {
                 mpFp_t U1, U2;
                 mpFp_init(U1);
@@ -650,7 +647,7 @@ void mpECP_cswap(mpECP_t pt2, mpECP_t pt1, int swap) {
 }
 
 void mpECP_add(mpECP_t rpt, mpECP_t pt1, mpECP_t pt2) {
-#ifdef USE_RCB
+#ifdef _MPECP_USE_RCB
     _mpFp_t *aa, *bb;
 #endif
     assert(mpECurve_cmp(pt1->cv, pt2->cv) == 0);
@@ -667,20 +664,20 @@ void mpECP_add(mpECP_t rpt, mpECP_t pt1, mpECP_t pt2) {
         return;
     }
     if (rpt->base_bits != 0) _mpECP_base_pts_cleanup(rpt);
-#ifdef USE_RCB
+#ifdef _MPECP_USE_RCB
     aa = pt1->cv->coeff.ws.a;
     bb = pt1->cv->coeff.ws.b;
 #endif
     switch (pt1->cv->type) {
         case EQTypeMontgomery:
             // Montgomery curve point internal representation is short-WS
-#ifdef USE_RCB
+#ifdef _MPECP_USE_RCB
             aa = pt1->cv->coeff.mo.ws_a;
             bb = pt1->cv->coeff.mo.ws_b;
 #endif
         case EQTypeShortWeierstrass: {
             // RCB uses projective coords, so fall through to same xform as Ed
-#ifdef USE_RCB
+#ifdef _MPECP_USE_RCB
                 //assert(0); // might want to implement something here ;)
                 // 2015 Renes-Costello-Batina "Algorithm 1"
                 // from https://eprint.iacr.org/2015/1060.pdf
@@ -1084,7 +1081,7 @@ void mpECP_double(mpECP_t rpt, mpECP_t pt) {
             // Montgomery curve point internal representation is short-WS
         case EQTypeShortWeierstrass:
             // RCB add is complete... fall through and call add
-#ifndef USE_RCB
+#ifndef _MPECP_USE_RCB
             {
                 // 2007 Bernstein-Lange formula
                 // from : http://www.hyperelliptic.org/EFD/g1p/auto-shortw-jacobian.html#doubling-dbl-2007-bl

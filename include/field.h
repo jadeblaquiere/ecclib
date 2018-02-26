@@ -35,6 +35,8 @@
 #define _EC_FIELD_H_INLINE_MATH
 
 #include <gmp.h>
+#include <assert.h>
+#include <mpzmod.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -49,6 +51,15 @@ typedef struct {
 
 typedef _mpFp_t mpFp_t[1];
 
+/* swap (and conditional swap) */
+
+void mpFp_swap(mpFp_t rop, mpFp_t op);
+void mpFp_cswap(mpFp_t rop, mpFp_t op, int swap);
+
+/* basic arithmetic */
+
+#ifndef _EC_FIELD_H_INLINE_MATH
+
 void mpFp_init(mpFp_t i);
 void mpFp_clear(mpFp_t i);
 
@@ -60,14 +71,7 @@ void mpFp_set_ui(mpFp_t rop, unsigned long i, mpz_t p);
 
 void mpz_set_mpFp(mpz_t rop, mpFp_t op);
 
-/* swap (and conditional swap) */
-
-void mpFp_swap(mpFp_t rop, mpFp_t op);
-void mpFp_cswap(mpFp_t rop, mpFp_t op, int swap);
-
-/* basic arithmetic */
-
-#ifndef _EC_FIELD_H_INLINE_MATH
+/* basic arith */
 
 void mpFp_add(mpFp_t rop, mpFp_t op1, mpFp_t op2);
 void mpFp_add_ui(mpFp_t rop, mpFp_t op1, unsigned long op2);
@@ -108,16 +112,48 @@ void mpFp_urandom(mpFp_t rop, mpz_t p);
 
 #ifdef _EC_FIELD_H_INLINE_MATH
 
+static inline void mpFp_init(mpFp_t i) {
+    mpz_init(i->i);
+    mpz_init(i->p);
+    return;
+}
+
+static inline void mpFp_clear(mpFp_t i) {
+    mpz_clear(i->i);
+    mpz_clear(i->p);
+    return;
+}
+
+static inline void mpFp_set(mpFp_t rop, mpFp_t op) {
+    mpz_set(rop->p, op->p);
+    mpz_set(rop->i, op->i);
+    return;
+}
+
+static inline void mpFp_set_mpz(mpFp_t rop, mpz_t i, mpz_t p) {
+    mpz_set(rop->p, p);
+    mpz_mod(rop->i, i, p);
+    return;
+}
+
+static inline void mpFp_set_ui(mpFp_t rop, unsigned long i, mpz_t p) {
+    mpz_set(rop->p, p);
+    mpz_set_ui(rop->i, i);
+    mpz_mod(rop->i, rop->i, p);
+    return;
+}
+
+static inline void mpz_set_mpFp(mpz_t rop, mpFp_t op) {
+    mpz_set(rop, op->i);
+    return;
+}
+
 static inline void mpFp_add(mpFp_t rop, mpFp_t op1, mpFp_t op2) {
 #ifndef _EC_FIELD_ASSUME_FIELD_EQUAL
     assert (mpz_cmp(op1->p, op2->p) == 0);
 #endif
     mpz_set(rop->p, op1->p);
-
-    mpz_add(rop->i, op1->i, op2->i);
-    if (mpz_cmp(rop->i, rop->p) >= 0) {
-        mpz_sub(rop->i, rop->i, rop->p);
-    }
+    _mpn_modadd(rop->i, op1->i, op2->i, op1->p);
     return;
 }
 
@@ -136,11 +172,7 @@ static inline void mpFp_sub(mpFp_t rop, mpFp_t op1, mpFp_t op2) {
     assert (mpz_cmp(op1->p, op2->p) == 0);
 #endif
     mpz_set(rop->p, op1->p);
-
-    mpz_sub(rop->i, op1->i, op2->i);
-    if (mpz_cmp_ui(rop->i, 0) < 0) {
-        mpz_add(rop->i, rop->i, rop->p);
-    }
+    _mpn_modsub(rop->i, op1->i, op2->i, op1->p);
     return;
 }
 

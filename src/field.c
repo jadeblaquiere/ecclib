@@ -33,6 +33,8 @@
 #include <gmp.h>
 #include <mpzurandom.h>
 
+#ifndef _EC_FIELD_H_INLINE_MATH
+
 void mpFp_init(mpFp_t i) {
     mpz_init(i->i);
     mpz_init(i->p);
@@ -58,15 +60,9 @@ void mpFp_set_mpz(mpFp_t rop, mpz_t i, mpz_t p) {
 }
 
 void mpFp_set_ui(mpFp_t rop, unsigned long i, mpz_t p) {
-    //mpz_t t;
-    //mpz_init(t);
-    
     mpz_set(rop->p, p);
     mpz_set_ui(rop->i, i);
     mpz_mod(rop->i, rop->i, p);
-    //mpz_set_ui(rop->i, i);
-    
-    //mpz_clear(t);
     return;
 }
 
@@ -74,6 +70,8 @@ void mpz_set_mpFp(mpz_t rop, mpFp_t op) {
     mpz_set(rop, op->i);
     return;
 }
+
+#endif
 
 void mpFp_swap(mpFp_t rop, mpFp_t op) {
     mpz_t t;
@@ -127,11 +125,7 @@ void mpFp_add(mpFp_t rop, mpFp_t op1, mpFp_t op2) {
     assert (mpz_cmp(op1->p, op2->p) == 0);
 #endif
     mpz_set(rop->p, op1->p);
-
-    mpz_add(rop->i, op1->i, op2->i);
-    if (mpz_cmp(rop->i, rop->p) >= 0) {
-        mpz_sub(rop->i, rop->i, rop->p);
-    }
+    _mpn_modadd(rop->i, op1->i, op2->i, op1->p);
     return;
 }
 
@@ -150,11 +144,7 @@ void mpFp_sub(mpFp_t rop, mpFp_t op1, mpFp_t op2) {
     assert (mpz_cmp(op1->p, op2->p) == 0);
 #endif
     mpz_set(rop->p, op1->p);
-
-    mpz_sub(rop->i, op1->i, op2->i);
-    if (mpz_cmp_ui(rop->i, 0) < 0) {
-        mpz_add(rop->i, rop->i, rop->p);
-    }
+    _mpn_modsub(rop->i, op1->i, op2->i, op1->p);
     return;
 }
 

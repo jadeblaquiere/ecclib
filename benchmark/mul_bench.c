@@ -39,7 +39,7 @@
 #include <string.h>
 #include <time.h>
 
-#define BENCH_SZ    (10)
+#define BENCH_SZ    (20)
 
 int main(int argc, char** argv) {
     int i, j, k;
