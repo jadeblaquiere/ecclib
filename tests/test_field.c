@@ -37,6 +37,7 @@
 #include <check.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
 
 typedef struct {
     _mpECurve_eq_type type;
@@ -81,16 +82,39 @@ static _std_ws_curve_t _std_ws_curve[] = {
 static char p25519[] = "57896044618658097711785492504343953926634992332820282019728792003956564819949";
 static char p112r1[] = "DB7C2ABF62E35E668076BEAD208B";
 
-START_TEST(test_mpFp_add)
+char *test_prime_fields[] = { "65521", "131071", "4294967291", "8589934583", "18446744073709551557", "36893488147419103183",
+    "0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFFFF0000000000000000FFFFFFFF",
+    "0x7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffed",
+    "0x3fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffef",
+    "0x01FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF"};
+
+#define ARRAY_SZ    (20000)
+
+static FILE *_f_urandom = NULL;
+
+unsigned long int ui_urandom(unsigned long int max) {
+    int sz_read;
+    unsigned long int value;
+    if (_f_urandom == NULL) {
+        _f_urandom = fopen("/dev/urandom", "rb");
+        assert(_f_urandom != NULL);
+    }
+    // bytes intentionally long to ensure uniformity, will truncate with modulo
+    sz_read = fread(&value, sizeof(unsigned long int), 1, _f_urandom);
+    assert(sz_read == 1);
+    if (max > 0) {
+        value = value % max;
+    }
+    return value;
+}
+
+START_TEST(test_mpFp_add_basic)
     int64_t i,j;
     mpFp_t a, b, c;
     mpz_t p;
     mpz_t d;
     mpz_t aa;
     mpz_t bb;
-    mpFp_init(a);
-    mpFp_init(b);
-    mpFp_init(c);
     mpz_init(p);
     mpz_init(d);
     mpz_init(aa);
@@ -98,6 +122,10 @@ START_TEST(test_mpFp_add)
 
     mpz_set_ui(p, 17);
     mpz_set_ui(d, 12);
+
+    mpFp_init(a, p);
+    mpFp_init(b, p);
+    mpFp_init(c, p);
 
     mpFp_set_mpz(a, d, p);
     mpFp_set_ui(b, 9, p);
@@ -125,6 +153,13 @@ START_TEST(test_mpFp_add)
     // field constant for secp112r1 (a prime number)
     mpz_set_str(p, p112r1, 16);
     mpz_set_ui(d, 12);
+
+    mpFp_clear(c);
+    mpFp_clear(b);
+    mpFp_clear(a);
+    mpFp_init(a, p);
+    mpFp_init(b, p);
+    mpFp_init(c, p);
 
     mpFp_set_mpz(a, d, p);
     mpFp_set_ui(b, 9, p);
@@ -157,120 +192,210 @@ START_TEST(test_mpFp_add)
     mpFp_clear(a);
 END_TEST
 
-START_TEST(test_mpFp_point_check)
-    int ncurve;
-    int i;
-    mpz_t z_p, z_a, z_b, z_n, z_h, z_gx, z_gy, z_r, z_l;
-    mpFp_t f_a, f_b, f_gx, f_gy, f_r, f_l;
-    mpECurve_t cv;
+START_TEST(test_mpFp_add_extended)
+    int i, j;
+    int nfields;
+    // static as w/large values of ARRAY_SZ the stack exceeds ulimit allowance
+    static mpFp_t a[ARRAY_SZ];
+    static mpFp_t b[ARRAY_SZ];
+    static mpz_t aaa[ARRAY_SZ];
+    static mpz_t ccc[ARRAY_SZ];
+    unsigned long int bui[ARRAY_SZ];
+    mpFp_t c;
+    mpz_t aa, bb, d, e, p;
+    //mpFp_field fp;
+    int64_t start_time, stop_time;
+    double fp_rate, mpz_rate;
 
-    mpECurve_init(cv);
-    mpz_init(z_p);
-    mpz_init(z_a);
-    mpz_init(z_b);
-    mpz_init(z_n);
-    mpz_init(z_h);
-    mpz_init(z_gx);
-    mpz_init(z_gy);
-    mpz_init(z_r);
-    mpz_init(z_l);
+    mpz_init(aa);
+    mpz_init(bb);
+    mpz_init(d);
+    mpz_init(e);
+    mpz_init(p);
+    //mpFp_field_init(fp);
 
-    mpFp_init(f_a);
-    mpFp_init(f_b);
-    mpFp_init(f_gx);
-    mpFp_init(f_gy);
-    mpFp_init(f_r);
-    mpFp_init(f_l);
+    nfields = sizeof(test_prime_fields)/sizeof(test_prime_fields[0]);
 
-    ncurve = sizeof(_std_ws_curve) / sizeof(_std_ws_curve_t);
+    for (j = 0 ; j < nfields; j++) {
+        mpz_set_str(p,test_prime_fields[j], 0);
 
-    for (i = 0; i < ncurve; i++) {
-        printf("testing for curve %s\n", _std_ws_curve[i].name);
-        mpz_set_str(z_p, _std_ws_curve[i].p, 0);
-        mpz_set_str(z_a, _std_ws_curve[i].a, 0);
-        mpFp_set_mpz(f_a, z_a, z_p);
-        assert(mpz_cmp(f_a->i, z_a) == 0);
-        mpz_set_str(z_b, _std_ws_curve[i].b, 0);
-        mpFp_set_mpz(f_b, z_b, z_p);
-        assert(mpz_cmp(f_b->i, z_b) == 0);
-        mpz_set_str(z_n, _std_ws_curve[i].n, 0);
-        mpz_set_str(z_h, _std_ws_curve[i].h, 0);
-        mpz_set_str(z_gx, _std_ws_curve[i].Gx, 0);
-        mpFp_set_mpz(f_gx, z_gx, z_p);
-        assert(mpz_cmp(f_gx->i, z_gx) == 0);
-        mpz_set_str(z_gy, _std_ws_curve[i].Gy, 0);
-        mpFp_set_mpz(f_gy, z_gy, z_p);
-        assert(mpz_cmp(f_gy->i, z_gy) == 0);
+        gmp_printf("Testing ADD for field 0x%ZX\n", p);
 
-        mpFp_pow_ui(f_r, f_gx, 3);
-        mpz_pow_ui(z_r, z_gx, 3);
-        mpz_mod(z_r, z_r, z_p);
-        assert(mpz_cmp(f_r->i, z_r) == 0);
-        mpFp_mul(f_l, f_a, f_gx);
-        mpz_mul(z_l, z_a, z_gx);
-        mpz_mod(z_l, z_l, z_p);
-        assert(mpz_cmp(f_l->i, z_l) == 0);
-        mpFp_add(f_r, f_r, f_l);
-        mpz_add(z_r, z_r, z_l);
-        mpz_mod(z_r, z_r, z_p);
-        assert(mpz_cmp(f_r->i, z_r) == 0);
-        mpFp_add(f_r, f_r, f_b);
-        mpz_add(z_r, z_r, z_b);
-        mpz_mod(z_r, z_r, z_p);
-        assert(mpz_cmp(f_r->i, z_r) == 0);
-        mpFp_pow_ui(f_l, f_gy, 2);
-        mpz_pow_ui(z_l, z_gy, 2);
-        mpz_mod(z_l, z_l, z_p);
-        assert(mpz_cmp(f_l->i, z_l) == 0);
-        assert(mpFp_cmp(f_l, f_r) == 0);
-        assert(mpz_cmp(z_l, z_r) == 0);
+        for (i = 0; i < ARRAY_SZ; i++) {
+            mpFp_init(a[i], p);
+            mpFp_init(b[i], p);
+            mpz_init(aaa[i]);
+            mpz_init(ccc[i]);
+        }
+        mpFp_init(c, p);
 
-    // basic approach: calculate left and right sides and then compare l=r?
+        for (i = 0; i < ARRAY_SZ; i++) {
+            //printf("i=%d\n",i);
+            mpFp_urandom(a[i],p);
+            mpFp_urandom(b[i],p);
+            mpz_set_mpFp(aaa[i], a[i]);
+            bui[i] = ui_urandom(0);
+        }
 
-    //switch (cv->type) {
-    //    case EQTypeShortWeierstrass: {
-    //        // y**2 = x**3 + ax + b
-    //        mpFp_pow_ui(r, x, 3);
-    //        mpFp_mul(l, cv->coeff.ws.a, x);
-    //        mpFp_add(r, r, l);
-    //        mpFp_add(r, r, cv->coeff.ws.b);
-    //        mpFp_pow_ui(l, y, 2);
-    //        break;
+        // ADDITION
+        for (i = 0; i < ARRAY_SZ; i++) {
+            mpFp_add(c, a[i], b[i]);
 
-        mpECurve_set_str_ws(cv, _std_ws_curve[i].p, _std_ws_curve[i].a,
-            _std_ws_curve[i].b, _std_ws_curve[i].n, _std_ws_curve[i].h,
-            _std_ws_curve[i].Gx, _std_ws_curve[i].Gy, _std_ws_curve[i].bits);
+            mpz_set_mpFp(aa, a[i]);
+            mpz_set_mpFp(bb, b[i]);
+            mpz_add(d, aa, bb);
+            mpz_mod(d, d, p);
+
+            mpz_set_mpFp(aa, c);
+            assert(mpz_cmp(d, aa) == 0);
+        }
+
+        for (i = 0; i < ARRAY_SZ; i++) {
+            mpFp_add_ui(c, a[i], bui[i]);
+
+            mpz_set_mpFp(aa, a[i]);
+            mpz_add_ui(d, aa, bui[i]);
+            mpz_mod(d, d, p);
+
+            mpz_set_mpFp(aa, c);
+            assert(mpz_cmp(d, aa) == 0);
+        }
+
+        //gmp_printf("c[n] = 0x%ZX\n", aa);
+        //gmp_printf("d[n] = 0x%ZX\n", d);
+
+        mpz_add(d, c->fp->p, c->fp->pc);
+
+        // corner cases for add ... carry conditions and add to -1, 0, 1 (mod p)
+
+        // a+b = carry + 1, result = pc + 1
+        mpz_set_mpFp(aa, a[0]);
+        mpz_sub(bb, d, aa);
+        mpz_add_ui(bb, bb, 1);
+        mpFp_set_mpz(b[0], bb, p);
+
+        // a+b = carry + 0, result = pc
+        mpz_set_mpFp(aa, a[1]);
+        mpz_sub(bb, d, aa);
+        mpFp_set_mpz(b[1], bb, p);
+
+        // a + b = carry - 1, result does not carry, but still > p
+        mpz_set_mpFp(aa, a[2]);
+        mpz_sub(bb, d, aa);
+        mpz_sub_ui(bb, bb, 1);
+        mpFp_set_mpz(b[2], bb, p);
+
+        // a + b = p + 1, result = 1
+        mpz_set_mpFp(aa, a[3]);
+        mpz_sub(bb, p, aa);
+        mpz_add_ui(bb, bb, 1);
+        mpFp_set_mpz(b[3], bb, p);
+
+        // a + b = p, result = 0
+        mpz_set_mpFp(aa, a[4]);
+        mpz_sub(bb, p, aa);
+        mpFp_set_mpz(b[4], bb, p);
+
+        // a + p = p - 1, result = p - 1
+        mpz_set_mpFp(aa, a[5]);
+        mpz_sub(bb, p, aa);
+        mpz_sub_ui(bb, bb, 1);
+        mpFp_set_mpz(b[5], bb, p);
+
+        //carry = mpn_add_n(c->_mp_d, a->_mp_d, b->_mp_d, psize);
+        for (i = 0; i < 6; i++) {
+            mpFp_add(c, a[i], b[i]);
+
+            mpz_set_mpFp(aa, a[i]);
+            mpz_set_mpFp(bb, b[i]);
+            mpz_add(d, aa, bb);
+            mpz_mod(d, d, p);
+
+            //printf("a[%d]: limbs = %d, limballoc = %d, limbsize = %lu\n", i, a[i]->i->_mp_size, a[i]->i->_mp_alloc, sizeof(a[i]->i->_mp_d[0]));
+            //printf("b[%d]: limbs = %d, limballoc = %d, limbsize = %lu\n", i, b[i]->i->_mp_size, b[i]->i->_mp_alloc, sizeof(b[i]->i->_mp_d[0]));
+            //printf("c: limbs = %d, limballoc = %d, limbsize = %lu\n", c->i->_mp_size, c->i->_mp_alloc, sizeof(c->i->_mp_d[0]));
+            //printf("d: limbs = %d, limballoc = %d, limbsize = %lu\n", d->_mp_size, d->_mp_alloc, sizeof(d->_mp_d[0]));
+
+            mpz_set_mpFp(aa, c);
+
+            //gmp_printf("a[%d] = 0x%ZX\n", i, aa);
+            //gmp_printf("b[%d] = 0x%ZX\n", i, bb);
+            //gmp_printf("c[%d] = 0x%ZX\n", i, aa);
+            //gmp_printf("d[%d] = 0x%ZX\n", i, d);
+
+            assert(mpz_cmp(d, aa) == 0);
+        }
+    
+        mpFp_set(c, a[0]);
+        mpz_set_mpFp(d, c);
+        //carry = mpn_add_n(c->_mp_d, a->_mp_d, b->_mp_d, psize);
+        start_time = clock();
+        for (i = 1; i < ARRAY_SZ; i++) {
+            mpFp_add(c, c, a[i]);
+        }
+        stop_time = clock();
+        fp_rate = ((double)ARRAY_SZ * CLOCKS_PER_SEC)/((double)(stop_time - start_time));
+        start_time = clock();
+        for (i = 1; i < ARRAY_SZ; i++) {
+            mpz_add(d, d, aaa[i]);
+            mpz_mod(d, d, p);
+        }
+        stop_time = clock();
+        mpz_rate = ((double)ARRAY_SZ * CLOCKS_PER_SEC)/((double)(stop_time - start_time));
+        mpz_set_mpFp(aa, c);
+        //gmp_printf("c[%d] = 0x%ZX\n", i, aa);
+        //gmp_printf("d[%d] = 0x%ZX\n", i, d);
+        printf("mpFp ADD rate = %g adds/sec (%g X)\n", fp_rate, (fp_rate / mpz_rate));
+        printf("mpz  ADD rate  = %g adds/sec\n", mpz_rate);
+        assert(mpz_cmp(d, aa) == 0);
+    
+        mpFp_set_ui(c, bui[0], p);
+        mpz_set_mpFp(d, c);
+        //carry = mpn_add_n(c->_mp_d, a->_mp_d, b->_mp_d, psize);
+        start_time = clock();
+        for (i = 1; i < ARRAY_SZ; i++) {
+            mpFp_add_ui(c, c, bui[i]);
+        }
+        stop_time = clock();
+        fp_rate = ((double)ARRAY_SZ * CLOCKS_PER_SEC)/((double)(stop_time - start_time));
+        start_time = clock();
+        for (i = 1; i < ARRAY_SZ; i++) {
+            mpz_add_ui(d, d, bui[i]);
+            mpz_mod(d, d, p);
+        }
+        stop_time = clock();
+        mpz_rate = ((double)ARRAY_SZ * CLOCKS_PER_SEC)/((double)(stop_time - start_time));
+        mpz_set_mpFp(aa, c);
+        //gmp_printf("c[%d] = 0x%ZX\n", i, aa);
+        //gmp_printf("d[%d] = 0x%ZX\n", i, d);
+        printf("mpFp ADD_UI rate = %g adds/sec (%g X)\n", fp_rate, (fp_rate / mpz_rate));
+        printf("mpz  ADD_UI rate  = %g adds/sec\n", mpz_rate);
+        assert(mpz_cmp(d, aa) == 0);
+    
+        mpFp_clear(c);
+        for (i = ARRAY_SZ-1; i >= 0; i--) {
+            mpz_clear(ccc[i]);
+            mpz_clear(aaa[i]);
+            mpFp_clear(b[i]);
+            mpFp_clear(a[i]);
+        }
     }
 
-    mpFp_clear(f_l);
-    mpFp_clear(f_r);
-    mpFp_clear(f_gy);
-    mpFp_clear(f_gx);
-    mpFp_clear(f_b);
-    mpFp_clear(f_a);
-
-    mpz_clear(z_l);
-    mpz_clear(z_r);
-    mpz_clear(z_gy);
-    mpz_clear(z_gx);
-    mpz_clear(z_h);
-    mpz_clear(z_n);
-    mpz_clear(z_b);
-    mpz_clear(z_a);
-    mpz_clear(z_p);
-
-    mpECurve_clear(cv);
+    //mpFp_field_clear(fp);
+    //mpz_clear(pc);
+    mpz_clear(p);
+    mpz_clear(e);
+    mpz_clear(d);
+    mpz_clear(bb);
+    mpz_clear(aa);
 END_TEST
 
-START_TEST(test_mpFp_sub)
+START_TEST(test_mpFp_sub_basic)
     int i,j;
     mpFp_t a, b, c;
     mpz_t p;
     mpz_t d;
     mpz_t aa, bb;
-    mpFp_init(a);
-    mpFp_init(b);
-    mpFp_init(c);
     mpz_init(p);
     mpz_init(d);
     mpz_init(aa);
@@ -278,6 +403,10 @@ START_TEST(test_mpFp_sub)
 
     mpz_set_ui(p, 17);
     mpz_set_ui(d, 12);
+
+    mpFp_init(a, p);
+    mpFp_init(b, p);
+    mpFp_init(c, p);
 
     mpFp_set_mpz(a, d, p);
     mpFp_set_ui(b, 9, p);
@@ -288,6 +417,13 @@ START_TEST(test_mpFp_sub)
 
     // 2**255-19 (a prime number)
     mpz_set_str(p, p25519, 10);
+
+    mpFp_clear(c);
+    mpFp_clear(b);
+    mpFp_clear(a);
+    mpFp_init(a, p);
+    mpFp_init(b, p);
+    mpFp_init(c, p);
 
     mpFp_set_mpz(a, d, p);
     mpFp_set_ui(b, 9, p);
@@ -322,18 +458,183 @@ START_TEST(test_mpFp_sub)
     mpFp_clear(a);
 END_TEST
 
-START_TEST(test_mpFp_mul)
+START_TEST(test_mpFp_sub_extended)
+    int i, j;
+    int nfields;
+    // static as w/large values of ARRAY_SZ the stack exceeds ulimit allowance
+    static mpFp_t a[ARRAY_SZ];
+    static mpFp_t b[ARRAY_SZ];
+    static mpz_t aaa[ARRAY_SZ];
+    static mpz_t ccc[ARRAY_SZ];
+    unsigned long int bui[ARRAY_SZ];
+    mpFp_t c;
+    mpz_t aa, bb, d, e, p;
+    //mpFp_field fp;
+    int64_t start_time, stop_time;
+    double fp_rate, mpz_rate;
+
+    mpz_init(aa);
+    mpz_init(bb);
+    mpz_init(d);
+    mpz_init(e);
+    mpz_init(p);
+    //mpFp_field_init(fp);
+
+    nfields = sizeof(test_prime_fields)/sizeof(test_prime_fields[0]);
+
+    for (j = 0 ; j < nfields; j++) {
+        mpz_set_str(p,test_prime_fields[j], 0);
+
+        gmp_printf("Testing SUB for field 0x%ZX\n", p);
+
+        for (i = 0; i < ARRAY_SZ; i++) {
+            mpFp_init(a[i], p);
+            mpFp_init(b[i], p);
+            mpz_init(aaa[i]);
+            mpz_init(ccc[i]);
+        }
+        mpFp_init(c, p);
+
+        for (i = 0; i < ARRAY_SZ; i++) {
+            //printf("i=%d\n",i);
+            mpFp_urandom(a[i],p);
+            mpFp_urandom(b[i],p);
+            mpz_set_mpFp(aaa[i], a[i]);
+            bui[i] = ui_urandom(0);
+        }
+
+        // SUBTRACTION
+        for (i = 0; i < ARRAY_SZ; i++) {
+            mpFp_sub(c, a[i], b[i]);
+    
+            mpz_set_mpFp(aa, a[i]);
+            mpz_set_mpFp(bb, b[i]);
+            mpz_sub(d, aa, bb);
+            mpz_mod(d, d, p);
+    
+            mpz_set_mpFp(aa, c);
+            assert(mpz_cmp(d, aa) == 0);
+        }
+    
+        for (i = 0; i < ARRAY_SZ; i++) {
+            mpFp_sub_ui(c, a[i], bui[i]);
+    
+            mpz_set_mpFp(aa, a[i]);
+            mpz_sub_ui(d, aa, bui[i]);
+            mpz_mod(d, d, p);
+    
+            mpz_set_mpFp(aa, c);
+            assert(mpz_cmp(d, aa) == 0);
+        }
+    
+        // corner cases for sub ... borrow conditions -> -1, 0, 1 (mod p)
+    
+        // a-b = 1, result = 1
+        mpz_set_mpFp(aa, a[0]);
+        mpz_set(bb, aa);
+        mpz_sub_ui(bb, bb, 1);
+        mpFp_set_mpz(b[0], bb, p);
+    
+        // a-b = 0, result = 0
+        mpz_set_mpFp(aa, a[1]);
+        mpz_set(bb, aa);
+        mpFp_set_mpz(b[1], bb, p);
+    
+        // a - b = - 1, result = p - (b - a) = p - 1
+        mpz_set_mpFp(aa, a[2]);
+        mpz_set(bb, aa);
+        mpz_add_ui(bb, bb, 1);
+        mpFp_set_mpz(b[2], bb, p);
+    
+        for (i = 0; i < 3; i++) {
+            mpFp_sub(c, a[i], b[i]);
+    
+            mpz_set_mpFp(aa, a[i]);
+            mpz_set_mpFp(bb, b[i]);
+            mpz_sub(d, aa, bb);
+            mpz_mod(d, d, p);
+    
+            mpz_set_mpFp(aa, c);
+            assert(mpz_cmp(d, aa) == 0);
+        }
+    
+        mpFp_set(c, a[0]);
+        mpz_set_mpFp(d, c);
+        //carry = mpn_add_n(c->_mp_d, a->_mp_d, b->_mp_d, psize);
+        start_time = clock();
+        for (i = 1; i < ARRAY_SZ; i++) {
+            mpFp_sub(c, c, a[i]);
+        }
+        stop_time = clock();
+        fp_rate = ((double)ARRAY_SZ * CLOCKS_PER_SEC)/((double)(stop_time - start_time));
+        start_time = clock();
+        for (i = 1; i < ARRAY_SZ; i++) {
+            mpz_sub(d, d, aaa[i]);
+            mpz_mod(d, d, p);
+        }
+        stop_time = clock();
+        mpz_rate = ((double)ARRAY_SZ * CLOCKS_PER_SEC)/((double)(stop_time - start_time));
+        mpz_set_mpFp(aa, c);
+        //gmp_printf("c[%d] = 0x%ZX\n", i, aa);
+        //gmp_printf("d[%d] = 0x%ZX\n", i, d);
+        assert(mpz_cmp(d, aa) == 0);
+        printf("mpFp SUB rate = %g subs/sec (%g X)\n", fp_rate, (fp_rate / mpz_rate));
+        printf("mpz  SUB rate  = %g subs/sec\n", mpz_rate);
+
+        mpFp_set_ui(c, bui[0], p);
+        mpz_set_mpFp(d, c);
+        //carry = mpn_add_n(c->_mp_d, a->_mp_d, b->_mp_d, psize);
+        start_time = clock();
+        for (i = 1; i < ARRAY_SZ; i++) {
+            mpFp_sub_ui(c, c, bui[i]);
+        }
+        stop_time = clock();
+        fp_rate = ((double)ARRAY_SZ * CLOCKS_PER_SEC)/((double)(stop_time - start_time));
+        start_time = clock();
+        for (i = 1; i < ARRAY_SZ; i++) {
+            mpz_sub_ui(d, d, bui[i]);
+            mpz_mod(d, d, p);
+        }
+        stop_time = clock();
+        mpz_rate = ((double)ARRAY_SZ * CLOCKS_PER_SEC)/((double)(stop_time - start_time));
+        mpz_set_mpFp(aa, c);
+        //gmp_printf("c[%d] = 0x%ZX\n", i, aa);
+        //gmp_printf("d[%d] = 0x%ZX\n", i, d);
+        assert(mpz_cmp(d, aa) == 0);
+        printf("mpFp SUB_UI rate = %g subs/sec (%g X)\n", fp_rate, (fp_rate / mpz_rate));
+        printf("mpz  SUB_UI rate  = %g subs/sec\n", mpz_rate);
+
+        mpFp_clear(c);
+        for (i = ARRAY_SZ-1; i >= 0; i--) {
+            mpz_clear(ccc[i]);
+            mpz_clear(aaa[i]);
+            mpFp_clear(b[i]);
+            mpFp_clear(a[i]);
+        }
+    }
+
+    //mpFp_field_clear(fp);
+    //mpz_clear(pc);
+    mpz_clear(p);
+    mpz_clear(e);
+    mpz_clear(d);
+    mpz_clear(bb);
+    mpz_clear(aa);
+END_TEST
+
+START_TEST(test_mpFp_mul_basic)
     mpFp_t a, b, c;
     mpz_t p;
     mpz_t d;
-    mpFp_init(a);
-    mpFp_init(b);
-    mpFp_init(c);
     mpz_init(p);
     mpz_init(d);
 
     mpz_set_ui(p, 17);
     mpz_set_ui(d, 12);
+
+    mpFp_init(a, p);
+    mpFp_init(b, p);
+    mpFp_init(c, p);
 
     mpFp_set_mpz(a, d, p);
     mpFp_set_ui(b, 9, p);
@@ -348,6 +649,13 @@ START_TEST(test_mpFp_mul)
     // 2**255-19 (a prime number)
     mpz_set_str(p, p25519, 10);
 
+    mpFp_clear(c);
+    mpFp_clear(b);
+    mpFp_clear(a);
+    mpFp_init(a, p);
+    mpFp_init(b, p);
+    mpFp_init(c, p);
+
     mpFp_set_mpz(a, d, p);
     mpFp_set_ui(b, 9, p);
     mpFp_mul(c, a, b);
@@ -362,12 +670,157 @@ START_TEST(test_mpFp_mul)
     mpFp_clear(a);
 END_TEST
 
-START_TEST(test_mpFp_pow)
+START_TEST(test_mpFp_mul_extended)
+    int i, j;
+    int nfields;
+    // static as w/large values of ARRAY_SZ the stack exceeds ulimit allowance
+    static mpFp_t a[ARRAY_SZ];
+    static mpFp_t b[ARRAY_SZ];
+    static mpz_t aaa[ARRAY_SZ];
+    static mpz_t ccc[ARRAY_SZ];
+    unsigned long int bui[ARRAY_SZ];
+    mpFp_t c;
+    mpz_t aa, bb, d, e, p;
+    //mpFp_field fp;
+    int64_t start_time, stop_time;
+    double fp_rate, mpz_rate;
+
+    mpz_init(aa);
+    mpz_init(bb);
+    mpz_init(d);
+    mpz_init(e);
+    mpz_init(p);
+    //mpFp_field_init(fp);
+
+    nfields = sizeof(test_prime_fields)/sizeof(test_prime_fields[0]);
+
+    for (j = 0 ; j < nfields; j++) {
+        mpz_set_str(p,test_prime_fields[j], 0);
+
+        gmp_printf("Testing MUL for field 0x%ZX\n", p);
+
+        for (i = 0; i < ARRAY_SZ; i++) {
+            mpFp_init(a[i], p);
+            mpFp_init(b[i], p);
+            mpz_init(aaa[i]);
+            mpz_init(ccc[i]);
+        }
+        mpFp_init(c, p);
+
+        for (i = 0; i < ARRAY_SZ; i++) {
+            //printf("i=%d\n",i);
+            mpFp_urandom(a[i],p);
+            mpFp_urandom(b[i],p);
+            mpz_set_mpFp(aaa[i], a[i]);
+            bui[i] = ui_urandom(0);
+        }
+
+        // Multiplication
+        for (i = 0; i < ARRAY_SZ; i++) {
+            mpFp_mul(c, a[i], b[i]);
+    
+            mpz_set_mpFp(aa, a[i]);
+            mpz_set_mpFp(bb, b[i]);
+            mpz_mul(d, aa, bb);
+            mpz_mod(d, d, p);
+    
+            mpz_set_mpFp(aa, c);
+            assert(mpz_cmp(d, aa) == 0);
+        }
+
+        for (i = 0; i < ARRAY_SZ; i++) {
+            mpFp_mul_ui(c, a[i], bui[i]);
+    
+            mpz_set_mpFp(aa, a[i]);
+            mpz_mul_ui(d, aa, bui[i]);
+            mpz_mod(d, d, p);
+    
+            mpz_set_mpFp(aa, c);
+            assert(mpz_cmp(d, aa) == 0);
+        }
+
+        mpFp_set(c, a[0]);
+        mpz_set_mpFp(d, c);
+        //carry = mpn_add_n(c->_mp_d, a->_mp_d, b->_mp_d, psize);
+        start_time = clock();
+        for (i = 1; i < ARRAY_SZ; i++) {
+            mpFp_mul(c, c, a[i]);
+        }
+        stop_time = clock();
+        fp_rate = ((double)ARRAY_SZ * CLOCKS_PER_SEC)/((double)(stop_time - start_time));
+        start_time = clock();
+        for (i = 1; i < ARRAY_SZ; i++) {
+            mpz_mul(d, d, aaa[i]);
+            mpz_mod(d, d, p);
+        }
+        stop_time = clock();
+        mpz_rate = ((double)ARRAY_SZ * CLOCKS_PER_SEC)/((double)(stop_time - start_time));
+        mpz_set_mpFp(aa, c);
+        //gmp_printf("c[%d] = 0x%ZX\n", i, aa);
+        //gmp_printf("d[%d] = 0x%ZX\n", i, d);
+        assert(mpz_cmp(d, aa) == 0);
+        printf("mpFp MUL rate = %g muls/sec (%g X)\n", fp_rate, (fp_rate / mpz_rate));
+        printf("mpz  MUL rate  = %g muls/sec\n", mpz_rate);
+        
+        mpFp_set_ui(c, bui[0], p);
+        mpz_set_mpFp(d, c);
+        //carry = mpn_add_n(c->_mp_d, a->_mp_d, b->_mp_d, psize);
+        start_time = clock();
+        for (i = 1; i < ARRAY_SZ; i++) {
+            mpFp_mul_ui(c, c, bui[i]);
+        }
+        stop_time = clock();
+        fp_rate = ((double)ARRAY_SZ * CLOCKS_PER_SEC)/((double)(stop_time - start_time));
+        start_time = clock();
+        for (i = 1; i < ARRAY_SZ; i++) {
+            mpz_mul_ui(d, d, bui[i]);
+            mpz_mod(d, d, p);
+        }
+        stop_time = clock();
+        mpz_rate = ((double)ARRAY_SZ * CLOCKS_PER_SEC)/((double)(stop_time - start_time));
+        mpz_set_mpFp(aa, c);
+        //gmp_printf("c[%d] = 0x%ZX\n", i, aa);
+        //gmp_printf("d[%d] = 0x%ZX\n", i, d);
+        assert(mpz_cmp(d, aa) == 0);
+        printf("mpFp MUL_UI rate = %g muls/sec (%g X)\n", fp_rate, (fp_rate / mpz_rate));
+        printf("mpz  MUL_UI rate  = %g muls/sec\n", mpz_rate);
+        
+        start_time = clock();
+        for (i = 1; i < ARRAY_SZ; i++) {
+            mpz_mul(ccc[i], aaa[i], aaa[i-1]);
+        }
+        stop_time = clock();
+        fp_rate = ((double)ARRAY_SZ * CLOCKS_PER_SEC)/((double)(stop_time - start_time));
+        start_time = clock();
+        for (i = 1; i < ARRAY_SZ; i++) {
+            mpz_mod(ccc[i], ccc[i], p);
+        }
+        stop_time = clock();
+        mpz_rate = ((double)ARRAY_SZ * CLOCKS_PER_SEC)/((double)(stop_time - start_time));
+        printf("mpz  MUL(noMOD) rate = %g ops/sec\n", fp_rate);
+        printf("mpz  MOD(noMUL) rate  = %g ops/sec\n", mpz_rate);
+
+        mpFp_clear(c);
+        for (i = ARRAY_SZ-1; i >= 0; i--) {
+            mpz_clear(ccc[i]);
+            mpz_clear(aaa[i]);
+            mpFp_clear(b[i]);
+            mpFp_clear(a[i]);
+        }
+    }
+
+    //mpFp_field_clear(fp);
+    //mpz_clear(pc);
+    mpz_clear(p);
+    mpz_clear(e);
+    mpz_clear(d);
+    mpz_clear(bb);
+    mpz_clear(aa);
+END_TEST
+
+START_TEST(test_mpFp_pow_basic)
     mpFp_t a, b, c;
     mpz_t p, d, e;
-    mpFp_init(a);
-    mpFp_init(b);
-    mpFp_init(c);
     mpz_init(p);
     mpz_init(d);
     mpz_init(e);
@@ -375,26 +828,37 @@ START_TEST(test_mpFp_pow)
     mpz_set_ui(p, 17);
     mpz_set_ui(d, 12);
 
+    mpFp_init(a, p);
+    mpFp_init(b, p);
+    mpFp_init(c, p);
+
     mpFp_set_mpz(a, d, p);
     mpFp_set_ui(b, 9, p);
     mpz_set_mpFp(e, b);
-    mpFp_pow(c, a, e);
-    assert(mpFp_cmp_ui(c, 5) == 0);
+    //mpFp_pow(c, a, e);
+    //assert(mpFp_cmp_ui(c, 5) == 0);
     mpFp_swap(b, a);
     mpz_set_mpFp(e, b);
-    mpFp_pow(c, a, e);
-    assert(mpFp_cmp_ui(c, 16) == 0);
+    //mpFp_pow(c, a, e);
+    //assert(mpFp_cmp_ui(c, 16) == 0);
     mpFp_pow_ui(c, a, 9);
     assert(mpFp_cmp_ui(c, 9) == 0);
 
     // 2**255-19 (a prime number)
     mpz_set_str(p, p25519, 10);
 
+    mpFp_clear(c);
+    mpFp_clear(b);
+    mpFp_clear(a);
+    mpFp_init(a, p);
+    mpFp_init(b, p);
+    mpFp_init(c, p);
+
     mpFp_set_mpz(a, d, p);
     mpFp_set_ui(b, 9, p);
     mpz_set_mpFp(e, b);
-    mpFp_pow(c, a, e);
-    assert(mpFp_cmp_ui(c, 5159780352) == 0);
+    //mpFp_pow(c, a, e);
+    //assert(mpFp_cmp_ui(c, 5159780352) == 0);
     mpFp_pow_ui(c, a, 9);
     assert(mpFp_cmp_ui(c, 5159780352) == 0);
 
@@ -405,12 +869,208 @@ START_TEST(test_mpFp_pow)
     mpFp_clear(a);
 END_TEST
 
-START_TEST(test_mpFp_inv)
+START_TEST(test_mpFp_pow_extended)
+    int i, j;
+    int nfields;
+    // static as w/large values of ARRAY_SZ the stack exceeds ulimit allowance
+    static mpFp_t a[ARRAY_SZ];
+    static mpFp_t b[ARRAY_SZ];
+    static mpz_t aaa[ARRAY_SZ];
+    static mpz_t ccc[ARRAY_SZ];
+    unsigned long int bui[ARRAY_SZ];
+    mpFp_t c;
+    mpz_t aa, bb, d, e, p;
+    //mpFp_field fp;
+    int64_t start_time, stop_time;
+    double fp_rate, mpz_rate;
+
+    mpz_init(aa);
+    mpz_init(bb);
+    mpz_init(d);
+    mpz_init(e);
+    mpz_init(p);
+    //mpFp_field_init(fp);
+
+    nfields = sizeof(test_prime_fields)/sizeof(test_prime_fields[0]);
+
+    for (j = 0 ; j < nfields; j++) {
+        mpz_set_str(p,test_prime_fields[j], 0);
+
+        gmp_printf("Testing POW for field 0x%ZX\n", p);
+
+        for (i = 0; i < ARRAY_SZ; i++) {
+            mpFp_init(a[i], p);
+            mpFp_init(b[i], p);
+            mpz_init(aaa[i]);
+            mpz_init(ccc[i]);
+        }
+        mpFp_init(c, p);
+
+        for (i = 0; i < ARRAY_SZ; i++) {
+            //printf("i=%d\n",i);
+            mpFp_urandom(a[i],p);
+            mpFp_urandom(b[i],p);
+            mpz_set_mpFp(aaa[i], a[i]);
+            bui[i] = ui_urandom(0);
+        }
+
+        // Exponentiation
+        for (i = 0; i < (ARRAY_SZ >> 4); i++) {
+            mpFp_pow_ui(c, a[i], bui[i]);
+    
+            mpz_set_mpFp(aa, a[i]);
+            mpz_powm_ui(d, aa, bui[i], p);
+    
+            mpz_set_mpFp(aa, c);
+            assert(mpz_cmp(d, aa) == 0);
+        }
+
+        start_time = clock();
+        for (i = 0; i < (ARRAY_SZ >> 4); i++) {
+            mpFp_pow_ui(c, a[i], bui[i]);
+        }
+        stop_time = clock();
+        fp_rate = ((double)(ARRAY_SZ >> 4) * CLOCKS_PER_SEC)/((double)(stop_time - start_time));
+        start_time = clock();
+        for (i = 0; i < (ARRAY_SZ >> 4); i++) {
+            mpz_powm_ui(d, aaa[i], bui[i], p);
+        }
+        stop_time = clock();
+        mpz_rate = ((double)(ARRAY_SZ >> 4) * CLOCKS_PER_SEC)/((double)(stop_time - start_time));
+        mpz_set_mpFp(aa, c);
+        //gmp_printf("c[%d] = 0x%ZX\n", i, aa);
+        //gmp_printf("d[%d] = 0x%ZX\n", i, d);
+        assert(mpz_cmp(d, aa) == 0);
+        printf("mpFp POWM rate = %g exps/sec (%g X)\n", fp_rate, (fp_rate / mpz_rate));
+        printf("mpz  POWM rate = %g exps/sec\n", mpz_rate);
+        
+        mpFp_clear(c);
+        for (i = ARRAY_SZ-1; i >= 0; i--) {
+            mpz_clear(ccc[i]);
+            mpz_clear(aaa[i]);
+            mpFp_clear(b[i]);
+            mpFp_clear(a[i]);
+        }
+    }
+
+    //mpFp_field_clear(fp);
+    //mpz_clear(pc);
+    mpz_clear(p);
+    mpz_clear(e);
+    mpz_clear(d);
+    mpz_clear(bb);
+    mpz_clear(aa);
+END_TEST
+
+START_TEST(test_mpFp_sqr_extended)
+    int i, j;
+    int nfields;
+    // static as w/large values of ARRAY_SZ the stack exceeds ulimit allowance
+    static mpFp_t a[ARRAY_SZ];
+    static mpFp_t b[ARRAY_SZ];
+    static mpz_t aaa[ARRAY_SZ];
+    static mpz_t ccc[ARRAY_SZ];
+    //unsigned long int bui[ARRAY_SZ];
+    mpFp_t c;
+    mpz_t aa, bb, d, e, p;
+    //mpFp_field fp;
+    int64_t start_time, stop_time;
+    double fp_rate, mpz_rate;
+
+    mpz_init(aa);
+    mpz_init(bb);
+    mpz_init(d);
+    mpz_init(e);
+    mpz_init(p);
+    //mpFp_field_init(fp);
+
+    nfields = sizeof(test_prime_fields)/sizeof(test_prime_fields[0]);
+
+    for (j = 0 ; j < nfields; j++) {
+        mpz_set_str(p,test_prime_fields[j], 0);
+
+        gmp_printf("Testing SQR for field 0x%ZX\n", p);
+
+        for (i = 0; i < ARRAY_SZ; i++) {
+            mpFp_init(a[i], p);
+            mpFp_init(b[i], p);
+            mpz_init(aaa[i]);
+            mpz_init(ccc[i]);
+        }
+        mpFp_init(c, p);
+
+        for (i = 0; i < ARRAY_SZ; i++) {
+            //printf("i=%d\n",i);
+            mpFp_urandom(a[i],p);
+            mpFp_urandom(b[i],p);
+            mpz_set_mpFp(aaa[i], a[i]);
+            //bui[i] = ui_urandom(0);
+        }
+
+        // Squaring
+        for (i = 0; i < ARRAY_SZ; i++) {
+            mpFp_sqr(c, a[i]);
+    
+            mpz_set_mpFp(aa, a[i]);
+            mpz_set_mpFp(bb, a[i]);
+            mpz_mul(d, aa, bb);
+            mpz_mod(d, d, p);
+    
+            mpz_set_mpFp(aa, c);
+            assert(mpz_cmp(d, aa) == 0);
+
+            mpz_powm_ui(d, bb, 2, p);
+            assert(mpz_cmp(d, aa) == 0);
+        }
+
+        start_time = clock();
+        for (i = 0; i < ARRAY_SZ; i++) {
+            mpFp_sqr(c, a[i]);
+        }
+        stop_time = clock();
+        fp_rate = ((double)ARRAY_SZ * CLOCKS_PER_SEC)/((double)(stop_time - start_time));
+        start_time = clock();
+        for (i = 0; i < ARRAY_SZ; i++) {
+            mpz_mul(d, aaa[i], aaa[i]);
+            mpz_mod(d, d, p);
+        }
+        stop_time = clock();
+        mpz_rate = ((double)ARRAY_SZ * CLOCKS_PER_SEC)/((double)(stop_time - start_time));
+        mpz_set_mpFp(aa, c);
+        //gmp_printf("c[%d] = 0x%ZX\n", i, aa);
+        //gmp_printf("d[%d] = 0x%ZX\n", i, d);
+        assert(mpz_cmp(d, aa) == 0);
+        printf("mpFp SQR rate = %g sqrs/sec (%g X)\n", fp_rate, (fp_rate / mpz_rate));
+        printf("mpz  SQR rate = %g sqrs/sec\n", mpz_rate);
+        start_time = clock();
+        for (i = 0; i < ARRAY_SZ; i++) {
+            mpz_powm_ui(d, aaa[i], 2, p);
+        }
+        stop_time = clock();
+        mpz_rate = ((double)ARRAY_SZ * CLOCKS_PER_SEC)/((double)(stop_time - start_time));
+        printf("mpz  SQR rate = %g sqrs/sec (using powm_ui)\n", mpz_rate);
+        
+        mpFp_clear(c);
+        for (i = ARRAY_SZ-1; i >= 0; i--) {
+            mpz_clear(ccc[i]);
+            mpz_clear(aaa[i]);
+            mpFp_clear(b[i]);
+            mpFp_clear(a[i]);
+        }
+    }
+
+    //mpFp_field_clear(fp);
+    //mpz_clear(pc);
+    mpz_clear(p);
+    mpz_clear(e);
+    mpz_clear(d);
+    mpz_clear(bb);
+    mpz_clear(aa);
+END_TEST
+
+START_TEST(test_mpFp_inv_basic)
     mpFp_t a, b, c;
     mpz_t p, d, e;
-    mpFp_init(a);
-    mpFp_init(b);
-    mpFp_init(c);
     mpz_init(p);
     mpz_init(d);
     mpz_init(e);
@@ -418,26 +1078,37 @@ START_TEST(test_mpFp_inv)
     mpz_set_ui(p, 17);
     mpz_set_ui(d, 12);
 
+    mpFp_init(a, p);
+    mpFp_init(b, p);
+    mpFp_init(c, p);
+
     mpFp_set_mpz(a, d, p);
     mpz_sub_ui(e, p, 2);
-    mpFp_pow(c, a, e);
+    //mpFp_pow(c, a, e);
     mpFp_inv(b, a);
-    assert(mpFp_cmp_ui(c, 10) == 0);
+    //assert(mpFp_cmp_ui(c, 10) == 0);
     assert(mpFp_cmp_ui(b, 10) == 0);
-    assert(mpFp_cmp(c, b) == 0);
+    //assert(mpFp_cmp(c, b) == 0);
     mpFp_mul(c, a, b);
     assert(mpFp_cmp_ui(c, 1) == 0);
 
     // 2**255-19 (a prime number)
     mpz_set_str(p, p25519, 10);
 
+    mpFp_clear(c);
+    mpFp_clear(b);
+    mpFp_clear(a);
+    mpFp_init(a, p);
+    mpFp_init(b, p);
+    mpFp_init(c, p);
+
     // compare extended euclidean algorithm result to inverse by pow
     // from Fermat's little thereom
     mpFp_set_mpz(a, d, p);
     mpz_sub_ui(e, p, 2);
-    mpFp_pow(c, a, e);
+    //mpFp_pow(c, a, e);
     mpFp_inv(b, a);
-    assert(mpFp_cmp(c, b) == 0);
+    //assert(mpFp_cmp(c, b) == 0);
     mpFp_mul(c, a, b);
     assert(mpFp_cmp_ui(c, 1) == 0);
 
@@ -449,19 +1120,117 @@ START_TEST(test_mpFp_inv)
     mpFp_clear(a);
 END_TEST
 
+START_TEST(test_mpFp_inv_extended)
+    int i, j;
+    int nfields;
+    int status, rstatus;
+    // static as w/large values of ARRAY_SZ the stack exceeds ulimit allowance
+    static mpFp_t a[ARRAY_SZ];
+    static mpFp_t b[ARRAY_SZ];
+    static mpz_t aaa[ARRAY_SZ];
+    static mpz_t ccc[ARRAY_SZ];
+    //unsigned long int bui[ARRAY_SZ];
+    mpFp_t c;
+    mpz_t aa, bb, d, e, p;
+    //mpFp_field fp;
+    int64_t start_time, stop_time;
+    double fp_rate, mpz_rate;
+
+    mpz_init(aa);
+    mpz_init(bb);
+    mpz_init(d);
+    mpz_init(e);
+    mpz_init(p);
+    //mpFp_field_init(fp);
+
+    nfields = sizeof(test_prime_fields)/sizeof(test_prime_fields[0]);
+
+    for (j = 0 ; j < nfields; j++) {
+        mpz_set_str(p,test_prime_fields[j], 0);
+
+        gmp_printf("Testing INV for field 0x%ZX\n", p);
+
+        for (i = 0; i < ARRAY_SZ; i++) {
+            mpFp_init(a[i], p);
+            mpFp_init(b[i], p);
+            mpz_init(aaa[i]);
+            mpz_init(ccc[i]);
+        }
+        mpFp_init(c, p);
+
+        for (i = 0; i < ARRAY_SZ; i++) {
+            //printf("i=%d\n",i);
+            mpFp_urandom(a[i],p);
+            mpFp_urandom(b[i],p);
+            mpz_set_mpFp(aaa[i], a[i]);
+            //bui[i] = ui_urandom(0);
+        }
+
+        // Inverse
+        for (i = 0; i < ARRAY_SZ; i++) {
+            status = mpFp_inv(c, a[i]);
+    
+            mpz_set_mpFp(aa, a[i]);
+            rstatus = mpz_invert(d, aa, p);
+
+            assert(rstatus != status);
+            if (status == 0) {
+                mpz_set_mpFp(aa, c);
+                assert(mpz_cmp(d, aa) == 0);
+            }
+        }
+
+        start_time = clock();
+        for (i = 0; i < ARRAY_SZ; i++) {
+            mpFp_inv(c, a[i]);
+        }
+        stop_time = clock();
+        fp_rate = ((double)ARRAY_SZ * CLOCKS_PER_SEC)/((double)(stop_time - start_time));
+        start_time = clock();
+        for (i = 0; i < ARRAY_SZ; i++) {
+            mpz_invert(d, aaa[i], p);
+        }
+        stop_time = clock();
+        mpz_rate = ((double)ARRAY_SZ * CLOCKS_PER_SEC)/((double)(stop_time - start_time));
+        mpz_set_mpFp(aa, c);
+        //gmp_printf("c[%d] = 0x%ZX\n", i, aa);
+        //gmp_printf("d[%d] = 0x%ZX\n", i, d);
+        assert(mpz_cmp(d, aa) == 0);
+        printf("mpFp INV rate = %g sqrs/sec (%g X)\n", fp_rate, (fp_rate / mpz_rate));
+        printf("mpz  INV rate = %g sqrs/sec\n", mpz_rate);
+
+        mpFp_clear(c);
+        for (i = ARRAY_SZ-1; i >= 0; i--) {
+            mpz_clear(ccc[i]);
+            mpz_clear(aaa[i]);
+            mpFp_clear(b[i]);
+            mpFp_clear(a[i]);
+        }
+    }
+
+    //mpFp_field_clear(fp);
+    //mpz_clear(pc);
+    mpz_clear(p);
+    mpz_clear(e);
+    mpz_clear(d);
+    mpz_clear(bb);
+    mpz_clear(aa);
+END_TEST
+
 START_TEST(test_mpFp_swap_cswap)
     mpFp_t a, b, c, d;
     mpz_t p;
     mpz_t e;
-    mpFp_init(a);
-    mpFp_init(b);
-    mpFp_init(c);
-    mpFp_init(d);
     mpz_init(p);
     mpz_init(e);
 
     mpz_set_ui(p, 17);
     mpz_set_ui(e, 12);
+
+    mpFp_init(a, p);
+    mpFp_init(b, p);
+    mpFp_init(c, p);
+    mpFp_init(d, p);
 
     mpFp_set_mpz(a, e, p);
     mpFp_set_ui(b, 9, p);
@@ -501,18 +1270,136 @@ START_TEST(test_mpFp_swap_cswap)
     mpFp_clear(a);
 END_TEST
 
-START_TEST(test_mpFp_sqrt)
+START_TEST(test_mpFp_cswap_extended)
+    int i, j, ii;
+    int nfields;
+    // static as w/large values of ARRAY_SZ the stack exceeds ulimit allowance
+    static mpFp_t a[ARRAY_SZ];
+    static mpFp_t b[ARRAY_SZ];
+    static mpz_t aaa[ARRAY_SZ];
+    static mpz_t ccc[ARRAY_SZ];
+    //unsigned long int bui[ARRAY_SZ];
+    mpFp_t c;
+    mpz_t aa, bb, d, e, p;
+    //mpFp_field fp;
+    int64_t start_time, stop_time;
+    double fp_rate, mpz_rate;
+
+    mpz_init(aa);
+    mpz_init(bb);
+    mpz_init(d);
+    mpz_init(e);
+    mpz_init(p);
+    //mpFp_field_init(fp);
+
+    nfields = sizeof(test_prime_fields)/sizeof(test_prime_fields[0]);
+
+    for (j = 0 ; j < nfields; j++) {
+        mpz_set_str(p,test_prime_fields[j], 0);
+
+        gmp_printf("Testing CSWAP for field 0x%ZX\n", p);
+
+        for (i = 0; i < ARRAY_SZ; i++) {
+            mpFp_init(a[i], p);
+            mpFp_init(b[i], p);
+            mpz_init(aaa[i]);
+            mpz_init(ccc[i]);
+        }
+        mpFp_init(c, p);
+
+        for (i = 0; i < ARRAY_SZ; i++) {
+            //printf("i=%d\n",i);
+            mpFp_urandom(a[i],p);
+            mpFp_urandom(b[i],p);
+            mpz_set_mpFp(aaa[i], a[i]);
+            //bui[i] = ui_urandom(0);
+        }
+
+        // Conditional Swap
+        for (i = 0; i < ARRAY_SZ; i++) {
+            ii = i % 2;
+            mpFp_set(c, a[i]);
+            mpFp_cswap(a[i], b[i], ii);
+            if (ii == 0) {
+                assert(mpFp_cmp(c, a[i]) == 0);
+            } else {
+                assert(mpFp_cmp(c, b[i]) == 0);
+            }
+            mpFp_cswap(a[i], b[i], ii);
+        }
+
+        //carry = mpn_add_n(c->_mp_d, a->_mp_d, b->_mp_d, psize);
+        start_time = clock();
+        for (i = 0; i < ARRAY_SZ; i++) {
+            ii = i % 2;
+            mpFp_cswap(a[i], b[i], ii);
+        }
+        stop_time = clock();
+        fp_rate = ((double)ARRAY_SZ * CLOCKS_PER_SEC)/((double)(stop_time - start_time));
+        for (i = 0; i < ARRAY_SZ; i++) {
+            ii = i % 2;
+            mpFp_cswap(a[i], b[i], ii);
+        }
+        start_time = clock();
+        for (i = 0; i < ARRAY_SZ; i++) {
+            ii = i % 2;
+            mpz_set(d, aaa[i]);
+            mpz_set(e, ccc[i]);
+            if (ii == 0) {
+                mpz_set(aaa[i], d);
+                mpz_set(ccc[i], e);
+            } else {
+                mpz_set(aaa[i], e);
+                mpz_set(ccc[i], d);
+            }
+        }
+        stop_time = clock();
+        mpz_rate = ((double)ARRAY_SZ * CLOCKS_PER_SEC)/((double)(stop_time - start_time));
+        for (i = 0; i < ARRAY_SZ; i++) {
+            ii = i % 2;
+            mpz_set(d, aaa[i]);
+            mpz_set(e, ccc[i]);
+            if (ii == 0) {
+                mpz_set(aaa[i], d);
+                mpz_set(ccc[i], e);
+            } else {
+                mpz_set(aaa[i], e);
+                mpz_set(ccc[i], d);
+            }
+        }
+        printf("mpFp CSWAP rate = %g swaps/sec (%g X)\n", fp_rate, (fp_rate / mpz_rate));
+        printf("mpz  CSWAP rate = %g swaps/sec\n", mpz_rate);
+        
+        mpFp_clear(c);
+        for (i = ARRAY_SZ-1; i >= 0; i--) {
+            mpz_clear(ccc[i]);
+            mpz_clear(aaa[i]);
+            mpFp_clear(b[i]);
+            mpFp_clear(a[i]);
+        }
+    }
+
+    //mpFp_field_clear(fp);
+    //mpz_clear(pc);
+    mpz_clear(p);
+    mpz_clear(e);
+    mpz_clear(d);
+    mpz_clear(bb);
+    mpz_clear(aa);
+END_TEST
+
+START_TEST(test_mpFp_sqrt_basic)
     int i, j, error, bb, cc;
-    int primes[] = {11, 13, 17, 19, 23, 29, 31};
+    int primes[] = {11, 13, 17, 19, 23, 29, 31, 1021};
     mpFp_t a, b, c;
     mpz_t p;
-    mpFp_init(a);
-    mpFp_init(b);
-    mpFp_init(c);
     mpz_init(p);
 
     for (j = 0 ; j < (sizeof(primes)/sizeof(primes[0])); j++) {
         mpz_set_ui(p, primes[j]);
+        mpFp_init(a, p);
+        mpFp_init(b, p);
+        mpFp_init(c, p);
         for (i = 0; i < primes[j]; i++) {
             mpFp_set_ui(a, i, p);
             error = mpFp_sqrt(b, a);
@@ -529,12 +1416,100 @@ START_TEST(test_mpFp_sqrt)
             assert(mpFp_cmp(a, c) == 0);
             printf("Square roots of %d (mod %d) are %d, %d\n", i, primes[j], bb, cc);
         }
+        mpFp_clear(c);
+        mpFp_clear(b);
+        mpFp_clear(a);
     }
 
     mpz_clear(p);
-    mpFp_clear(c);
-    mpFp_clear(b);
-    mpFp_clear(a);
+END_TEST
+
+START_TEST(test_mpFp_sqrt_extended)
+    int i, j;
+    int nfields;
+    int status;
+    // static as w/large values of ARRAY_SZ the stack exceeds ulimit allowance
+    static mpFp_t a[ARRAY_SZ];
+    static mpFp_t b[ARRAY_SZ];
+    static mpz_t aaa[ARRAY_SZ];
+    static mpz_t ccc[ARRAY_SZ];
+    //unsigned long int bui[ARRAY_SZ];
+    mpFp_t c, cc;
+    mpz_t aa, bb, d, e, p;
+    //mpFp_field fp;
+    int64_t start_time, stop_time;
+    double fp_rate;
+
+    mpz_init(aa);
+    mpz_init(bb);
+    mpz_init(d);
+    mpz_init(e);
+    mpz_init(p);
+    //mpFp_field_init(fp);
+
+    nfields = sizeof(test_prime_fields)/sizeof(test_prime_fields[0]);
+
+    for (j = 0 ; j < nfields; j++) {
+        mpz_set_str(p,test_prime_fields[j], 0);
+
+        gmp_printf("Testing SQRT for field 0x%ZX\n", p);
+
+        for (i = 0; i < ARRAY_SZ; i++) {
+            mpFp_init(a[i], p);
+            mpFp_init(b[i], p);
+            mpz_init(aaa[i]);
+            mpz_init(ccc[i]);
+        }
+        mpFp_init(c, p);
+        mpFp_init(cc, p);
+
+        for (i = 0; i < ARRAY_SZ; i++) {
+            //printf("i=%d\n",i);
+            mpFp_urandom(a[i],p);
+            mpFp_urandom(b[i],p);
+            mpz_set_mpFp(aaa[i], a[i]);
+            //bui[i] = ui_urandom(0);
+        }
+
+        // Squaring
+        for (i = 0; i < ARRAY_SZ; i++) {
+            status = mpFp_sqrt(c, a[i]);
+            
+            if (status == 0) {
+                mpFp_sqr(cc, c);
+                assert(mpFp_cmp(cc, a[i]) == 0);
+                mpFp_neg(cc, c);
+                mpFp_sqr(cc, cc);
+                assert(mpFp_cmp(cc, a[i]) == 0);
+            }
+        }
+
+        start_time = clock();
+        for (i = 0; i < ARRAY_SZ; i++) {
+            mpFp_sqrt(c, a[i]);
+        }
+        stop_time = clock();
+        fp_rate = ((double)ARRAY_SZ * CLOCKS_PER_SEC)/((double)(stop_time - start_time));
+        printf("mpFp SQRT rate = %g sqrts/sec\n", fp_rate);
+
+        mpFp_clear(cc);
+        mpFp_clear(c);
+
+        for (i = ARRAY_SZ-1; i >= 0; i--) {
+            mpz_clear(ccc[i]);
+            mpz_clear(aaa[i]);
+            mpFp_clear(b[i]);
+            mpFp_clear(a[i]);
+        }
+    }
+
+    //mpFp_field_clear(fp);
+    //mpz_clear(pc);
+    mpz_clear(p);
+    mpz_clear(e);
+    mpz_clear(d);
+    mpz_clear(bb);
+    mpz_clear(aa);
 END_TEST
 
 START_TEST(test_mpFp_tstbit)
@@ -542,13 +1517,13 @@ START_TEST(test_mpFp_tstbit)
     int primes[] = {11, 13, 17, 19, 23, 29, 31};
     mpFp_t a, b, c;
     mpz_t p;
-    mpFp_init(a);
-    mpFp_init(b);
-    mpFp_init(c);
     mpz_init(p);
 
     for (j = 0 ; j < (sizeof(primes)/sizeof(primes[0])); j++) {
         mpz_set_ui(p, primes[j]);
+        mpFp_init(a, p);
+        mpFp_init(b, p);
+        mpFp_init(c, p);
         for (i = 0; i < primes[j]; i++) {
             mpFp_set_ui(a, i, p);
             mpFp_set_ui(b, 0, p);
@@ -561,12 +1536,11 @@ START_TEST(test_mpFp_tstbit)
             }
             assert(mpFp_cmp(a, b) == 0);
         }
+        mpFp_clear(c);
+        mpFp_clear(a);
     }
 
     mpz_clear(p);
-    mpFp_clear(c);
-    mpFp_clear(b);
-    mpFp_clear(a);
 END_TEST
 
 START_TEST(test_mpFp_urandom)
@@ -574,15 +1548,15 @@ START_TEST(test_mpFp_urandom)
     mpz_t a;
     mpFp_t b;
     mpz_init(a);
-    mpFp_init(b);
 
     mpz_set_ui(a, 251);
+    mpFp_init(b, a);
 
     for (i = 0; i < 1000; i++) {
         mpFp_urandom(b, a);
         //gmp_printf("A: %ZX\n", a);
         //gmp_printf("B: %ZX\n\n", b->i);
-        assert (mpz_cmp(b->p, a) == 0);
+        assert (mpz_cmp(b->fp->p, a) == 0);
         assert (mpz_cmp_ui(b->i, 0) >= 0);
         assert (mpz_cmp(a,b->i) >= 0);
         mpz_add(a, a, b->i);
@@ -592,6 +1566,123 @@ START_TEST(test_mpFp_urandom)
     mpz_clear(a);
 END_TEST
 
+START_TEST(test_mpFp_point_check)
+    int ncurve;
+    int i;
+    mpz_t z_p, z_a, z_b, z_n, z_h, z_gx, z_gy, z_r, z_l, t;
+    mpFp_t f_a, f_b, f_gx, f_gy, f_r, f_l;
+    mpECurve_t cv;
+
+    mpECurve_init(cv);
+    mpz_init(z_p);
+    mpz_init(z_a);
+    mpz_init(z_b);
+    mpz_init(z_n);
+    mpz_init(z_h);
+    mpz_init(z_gx);
+    mpz_init(z_gy);
+    mpz_init(z_r);
+    mpz_init(z_l);
+    mpz_init(t);
+
+    ncurve = sizeof(_std_ws_curve) / sizeof(_std_ws_curve_t);
+
+    for (i = 0; i < ncurve; i++) {
+        printf("testing for curve %s\n", _std_ws_curve[i].name);
+        mpz_set_str(z_p, _std_ws_curve[i].p, 0);
+
+        mpFp_init(f_a, z_p);
+        mpFp_init(f_b, z_p);
+        mpFp_init(f_gx, z_p);
+        mpFp_init(f_gy, z_p);
+        mpFp_init(f_r, z_p);
+        mpFp_init(f_l, z_p);
+
+        mpz_set_str(z_a, _std_ws_curve[i].a, 0);
+        mpFp_set_mpz(f_a, z_a, z_p);
+        mpz_set_mpFp(t, f_a);
+        assert(mpz_cmp(t, z_a) == 0);
+        mpz_set_str(z_b, _std_ws_curve[i].b, 0);
+        mpFp_set_mpz(f_b, z_b, z_p);
+        mpz_set_mpFp(t, f_b);
+        assert(mpz_cmp(t, z_b) == 0);
+        mpz_set_str(z_n, _std_ws_curve[i].n, 0);
+        mpz_set_str(z_h, _std_ws_curve[i].h, 0);
+        mpz_set_str(z_gx, _std_ws_curve[i].Gx, 0);
+        mpFp_set_mpz(f_gx, z_gx, z_p);
+        mpz_set_mpFp(t, f_gx);
+        assert(mpz_cmp(t, z_gx) == 0);
+        mpz_set_str(z_gy, _std_ws_curve[i].Gy, 0);
+        mpFp_set_mpz(f_gy, z_gy, z_p);
+        mpz_set_mpFp(t, f_gy);
+        assert(mpz_cmp(t, z_gy) == 0);
+
+        mpFp_pow_ui(f_r, f_gx, 3);
+        mpz_pow_ui(z_r, z_gx, 3);
+        mpz_mod(z_r, z_r, z_p);
+        mpz_set_mpFp(t, f_r);
+        assert(mpz_cmp(t, z_r) == 0);
+        mpFp_mul(f_l, f_a, f_gx);
+        mpz_mul(z_l, z_a, z_gx);
+        mpz_mod(z_l, z_l, z_p);
+        mpz_set_mpFp(t, f_l);
+        assert(mpz_cmp(t, z_l) == 0);
+        mpFp_add(f_r, f_r, f_l);
+        mpz_add(z_r, z_r, z_l);
+        mpz_mod(z_r, z_r, z_p);
+        mpz_set_mpFp(t, f_r);
+        assert(mpz_cmp(t, z_r) == 0);
+        mpFp_add(f_r, f_r, f_b);
+        mpz_add(z_r, z_r, z_b);
+        mpz_mod(z_r, z_r, z_p);
+        mpz_set_mpFp(t, f_r);
+        assert(mpz_cmp(t, z_r) == 0);
+        mpFp_pow_ui(f_l, f_gy, 2);
+        mpz_pow_ui(z_l, z_gy, 2);
+        mpz_mod(z_l, z_l, z_p);
+        mpz_set_mpFp(t, f_l);
+        assert(mpz_cmp(t, z_l) == 0);
+        assert(mpFp_cmp(f_l, f_r) == 0);
+        assert(mpz_cmp(z_l, z_r) == 0);
+
+    // basic approach: calculate left and right sides and then compare l=r?
+
+    //switch (cv->type) {
+    //    case EQTypeShortWeierstrass: {
+    //        // y**2 = x**3 + ax + b
+    //        mpFp_pow_ui(r, x, 3);
+    //        mpFp_mul(l, cv->coeff.ws.a, x);
+    //        mpFp_add(r, r, l);
+    //        mpFp_add(r, r, cv->coeff.ws.b);
+    //        mpFp_pow_ui(l, y, 2);
+    //        break;
+
+        mpECurve_set_str_ws(cv, _std_ws_curve[i].p, _std_ws_curve[i].a,
+            _std_ws_curve[i].b, _std_ws_curve[i].n, _std_ws_curve[i].h,
+            _std_ws_curve[i].Gx, _std_ws_curve[i].Gy, _std_ws_curve[i].bits);
+
+        mpFp_clear(f_l);
+        mpFp_clear(f_r);
+        mpFp_clear(f_gy);
+        mpFp_clear(f_gx);
+        mpFp_clear(f_b);
+        mpFp_clear(f_a);
+    }
+
+    mpz_clear(t);
+    mpz_clear(z_l);
+    mpz_clear(z_r);
+    mpz_clear(z_gy);
+    mpz_clear(z_gx);
+    mpz_clear(z_h);
+    mpz_clear(z_n);
+    mpz_clear(z_b);
+    mpz_clear(z_a);
+    mpz_clear(z_p);
+
+    mpECurve_clear(cv);
+END_TEST
+
 static Suite *mpFp_test_suite(void) {
     Suite *s;
     TCase *tc;
@@ -599,16 +1690,24 @@ static Suite *mpFp_test_suite(void) {
     s = suite_create("Multi-Precision over Prime Fields");
     tc = tcase_create("arithmetic");
 
-    tcase_add_test(tc, test_mpFp_add);
-    tcase_add_test(tc, test_mpFp_sub);
-    tcase_add_test(tc, test_mpFp_mul);
-    tcase_add_test(tc, test_mpFp_pow);
-    tcase_add_test(tc, test_mpFp_inv);
-    tcase_add_test(tc, test_mpFp_sqrt);
+    tcase_add_test(tc, test_mpFp_add_basic);
+    tcase_add_test(tc, test_mpFp_add_extended);
+    tcase_add_test(tc, test_mpFp_sub_basic);
+    tcase_add_test(tc, test_mpFp_sub_extended);
     tcase_add_test(tc, test_mpFp_swap_cswap);
+    tcase_add_test(tc, test_mpFp_cswap_extended);
+    tcase_add_test(tc, test_mpFp_mul_basic);
+    tcase_add_test(tc, test_mpFp_mul_extended);
+    tcase_add_test(tc, test_mpFp_pow_basic);
+    tcase_add_test(tc, test_mpFp_pow_extended);
+    tcase_add_test(tc, test_mpFp_sqr_extended);
+    tcase_add_test(tc, test_mpFp_inv_basic);
+    tcase_add_test(tc, test_mpFp_inv_extended);
+    tcase_add_test(tc, test_mpFp_sqrt_basic);
+    tcase_add_test(tc, test_mpFp_sqrt_extended);
     tcase_add_test(tc, test_mpFp_tstbit);
-    tcase_add_test(tc, test_mpFp_point_check);
     tcase_add_test(tc, test_mpFp_urandom);
+    tcase_add_test(tc, test_mpFp_point_check);
 
      // set no timeout instead of default 4
     tcase_set_timeout(tc, 0.0);

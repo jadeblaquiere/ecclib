@@ -41,7 +41,7 @@ extern "C" {
 // Implementation of Elliptic Curve math following GNU GMP sytle
 // internal representation supports projective (e.g. Jacobian) coords
 
-typedef enum {EQTypeNone, EQTypeShortWeierstrass, EQTypeEdwards, EQTypeMontgomery, EQTypeTwistedEdwards} _mpECurve_eq_type;
+typedef enum {EQTypeNone, EQTypeUninitialized, EQTypeShortWeierstrass, EQTypeEdwards, EQTypeMontgomery, EQTypeTwistedEdwards} _mpECurve_eq_type;
 
 // short Weierstrass curve defined as y**2 = x**3 + ax + b
 
@@ -93,7 +93,8 @@ typedef union {
 
 typedef struct {
     _mpECurve_eq_type type; // curve type
-    mpz_t p; // prime field of curve
+    //mpz_t p; // prime field of curve
+    mpFp_field_ptr fp;
     _mpECurve_coeff_t coeff; // curve coefficients
     mpz_t n; // order of Generator point of curve
     mpz_t h; // cofactor of curve
@@ -102,6 +103,7 @@ typedef struct {
 } _mpECurve_t;
 
 typedef _mpECurve_t mpECurve_t[1];
+typedef _mpECurve_t *mpECurve_ptr;
 
 void mpECurve_init(mpECurve_t c);
 void mpECurve_clear(mpECurve_t c);

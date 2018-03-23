@@ -50,14 +50,14 @@ typedef struct _p_mpECP_t {
     mpFp_t y;
     mpFp_t z;
     int is_neutral;
-    mpECurve_t cv;
+    mpECurve_ptr cvp;
     int base_bits;
     struct _p_mpECP_t *base_pt;
 } _mpECP_t;
 
 typedef _mpECP_t mpECP_t[1];
 
-void mpECP_init(mpECP_t pt);
+void mpECP_init(mpECP_t pt, mpECurve_t cv);
 void mpECP_clear(mpECP_t pt);
 
 void mpECP_set(mpECP_t rpt, mpECP_t op);

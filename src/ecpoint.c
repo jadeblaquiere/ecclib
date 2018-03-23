@@ -40,7 +40,7 @@
 #define _MPECP_BASE_BITS    (8)
 
 static inline int _mpECP_n_base_pt_levels(mpECP_t pt) {
-    return (pt->cv->bits + pt->base_bits - 1) / pt->base_bits;
+    return (pt->cvp->bits + pt->base_bits - 1) / pt->base_bits;
 }
 
 static inline int _mpECP_n_base_pt_level_size(mpECP_t pt) {
@@ -70,17 +70,11 @@ static int _known_curve_type(mpECurve_t cv) {
         (cv->type == EQTypeTwistedEdwards);
 }
 
-static inline void mpFp_set_ui_nomod(mpFp_t rop, unsigned long i, mpz_t p) {
-    mpz_set(rop->p, p);
-    mpz_set_ui(rop->i, i);
-    return;
-}
-
-void mpECP_init(mpECP_t pt) {
-    mpFp_init(pt->x);
-    mpFp_init(pt->y);
-    mpFp_init(pt->z);
-    mpECurve_init(pt->cv);
+void mpECP_init(mpECP_t pt, mpECurve_t cv) {
+    pt->cvp = cv;
+    mpFp_init_fp(pt->x, cv->fp);
+    mpFp_init_fp(pt->y, cv->fp);
+    mpFp_init_fp(pt->z, cv->fp);
     pt->base_bits = 0;
     pt->base_pt = NULL;
     return;
@@ -91,13 +85,13 @@ void mpECP_clear(mpECP_t pt) {
     mpFp_clear(pt->x);
     mpFp_clear(pt->y);
     mpFp_clear(pt->z);
-    mpECurve_clear(pt->cv);
+    pt->cvp = NULL;
     return;
 }
 
 void mpECP_set(mpECP_t rpt, mpECP_t pt) {
     if (rpt->base_bits != 0) _mpECP_base_pts_cleanup(rpt);
-    mpECurve_set(rpt->cv, pt->cv);
+    rpt->cvp = pt->cvp;
     rpt->is_neutral = pt->is_neutral;
     mpFp_set(rpt->x, pt->x);
     mpFp_set(rpt->y, pt->y);
@@ -106,64 +100,66 @@ void mpECP_set(mpECP_t rpt, mpECP_t pt) {
 }
 
 static inline void _transform_mo_to_ws(mpECP_t pt) {
-    assert (pt->cv->type == EQTypeMontgomery);
+    assert (pt->cvp->type == EQTypeMontgomery);
     // u = x/B + A/3, v = y/B
-    mpFp_mul(pt->x, pt->x, pt->cv->coeff.mo.Binv);
-    mpFp_add(pt->x, pt->x, pt->cv->coeff.mo.Adiv3);
-    mpFp_mul(pt->y, pt->y, pt->cv->coeff.mo.Binv);
+    mpFp_mul(pt->x, pt->x, pt->cvp->coeff.mo.Binv);
+    mpFp_add(pt->x, pt->x, pt->cvp->coeff.mo.Adiv3);
+    mpFp_mul(pt->y, pt->y, pt->cvp->coeff.mo.Binv);
 }
 
 void mpECP_set_mpz(mpECP_t rpt, mpz_t x, mpz_t y, mpECurve_t cv) {
     if (rpt->base_bits != 0) _mpECP_base_pts_cleanup(rpt);
-    mpECurve_set(rpt->cv, cv);
+    rpt->cvp = &cv[0];
     rpt->is_neutral = 0;
-    mpFp_set_mpz(rpt->x, x, cv->p);
-    mpFp_set_mpz(rpt->y, y, cv->p);
-    mpFp_set_ui_nomod(rpt->z, 1, cv->p);
+    mpFp_set_mpz_fp(rpt->x, x, cv->fp);
+    mpFp_set_mpz_fp(rpt->y, y, cv->fp);
+    mpFp_set_ui_fp(rpt->z, 1, cv->fp);
     if (cv->type == EQTypeMontgomery) _transform_mo_to_ws(rpt);
     return;
 }
 
 void mpECP_set_mpFp(mpECP_t rpt, mpFp_t x, mpFp_t y, mpECurve_t cv) {
     if (rpt->base_bits != 0) _mpECP_base_pts_cleanup(rpt);
-    mpECurve_set(rpt->cv, cv);
+    rpt->cvp = &cv[0];
     rpt->is_neutral = 0;
     mpFp_set(rpt->x, x);
     mpFp_set(rpt->y, y);
-    mpFp_set_ui_nomod(rpt->z, 1, cv->p);
+    assert(cv->fp == x->fp);
+    assert(cv->fp == y->fp);
+    mpFp_set_ui_fp(rpt->z, 1, cv->fp);
     if (cv->type == EQTypeMontgomery) _transform_mo_to_ws(rpt);
     return;
 }
 
 void mpECP_set_neutral(mpECP_t rpt, mpECurve_t cv) {
     if (rpt->base_bits != 0) _mpECP_base_pts_cleanup(rpt);
-    mpECurve_set(rpt->cv, cv);
+    rpt->cvp = &cv[0];
     switch (cv->type) {
     case EQTypeShortWeierstrass:
         rpt->is_neutral = 1;
-        mpFp_set_ui_nomod(rpt->x, 0, cv->p);
-        mpFp_set_ui_nomod(rpt->y, 1, cv->p);
-        mpFp_set_ui_nomod(rpt->z, 0, cv->p);
+        mpFp_set_ui_fp(rpt->x, 0, cv->fp);
+        mpFp_set_ui_fp(rpt->y, 1, cv->fp);
+        mpFp_set_ui_fp(rpt->z, 0, cv->fp);
         return;
     case EQTypeEdwards:
         // return the neutral element (which is a valid curve point 0,c)
         rpt->is_neutral = 0;
-        mpFp_set_ui_nomod(rpt->z, 1, cv->p);
-        mpFp_set_ui_nomod(rpt->x, 0, cv->p);
+        mpFp_set_ui_fp(rpt->z, 1, cv->fp);
+        mpFp_set_ui_fp(rpt->x, 0, cv->fp);
         mpFp_set(rpt->y, cv->coeff.ed.c);
         return;
     case EQTypeMontgomery:
         rpt->is_neutral = 1;
-        mpFp_set_ui_nomod(rpt->x, 0, cv->p);
-        mpFp_set_ui_nomod(rpt->y, 1, cv->p);
-        mpFp_set_ui_nomod(rpt->z, 0, cv->p);
+        mpFp_set_ui_fp(rpt->x, 0, cv->fp);
+        mpFp_set_ui_fp(rpt->y, 1, cv->fp);
+        mpFp_set_ui_fp(rpt->z, 0, cv->fp);
         return;
     case EQTypeTwistedEdwards:
         // return the neutral element (which is a valid curve point 0,1)
         rpt->is_neutral = 0;
-        mpFp_set_ui_nomod(rpt->x, 0, cv->p);
-        mpFp_set_ui_nomod(rpt->y, 1, cv->p);
-        mpFp_set_ui_nomod(rpt->z, 1, cv->p);
+        mpFp_set_ui_fp(rpt->x, 0, cv->fp);
+        mpFp_set_ui_fp(rpt->y, 1, cv->fp);
+        mpFp_set_ui_fp(rpt->z, 1, cv->fp);
         return;
     default:
         assert(_known_curve_type(cv));
@@ -175,8 +171,8 @@ void _mpECP_to_affine(mpECP_t pt) {
     if (mpFp_cmp_ui(pt->z, 1) == 0) {
         return;
     }
-    mpFp_init(zinv);
-    switch (pt->cv->type) {
+    mpFp_init_fp(zinv, pt->cvp->fp);
+    switch (pt->cvp->type) {
         case EQTypeMontgomery:
             // Montgomery curve point internal representation is short-WS
         case EQTypeShortWeierstrass:
@@ -186,13 +182,13 @@ void _mpECP_to_affine(mpECP_t pt) {
                 mpFp_t t;
                 if (pt->is_neutral != 0) break;
                 // Jacobian coords x = X/Z**2 y = Y/Z**3);
-                mpFp_init(t);
+                mpFp_init_fp(t, pt->cvp->fp);
                 mpFp_inv(zinv, pt->z);
-                mpFp_pow_ui(t, zinv, 2);
+                mpFp_sqr(t, zinv);
                 mpFp_mul(pt->x, pt->x, t);
                 mpFp_pow_ui(t, zinv, 3);
                 mpFp_mul(pt->y, pt->y, t);
-                mpFp_set_ui_nomod(pt->z, 1, pt->cv->p);
+                mpFp_set_ui_fp(pt->z, 1, pt->cvp->fp);
                 mpFp_clear(t);
             }
             break;
@@ -204,37 +200,37 @@ void _mpECP_to_affine(mpECP_t pt) {
             mpFp_inv(zinv, pt->z);
             mpFp_mul(pt->x, pt->x, zinv);
             mpFp_mul(pt->y, pt->y, zinv);
-            mpFp_set_ui_nomod(pt->z, 1, pt->cv->p);
+            mpFp_set_ui_fp(pt->z, 1, pt->cvp->fp);
             break;
         default:
-            assert(_known_curve_type(pt->cv));
+            assert(_known_curve_type(pt->cvp));
     }
     mpFp_clear(zinv);
     return;
 }
 
 static inline void _transform_ws_to_mo_x(mpFp_t x, mpECP_t pt) {
-    //assert (pt->cv->type == EQTypeMontgomery)
+    //assert (pt->cvp->type == EQTypeMontgomery)
     //_mpECP_to_affine(pt);
     // transform to Mo
     // x = Bu-A/3, y = Bv
-    mpFp_mul(x, pt->x, pt->cv->coeff.mo.B);
-    mpFp_sub(x, x, pt->cv->coeff.mo.Adiv3);
+    mpFp_mul(x, pt->x, pt->cvp->coeff.mo.B);
+    mpFp_sub(x, x, pt->cvp->coeff.mo.Adiv3);
     return;
 }
 
 static inline void _transform_ws_to_mo_y(mpFp_t y, mpECP_t pt) {
-    //assert (pt->cv->type == EQTypeMontgomery)
+    //assert (pt->cvp->type == EQTypeMontgomery)
     //_mpECP_to_affine(pt);
     // transform to Mo
     // x = Bu-A/3, y = Bv
-    mpFp_mul(y, pt->y, pt->cv->coeff.mo.B);
+    mpFp_mul(y, pt->y, pt->cvp->coeff.mo.B);
     return;
 }
 
 void mpFp_set_mpECP_affine_x(mpFp_t x, mpECP_t pt) {
     _mpECP_to_affine(pt);
-    if (pt->cv->type == EQTypeMontgomery) {
+    if (pt->cvp->type == EQTypeMontgomery) {
         _transform_ws_to_mo_x(x, pt);
     } else {
         mpFp_set(x, pt->x);
@@ -244,7 +240,7 @@ void mpFp_set_mpECP_affine_x(mpFp_t x, mpECP_t pt) {
 
 void mpFp_set_mpECP_affine_y(mpFp_t y, mpECP_t pt) {
     _mpECP_to_affine(pt);
-    if (pt->cv->type == EQTypeMontgomery) {
+    if (pt->cvp->type == EQTypeMontgomery) {
         _transform_ws_to_mo_y(y, pt);
     } else {
         mpFp_set(y, pt->y);
@@ -254,9 +250,9 @@ void mpFp_set_mpECP_affine_y(mpFp_t y, mpECP_t pt) {
 
 void mpz_set_mpECP_affine_x(mpz_t x, mpECP_t pt) {
     _mpECP_to_affine(pt);
-    if (pt->cv->type == EQTypeMontgomery) {
+    if (pt->cvp->type == EQTypeMontgomery) {
         mpFp_t t;
-        mpFp_init(t);
+        mpFp_init_fp(t, pt->cvp->fp);
         _transform_ws_to_mo_x(t, pt);
         mpz_set_mpFp(x, t);
         mpFp_clear(t);
@@ -268,9 +264,9 @@ void mpz_set_mpECP_affine_x(mpz_t x, mpECP_t pt) {
 
 void mpz_set_mpECP_affine_y(mpz_t y, mpECP_t pt) {
     _mpECP_to_affine(pt);
-    if (pt->cv->type == EQTypeMontgomery) {
+    if (pt->cvp->type == EQTypeMontgomery) {
         mpFp_t t;
-        mpFp_init(t);
+        mpFp_init_fp(t, pt->cvp->fp);
         _transform_ws_to_mo_y(t, pt);
         mpz_set_mpFp(y, t);
         mpFp_clear(t);
@@ -287,7 +283,7 @@ static inline int _bytelen(int bits) {
 int mpECP_set_str(mpECP_t rpt, char *s, mpECurve_t cv) {
     int bytes;
     char *buffer;
-    
+
     bytes = _bytelen(cv->bits);
     buffer = (char *)malloc((strlen(s) + 1) * sizeof(char));
     assert(buffer != NULL);
@@ -319,11 +315,11 @@ int mpECP_set_str(mpECP_t rpt, char *s, mpECurve_t cv) {
                 int error, odd;
                 if (strlen(s) != (2 + (2 * bytes))) return -1;
                 mpz_init(xz);
-                mpFp_init(x);
-                mpFp_init(y);
-                mpFp_init(t);
+                mpFp_init_fp(x, cv->fp);
+                mpFp_init_fp(y, cv->fp);
+                mpFp_init_fp(t, cv->fp);
                 gmp_sscanf(&s[2],"%ZX", xz);
-                mpFp_set_mpz(x, xz, cv->p);
+                mpFp_set_mpz_fp(x, xz, cv->fp);
                 switch (cv->type) {
                     case EQTypeShortWeierstrass: {
                             // y**2 = x**3 + ax + b
@@ -343,8 +339,8 @@ int mpECP_set_str(mpECP_t rpt, char *s, mpECurve_t cv) {
                         break;
                     case EQTypeEdwards: {
                             mpFp_t c2, x2;
-                            mpFp_init(c2);
-                            mpFp_init(x2);
+                            mpFp_init_fp(c2, cv->fp);
+                            mpFp_init_fp(x2, cv->fp);
                             // x**2 + y**2 = c**2 (1 + d * x**2 * y**2)
                             // y**2 - C**2 * d * x**2 * y**2 = c**2 - x**2
                             // y**2 = (c**2 - x**2) / (1 - c**2 * d * x**2)
@@ -352,7 +348,7 @@ int mpECP_set_str(mpECP_t rpt, char *s, mpECurve_t cv) {
                             mpFp_mul(t, cv->coeff.ed.d, c2);
                             mpFp_pow_ui(x2, x, 2);
                             mpFp_mul(t, t, x2);
-                            mpFp_set_ui_nomod(y, 1, cv->p);
+                            mpFp_set_ui_fp(y, 1, cv->fp);
                             mpFp_sub(t, y, t);
                             mpFp_sub(y, c2, x2);
                             mpFp_inv(t, t);
@@ -371,8 +367,8 @@ int mpECP_set_str(mpECP_t rpt, char *s, mpECurve_t cv) {
                         break;
                     case EQTypeTwistedEdwards: {
                             mpFp_t a, x2;
-                            mpFp_init(a);
-                            mpFp_init(x2);
+                            mpFp_init_fp(a, cv->fp);
+                            mpFp_init_fp(x2, cv->fp);
                             // a * x**2 + y**2 = 1 + d * x**2 * y**2
                             // y**2 - d * x**2 * y**2 = 1 - a * x**2
                             // y**2 = (1 - a * x**2) / (1 - d * x**2)
@@ -380,7 +376,7 @@ int mpECP_set_str(mpECP_t rpt, char *s, mpECurve_t cv) {
                             mpFp_set(t, cv->coeff.te.d);
                             mpFp_pow_ui(x2, x, 2);
                             mpFp_mul(t, t, x2);
-                            mpFp_set_ui_nomod(y, 1, cv->p);
+                            mpFp_set_ui_fp(y, 1, cv->fp);
                             mpFp_sub(t, y, t);
                             mpFp_mul(x2, x2, a);
                             mpFp_sub(y, y, x2);
@@ -402,7 +398,7 @@ int mpECP_set_str(mpECP_t rpt, char *s, mpECurve_t cv) {
                             int error;
                             // B * y**2 = x**3 + A * x**2 + x
                             mpFp_t s;
-                            mpFp_init(s);
+                            mpFp_init_fp(s, cv->fp);
                             mpFp_mul(s, x, x);
                             mpFp_mul(t, s, x);
                             mpFp_mul(s, s, cv->coeff.mo.A);
@@ -444,7 +440,7 @@ int mpECP_set_str(mpECP_t rpt, char *s, mpECurve_t cv) {
 
 int  mpECP_out_strlen(mpECP_t pt, int compress) {
     int bytes;
-    bytes = _bytelen(pt->cv->bits);
+    bytes = _bytelen(pt->cvp->bits);
     // use common prefix (02, 03, 04) and then either X or X and Y
     if (compress == 0) {
         return (2 + (4 * bytes));
@@ -456,7 +452,7 @@ void mpECP_out_str(char *s, mpECP_t pt, int compress) {
     int i, bytes;
     char format[32];
     _mpECP_to_affine(pt);
-    bytes = _bytelen(pt->cv->bits);
+    bytes = _bytelen(pt->cvp->bits);
     // print format for n-bit (big endian) hexadecimal numbers (w/o '0x')
     sprintf(format,"%%0%dZX", (bytes * 2));
     //printf("mp_ECP_out_str format: %s\n", format);
@@ -492,40 +488,47 @@ void mpECP_out_str(char *s, mpECP_t pt, int compress) {
     //printf("prefix = %s\n", s);
     //gmp_printf(format, pt->x->i);
     //printf("\n");
-    if (pt->cv->type == EQTypeMontgomery) {
+    mpz_t xz;
+    mpz_init(xz);
+    if (pt->cvp->type == EQTypeMontgomery) {
         mpFp_t x;
-        mpFp_init(x);
+        mpFp_init_fp(x, pt->cvp->fp);
         _transform_ws_to_mo_x(x, pt);
-        gmp_sprintf(&s[2], format, x);
+        mpz_set_mpFp(xz, x);
         mpFp_clear(x);
     } else {
-        gmp_sprintf(&s[2], format, pt->x->i);
+        mpz_set_mpFp(xz, pt->x);
     }
+    gmp_sprintf(&s[2], format, xz);
     //printf("as string = %s\n", s);
     if (compress == 0) {
-        if (pt->cv->type == EQTypeMontgomery) {
+        mpz_t yz;
+        mpz_init(yz);
+        if (pt->cvp->type == EQTypeMontgomery) {
             mpFp_t y;
-            mpFp_init(y);
+            mpFp_init_fp(y, pt->cvp->fp);
             _transform_ws_to_mo_y(y, pt);
-            gmp_sprintf(&s[2 + (2 * bytes)], format, y);
-            mpFp_clear(y);
+            mpz_set_mpFp(yz, y);
         } else {
-            gmp_sprintf(&s[2 + (2 * bytes)], format, pt->y->i);
+            mpz_set_mpFp(yz, pt->y);
         }
+        gmp_sprintf(&s[2 + (2 * bytes)], format, yz);
         s[2 + (4 * bytes)] = 0;
+        mpz_clear(yz);
     } else {
         s[2 + (2 * bytes)] = 0;
     }
+    mpz_clear(xz);
     //printf("exported as %s\n", s);
     return;
 }
 
 void mpECP_neg(mpECP_t rpt, mpECP_t pt) {
     if (pt->is_neutral != 0) {
-        mpECP_set_neutral(rpt, pt->cv);
+        mpECP_set_neutral(rpt, pt->cvp);
         return;
     }
-    switch (pt->cv->type) {
+    switch (pt->cvp->type) {
         case EQTypeMontgomery:
             // Montgomery curve point internal representation is short-WS
         case EQTypeShortWeierstrass:
@@ -538,13 +541,13 @@ void mpECP_neg(mpECP_t rpt, mpECP_t pt) {
             mpFp_neg(rpt->x, pt->x);
             break;
         default:
-            assert(_known_curve_type(pt->cv));
+            assert(_known_curve_type(pt->cvp));
     }
     return;
 }
 
 int mpECP_cmp(mpECP_t pt1, mpECP_t pt2) {
-    if (mpECurve_cmp(pt1->cv, pt2->cv) != 0) return -1;
+    if (mpECurve_cmp(pt1->cvp, pt2->cvp) != 0) return -1;
     if (pt1->is_neutral != 0) {
         if (pt2->is_neutral != 0) {
             return 0;
@@ -553,7 +556,7 @@ int mpECP_cmp(mpECP_t pt1, mpECP_t pt2) {
     } else if (pt2->is_neutral != 0) {
         return -1;
     }
-    switch (pt1->cv->type) {
+    switch (pt1->cvp->type) {
         case EQTypeMontgomery:
             // Montgomery curve point internal representation is short-WS
         case EQTypeShortWeierstrass:
@@ -561,8 +564,8 @@ int mpECP_cmp(mpECP_t pt1, mpECP_t pt2) {
 #ifndef _MPECP_USE_RCB
             {
                 mpFp_t U1, U2;
-                mpFp_init(U1);
-                mpFp_init(U2);
+                mpFp_init_fp(U1, pt1->cvp->fp);
+                mpFp_init_fp(U2, pt1->cvp->fp);
                 mpFp_pow_ui(U1, pt2->z, 2);
                 mpFp_mul(U1, U1, pt1->x);
                 mpFp_pow_ui(U2, pt1->z, 2);
@@ -581,8 +584,8 @@ int mpECP_cmp(mpECP_t pt1, mpECP_t pt2) {
         case EQTypeEdwards:
         case EQTypeTwistedEdwards: {
                 mpFp_t U1, U2;
-                mpFp_init(U1);
-                mpFp_init(U2);
+                mpFp_init_fp(U1, pt1->cvp->fp);
+                mpFp_init_fp(U2, pt1->cvp->fp);
                 mpFp_mul(U1, pt2->z, pt1->x);
                 mpFp_mul(U2, pt1->z, pt2->x);
                 if (mpFp_cmp(U1, U2) != 0) return -1;
@@ -594,7 +597,7 @@ int mpECP_cmp(mpECP_t pt1, mpECP_t pt2) {
             }
             break;
         default:
-            assert(_known_curve_type(pt1->cv));
+            assert(_known_curve_type(pt1->cvp));
     }
     return 0;
 }
@@ -602,10 +605,10 @@ int mpECP_cmp(mpECP_t pt1, mpECP_t pt2) {
 void mpECP_swap(mpECP_t pt2, mpECP_t pt1) {
     int t;
     struct _p_mpECP_t *t_base_pt;
-    assert(mpECurve_cmp(pt1->cv, pt2->cv) == 0);
-    mpFp_swap(pt2->x, pt1->x);
-    mpFp_swap(pt2->y, pt1->y);
-    mpFp_swap(pt2->z, pt1->z);
+    assert(mpECurve_cmp(pt1->cvp, pt2->cvp) == 0);
+    mpFp_cswap(pt2->x, pt1->x, 1);
+    mpFp_cswap(pt2->y, pt1->y, 1);
+    mpFp_cswap(pt2->z, pt1->z, 1);
     t = pt2->is_neutral;
     pt2->is_neutral = pt1->is_neutral;
     pt1->is_neutral = t;
@@ -619,28 +622,23 @@ void mpECP_swap(mpECP_t pt2, mpECP_t pt1) {
 }
 
 static void _mpECP_cswap_safe(mpECP_t pt2, mpECP_t pt1, int swap) {
-    int a, b;
-    
+    int a[2];
+    swap = (swap != 0);
+
     mpFp_cswap(pt2->x, pt1->x, swap);
     mpFp_cswap(pt2->y, pt1->y, swap);
     mpFp_cswap(pt2->z, pt1->z, swap);
-    
-    a = pt1->is_neutral;
-    b = pt2->is_neutral;
-    
-    if (swap != 0) {
-        pt2->is_neutral = a;
-        pt1->is_neutral = b;
-    } else {
-        pt2->is_neutral = b;
-        pt1->is_neutral = a;
-    }
+
+    a[0] = pt1->is_neutral;
+    a[1] = pt2->is_neutral;
+    pt2->is_neutral = a[1-swap];
+    pt1->is_neutral = a[swap];
 
     return;
 }
 
 void mpECP_cswap(mpECP_t pt2, mpECP_t pt1, int swap) {
-    assert(mpECurve_cmp(pt1->cv, pt2->cv) == 0);
+    assert(mpECurve_cmp(pt1->cvp, pt2->cvp) == 0);
     assert(pt1->base_bits == 0);
     assert(pt2->base_bits == 0);
     _mpECP_cswap_safe(pt2, pt1, swap);
@@ -648,12 +646,12 @@ void mpECP_cswap(mpECP_t pt2, mpECP_t pt1, int swap) {
 
 void mpECP_add(mpECP_t rpt, mpECP_t pt1, mpECP_t pt2) {
 #ifdef _MPECP_USE_RCB
-    _mpFp_t *aa, *bb;
+    mpFp_ptr aa, bb;
 #endif
-    assert(mpECurve_cmp(pt1->cv, pt2->cv) == 0);
+    assert(mpECurve_cmp(pt1->cvp, pt2->cvp) == 0);
     if (pt1->is_neutral != 0) {
         if (pt2->is_neutral != 0) {
-            mpECP_set_neutral(rpt, pt1->cv);
+            mpECP_set_neutral(rpt, pt1->cvp);
             return;
         } else {
             mpECP_set(rpt, pt2);
@@ -665,15 +663,15 @@ void mpECP_add(mpECP_t rpt, mpECP_t pt1, mpECP_t pt2) {
     }
     if (rpt->base_bits != 0) _mpECP_base_pts_cleanup(rpt);
 #ifdef _MPECP_USE_RCB
-    aa = pt1->cv->coeff.ws.a;
-    bb = pt1->cv->coeff.ws.b;
+    aa = pt1->cvp->coeff.ws.a;
+    bb = pt1->cvp->coeff.ws.b;
 #endif
-    switch (pt1->cv->type) {
+    switch (pt1->cvp->type) {
         case EQTypeMontgomery:
             // Montgomery curve point internal representation is short-WS
 #ifdef _MPECP_USE_RCB
-            aa = pt1->cv->coeff.mo.ws_a;
-            bb = pt1->cv->coeff.mo.ws_b;
+            aa = pt1->cvp->coeff.mo.ws_a;
+            bb = pt1->cvp->coeff.mo.ws_b;
 #endif
         case EQTypeShortWeierstrass: {
             // RCB uses projective coords, so fall through to same xform as Ed
@@ -682,13 +680,13 @@ void mpECP_add(mpECP_t rpt, mpECP_t pt1, mpECP_t pt2) {
                 // 2015 Renes-Costello-Batina "Algorithm 1"
                 // from https://eprint.iacr.org/2015/1060.pdf
                 mpFp_t t0, t1, t2, t3, t4, t5, b3;
-                mpFp_init(t0);
-                mpFp_init(t1);
-                mpFp_init(t2);
-                mpFp_init(t3);
-                mpFp_init(t4);
-                mpFp_init(t5);
-                mpFp_init(b3);
+                mpFp_init_fp(t0, pt1->cvp->fp);
+                mpFp_init_fp(t1, pt1->cvp->fp);
+                mpFp_init_fp(t2, pt1->cvp->fp);
+                mpFp_init_fp(t3, pt1->cvp->fp);
+                mpFp_init_fp(t4, pt1->cvp->fp);
+                mpFp_init_fp(t5, pt1->cvp->fp);
+                mpFp_init_fp(b3, pt1->cvp->fp);
                 // TODO: Precalculate b3 and store in coeff.ws.b3
                 mpFp_add(b3, bb, bb);
                 mpFp_add(b3, b3, bb);
@@ -815,10 +813,10 @@ void mpECP_add(mpECP_t rpt, mpECP_t pt1, mpECP_t pt2) {
                 //40. Z3 <- Z3 + t0
                 mpFp_add(rpt->z, rpt->z, t0);
 
-                mpECurve_set(rpt->cv, pt1->cv);
+                rpt->cvp = pt1->cvp;
 
                 if (mpFp_cmp_ui(rpt->z, 0) == 0) {
-                    mpECP_set_neutral(rpt, pt1->cv);
+                    mpECP_set_neutral(rpt, pt1->cvp);
                 } else {
                     rpt->is_neutral = 0;
                 }
@@ -848,16 +846,16 @@ void mpECP_add(mpECP_t rpt, mpECP_t pt1, mpECP_t pt2) {
                 // Y3 = r*(V-X3)-2*S1*J
                 // Z3 = ((Z1+Z2)**2-Z1Z1-Z2Z2)*H
                 mpFp_t Z1Z1, Z2Z2, U1, U2, S1, S2, H, I, J, V;
-                mpFp_init(Z1Z1);
-                mpFp_init(Z2Z2);
-                mpFp_init(U1);
-                mpFp_init(U2);
-                mpFp_init(S1);
-                mpFp_init(S2);
-                mpFp_init(H);
-                mpFp_init(I);
-                mpFp_init(J);
-                mpFp_init(V);
+                mpFp_init_fp(Z1Z1, pt1->cvp->fp);
+                mpFp_init_fp(Z2Z2, pt1->cvp->fp);
+                mpFp_init_fp(U1, pt1->cvp->fp);
+                mpFp_init_fp(U2, pt1->cvp->fp);
+                mpFp_init_fp(S1, pt1->cvp->fp);
+                mpFp_init_fp(S2, pt1->cvp->fp);
+                mpFp_init_fp(H, pt1->cvp->fp);
+                mpFp_init_fp(I, pt1->cvp->fp);
+                mpFp_init_fp(J, pt1->cvp->fp);
+                mpFp_init_fp(V, pt1->cvp->fp);
                 // Z1Z1 = Z1**2
                 mpFp_pow_ui(Z1Z1, pt1->z, 2);
                 // Z2Z2 = Z2**2
@@ -880,7 +878,7 @@ void mpECP_add(mpECP_t rpt, mpECP_t pt1, mpECP_t pt2) {
                         // pt1 == -pt2 ? validate, return is_neutral
                         mpFp_neg(I, S2);
                         assert(mpFp_cmp(I, S1) == 0);
-                        mpECP_set_neutral(rpt, pt1->cv);
+                        mpECP_set_neutral(rpt, pt1->cvp);
                     }
                 } else {
                     // H = U2-U1
@@ -914,7 +912,7 @@ void mpECP_add(mpECP_t rpt, mpECP_t pt1, mpECP_t pt2) {
                     mpFp_sub(I, I, Z1Z1);
                     mpFp_sub(I, I, Z2Z2);
                     mpFp_mul(rpt->z, I, H);
-                    mpECurve_set(rpt->cv, pt1->cv);
+                    rpt->cvp = pt1->cvp;
                     rpt->is_neutral = 0;
                 }
                 // done... clean up temporary variables
@@ -946,14 +944,14 @@ void mpECP_add(mpECP_t rpt, mpECP_t pt1, mpECP_t pt2) {
                 // Y3 = A*G*(D-C)
                 // Z3 = c*F*G
                 mpFp_t A, B, C, D, E, F, G;
-                mpFp_init(A);
-                mpFp_init(B);
-                mpFp_init(C);
-                mpFp_init(D);
-                mpFp_init(E);
-                mpFp_init(F);
-                mpFp_init(G);
-                
+                mpFp_init_fp(A, pt1->cvp->fp);
+                mpFp_init_fp(B, pt1->cvp->fp);
+                mpFp_init_fp(C, pt1->cvp->fp);
+                mpFp_init_fp(D, pt1->cvp->fp);
+                mpFp_init_fp(E, pt1->cvp->fp);
+                mpFp_init_fp(F, pt1->cvp->fp);
+                mpFp_init_fp(G, pt1->cvp->fp);
+
                 // A = Z1*Z2
                 mpFp_mul(A, pt1->z, pt2->z);
                 // B = A**2
@@ -963,7 +961,7 @@ void mpECP_add(mpECP_t rpt, mpECP_t pt1, mpECP_t pt2) {
                 // D = Y1*Y2
                 mpFp_mul(D, pt1->y, pt2->y);
                 // E = d*C*D
-                mpFp_mul(E, pt1->cv->coeff.ed.d, C);
+                mpFp_mul(E, pt1->cvp->coeff.ed.d, C);
                 mpFp_mul(E, E, D);
                 // F = B-E
                 mpFp_sub(F, B, E);
@@ -983,11 +981,11 @@ void mpECP_add(mpECP_t rpt, mpECP_t pt1, mpECP_t pt2) {
                 mpFp_mul(B, B, G);
                 mpFp_mul(rpt->y, B, A);
                 // Z3 = c*F*G
-                mpFp_mul(B, pt1->cv->coeff.ed.c, G);
+                mpFp_mul(B, pt1->cvp->coeff.ed.c, G);
                 mpFp_mul(rpt->z, B, F);
-                mpECurve_set(rpt->cv, pt1->cv);
+                mpECurve_set(rpt->cvp, pt1->cvp);
                 rpt->is_neutral = 0;
-                
+
                 mpFp_clear(G);
                 mpFp_clear(F);
                 mpFp_clear(E);
@@ -1012,14 +1010,14 @@ void mpECP_add(mpECP_t rpt, mpECP_t pt1, mpECP_t pt2) {
                 // Y3 = A*G*(D-a*C)
                 // Z3 = F*G
                 mpFp_t A, B, C, D, E, F, G;
-                mpFp_init(A);
-                mpFp_init(B);
-                mpFp_init(C);
-                mpFp_init(D);
-                mpFp_init(E);
-                mpFp_init(F);
-                mpFp_init(G);
-                
+                mpFp_init_fp(A, pt1->cvp->fp);
+                mpFp_init_fp(B, pt1->cvp->fp);
+                mpFp_init_fp(C, pt1->cvp->fp);
+                mpFp_init_fp(D, pt1->cvp->fp);
+                mpFp_init_fp(E, pt1->cvp->fp);
+                mpFp_init_fp(F, pt1->cvp->fp);
+                mpFp_init_fp(G, pt1->cvp->fp);
+
                 // A = Z1*Z2
                 mpFp_mul(A, pt1->z, pt2->z);
                 // B = A**2
@@ -1029,7 +1027,7 @@ void mpECP_add(mpECP_t rpt, mpECP_t pt1, mpECP_t pt2) {
                 // D = Y1*Y2
                 mpFp_mul(D, pt1->y, pt2->y);
                 // E = d*C*D
-                mpFp_mul(E, pt1->cv->coeff.te.d, C);
+                mpFp_mul(E, pt1->cvp->coeff.te.d, C);
                 mpFp_mul(E, E, D);
                 // F = B-E
                 mpFp_sub(F, B, E);
@@ -1045,15 +1043,15 @@ void mpECP_add(mpECP_t rpt, mpECP_t pt1, mpECP_t pt2) {
                 mpFp_mul(B, B, F);
                 mpFp_mul(rpt->x, B, A);
                 // Y3 = A*G*(D-a*C)
-                mpFp_mul(C, C, pt1->cv->coeff.te.a);
+                mpFp_mul(C, C, pt1->cvp->coeff.te.a);
                 mpFp_sub(B, D, C);
                 mpFp_mul(B, B, G);
                 mpFp_mul(rpt->y, B, A);
                 // Z3 = F*G
                 mpFp_mul(rpt->z, G, F);
-                mpECurve_set(rpt->cv, pt1->cv);
+                mpECurve_set(rpt->cvp, pt1->cvp);
                 rpt->is_neutral = 0;
-                
+
                 mpFp_clear(G);
                 mpFp_clear(F);
                 mpFp_clear(E);
@@ -1065,18 +1063,18 @@ void mpECP_add(mpECP_t rpt, mpECP_t pt1, mpECP_t pt2) {
             }
             break;
         default:
-            assert(_known_curve_type(pt1->cv));
+            assert(_known_curve_type(pt1->cvp));
     }
     assert(0);
 }
 
 void mpECP_double(mpECP_t rpt, mpECP_t pt) {
     if (pt->is_neutral != 0) {
-        mpECP_set_neutral(rpt, pt->cv);
+        mpECP_set_neutral(rpt, pt->cvp);
         return;
     }
     if (rpt->base_bits != 0) _mpECP_base_pts_cleanup(rpt);
-    switch (pt->cv->type) {
+    switch (pt->cvp->type) {
         case EQTypeMontgomery:
             // Montgomery curve point internal representation is short-WS
         case EQTypeShortWeierstrass:
@@ -1096,13 +1094,13 @@ void mpECP_double(mpECP_t rpt, mpECP_t pt) {
                 // Y3 = M*(S-T)-8*YYYY
                 // Z3 = (Y1+Z1)**2-YY-ZZ
                 mpFp_t XX, YY, YYYY, ZZ, S, M, T;
-                mpFp_init(XX);
-                mpFp_init(YY);
-                mpFp_init(YYYY);
-                mpFp_init(ZZ);
-                mpFp_init(S);
-                mpFp_init(M);
-                mpFp_init(T);
+                mpFp_init_fp(XX, pt->cvp->fp);
+                mpFp_init_fp(YY, pt->cvp->fp);
+                mpFp_init_fp(YYYY, pt->cvp->fp);
+                mpFp_init_fp(ZZ, pt->cvp->fp);
+                mpFp_init_fp(S, pt->cvp->fp);
+                mpFp_init_fp(M, pt->cvp->fp);
+                mpFp_init_fp(T, pt->cvp->fp);
                 // XX = X1**2
                 mpFp_pow_ui(XX, pt->x, 2);
                 // YY = Y1**2
@@ -1119,10 +1117,10 @@ void mpECP_double(mpECP_t rpt, mpECP_t pt) {
                 mpFp_mul_ui(S, S, 2);
                 // M = 3*XX+a*ZZ**2
                 mpFp_pow_ui(M, ZZ, 2);
-                if (pt->cv->type == EQTypeMontgomery) {
-                    mpFp_mul(M, M, pt->cv->coeff.mo.ws_a);
+                if (pt->cvp->type == EQTypeMontgomery) {
+                    mpFp_mul(M, M, pt->cvp->coeff.mo.ws_a);
                 } else {
-                    mpFp_mul(M, M, pt->cv->coeff.ws.a);
+                    mpFp_mul(M, M, pt->cvp->coeff.ws.a);
                 }
                 mpFp_mul_ui(T, XX, 3);
                 mpFp_add(M, M, T);
@@ -1152,7 +1150,7 @@ void mpECP_double(mpECP_t rpt, mpECP_t pt) {
                 mpFp_clear(YYYY);
                 mpFp_clear(YY);
                 mpFp_clear(XX);
-                mpECurve_set(rpt->cv, pt->cv);
+                mpECurve_set(rpt->cvp, pt->cvp);
                 rpt->is_neutral = 0;
                 return;
             }
@@ -1166,22 +1164,22 @@ void mpECP_double(mpECP_t rpt, mpECP_t pt) {
             }
             break;
         default:
-            assert(_known_curve_type(pt->cv));
+            assert(_known_curve_type(pt->cvp));
     }
     assert(0);
 }
 
 void mpECP_sub(mpECP_t rpt, mpECP_t pt1, mpECP_t pt2) {
-    assert(mpECurve_cmp(pt1->cv, pt2->cv) == 0);
+    assert(mpECurve_cmp(pt1->cvp, pt2->cvp) == 0);
     if (pt2->is_neutral != 0) {
         if (pt1->is_neutral != 0) {
-            mpECP_set_neutral(rpt, pt1->cv);
+            mpECP_set_neutral(rpt, pt1->cvp);
         } else {
             mpECP_set(rpt, pt1);
         }
     } else {
         mpECP_t n;
-        mpECP_init(n);
+        mpECP_init(n, pt1->cvp);
         mpECP_neg(n, pt2);
         mpECP_add(rpt, pt1, n);
         mpECP_clear(n);
@@ -1192,19 +1190,18 @@ void mpECP_sub(mpECP_t rpt, mpECP_t pt1, mpECP_t pt2) {
 void mpECP_scalar_mul(mpECP_t rpt, mpECP_t pt, mpFp_t sc) {
     int i, b;
     mpECP_t R0, R1;
-    mpECP_init(R0);
-    mpECP_init(R1);
-    mpECP_set_neutral(R0, pt->cv);
+    mpECP_init(R0, pt->cvp);
+    mpECP_init(R1, pt->cvp);
+    mpECP_set_neutral(R0, pt->cvp);
     mpECP_set(R1, pt);
     // scalar should be modulo the order of the curve
-    assert(mpz_cmp(sc->p, pt->cv->n) == 0);
-    for (i = pt->cv->bits - 1; i >= 0 ; i--) {
+    assert(mpz_cmp(sc->fp->p, pt->cvp->n) == 0);
+    for (i = pt->cvp->bits - 1; i >= 0 ; i--) {
         b = mpFp_tstbit(sc, i);
-        //printf("bit %d = %d\n", i, b);
-        _mpECP_cswap_safe(R0, R1, b);
+        mpECP_cswap(R0, R1, b);
         mpECP_add(R1, R1, R0);
         mpECP_double(R0, R0);
-        _mpECP_cswap_safe(R0, R1, b);
+        mpECP_cswap(R0, R1, b);
     }
     mpECP_set(rpt, R0);
     mpECP_clear(R1);
@@ -1214,8 +1211,8 @@ void mpECP_scalar_mul(mpECP_t rpt, mpECP_t pt, mpFp_t sc) {
 
 void mpECP_scalar_mul_mpz(mpECP_t rpt, mpECP_t pt, mpz_t sc) {
     mpFp_t s;
-    mpFp_init(s);
-    mpFp_set_mpz(s, sc, pt->cv->n);
+    mpFp_init_fp(s, pt->cvp->fp);
+    mpFp_set_mpz(s, sc, pt->cvp->n);
     mpECP_scalar_mul(rpt, pt, s);
     mpFp_clear(s);
     return;
@@ -1230,25 +1227,25 @@ void mpECP_scalar_base_mul_setup(mpECP_t pt) {
         // already set up... 
         return;
     }
-    mpECP_init(a);
-    mpECP_init(b);
+    mpECP_init(a, pt->cvp);
+    mpECP_init(b, pt->cvp);
     assert(pt->base_bits == 0);
     pt->base_bits = _MPECP_BASE_BITS;
     npts = _mpECP_n_base_pts(pt);
     base_pt = (struct _p_mpECP_t *)malloc(npts * sizeof(struct _p_mpECP_t));
     for (i = 0; i < npts; i++) {
-        mpECP_init(&base_pt[i]);
+        mpECP_init(&base_pt[i], pt->cvp);
     }
     level_pt = (struct _p_mpECP_t *)malloc(pt->base_bits * sizeof(struct _p_mpECP_t));
     for (i = 0; i < pt->base_bits; i++) {
-        mpECP_init(&(level_pt[i]));
+        mpECP_init(&(level_pt[i]), pt->cvp);
     }
     nlevels = _mpECP_n_base_pt_levels(pt);
     levelsz = _mpECP_n_base_pt_level_size(pt);
     // printf("setup: levels = %d, levelsz = %d\n", nlevels, levelsz);
     mpECP_set(a, pt);
     for (j = 0; j < nlevels; j++) {
-        mpECP_set_neutral(b, pt->cv);
+        mpECP_set_neutral(b, pt->cvp);
         for (i = 0; i < levelsz; i++) {
             mpECP_set(&base_pt[(j * levelsz) + i], b);
             mpECP_add(b, b, a);
@@ -1265,12 +1262,14 @@ void mpECP_scalar_base_mul(mpECP_t rpt, mpECP_t pt, mpFp_t sc) {
     int j, k, nlevels, levelsz;
     mpz_t s, kmpz;
     mpECP_t a;
-    assert (mpz_cmp(sc->p, pt->cv->n) == 0);
-    mpECP_scalar_base_mul_setup(pt);
+    assert (mpz_cmp(sc->fp->p, pt->cvp->n) == 0);
+    if (pt->base_bits == 0) {
+        mpECP_scalar_base_mul_setup(pt);
+    }
     mpz_init(s);
     mpz_init(kmpz);
-    mpECP_init(a);
-    mpECP_set_neutral(a, pt->cv);
+    mpECP_init(a, pt->cvp);
+    mpECP_set_neutral(a, pt->cvp);
     mpz_set_mpFp(s, sc);
     nlevels = _mpECP_n_base_pt_levels(pt);
     levelsz = _mpECP_n_base_pt_level_size(pt);
@@ -1289,19 +1288,18 @@ void mpECP_scalar_base_mul(mpECP_t rpt, mpECP_t pt, mpFp_t sc) {
 
 void mpECP_scalar_base_mul_mpz(mpECP_t rpt, mpECP_t pt, mpz_t s) {
     mpFp_t sc;
-    mpFp_init(sc);
-    mpFp_set_mpz(sc, s, pt->cv->n);
+    mpFp_init_fp(sc, pt->cvp->fp);
+    mpFp_set_mpz(sc, s, pt->cvp->n);
     mpECP_scalar_base_mul(rpt, pt, sc);
     mpFp_clear(sc);
     return;
 }
 
-
 void mpECP_urandom(mpECP_t rpt, mpECurve_t cv) {
     mpFp_t a;
     mpECP_t g;
-    mpFp_init(a);
-    mpECP_init(g);
+    mpFp_init_fp(a, cv->fp);
+    mpECP_init(g, cv);
     mpECP_set_mpz(g, cv->G[0], cv->G[1], cv);
     mpFp_urandom(a, cv->n);
     mpECP_scalar_mul(rpt, g, a);

@@ -53,24 +53,29 @@ int main(int argc, char** argv) {
     char **clist;
     int64_t start_time, stop_time;
 
+    printf("\"curve\", \"num_iter\", \"time\", \"rate\",\n");
+
     mpECurve_init(cv);
-    mpECP_init(rpt);
     for (i = 0; i < BENCH_SZ; i++) {
         mpz_init(n[i]);
-        mpECP_init(pt[i]);
     }
-
-    printf("\"curve\", \"num_iter\", \"time\", \"rate\",\n");
 
     clist = _mpECurve_list_standard_curves();
     i = 0;
     while (clist[i] != NULL) {
         status = mpECurve_set_named(cv, clist[i]);
         assert(status == 0);
+
+        mpECP_init(rpt, cv);
+        for (j = 0; j < BENCH_SZ; j++) {
+            mpz_init(n[j]);
+            mpECP_init(pt[j], cv);
+        }
+
         //printf("initializing test vectors\n");
         for (j = 0; j < BENCH_SZ; j++) {
             mpECP_urandom(pt[j], cv);
-            mpz_urandom(n[j], cv->p);
+            mpz_urandom(n[j], cv->fp->p);
         }
 
         start_time = clock();
@@ -85,7 +90,17 @@ int main(int argc, char** argv) {
         mul_rate = (double)(BENCH_SZ * BENCH_SZ) / cpu_time;
         printf("\"%s\", %d, %lf, %lf,\n", clist[i], (int)(BENCH_SZ*BENCH_SZ),cpu_time, mul_rate);
 
+        mpECP_clear(rpt);
+        for (j = 0; j < BENCH_SZ; j++) {
+            mpECP_clear(pt[j]);
+        }
+
         i += 1;
     }
+
+    for (i = 0; i < BENCH_SZ; i++) {
+        mpz_clear(n[i]);
+    }
+
     return 0;
 }

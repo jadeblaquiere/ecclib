@@ -41,10 +41,11 @@ START_TEST(test_mpECP_create)
     mpECurve_t cv;
     mpECP_t a;
     mpECurve_init(cv);
-    mpECP_init(a);
     
     error = mpECurve_set_named(cv, "secp256k1");
     assert(error == 0);
+
+    mpECP_init(a, cv);
     mpECP_set_mpz(a, cv->G[0], cv->G[1], cv);
 
     mpECP_clear(a);
@@ -57,7 +58,6 @@ START_TEST(test_mpECP_str_out)
     mpECurve_t cv;
     mpECP_t a;
     mpECurve_init(cv);
-    mpECP_init(a);
     
     ncurves = sizeof(test_curve) / sizeof(test_curve[0]);
     for (i = 0 ; i < ncurves; i++) {
@@ -65,6 +65,7 @@ START_TEST(test_mpECP_str_out)
         char *buffer;
         error = mpECurve_set_named(cv, test_curve[i]);
         assert(error == 0);
+        mpECP_init(a, cv);
         mpECP_set_mpz(a, cv->G[0], cv->G[1], cv);
         printf("Exporting base point for curve %s:\n", test_curve[i]);
         slen = mpECP_out_strlen(a, 1);
@@ -79,9 +80,9 @@ START_TEST(test_mpECP_str_out)
         mpECP_out_str(buffer, a, 0);
         printf("Uncompressed : %s\n", buffer);
         assert(strlen(buffer) == slen);
+        mpECP_clear(a);
     }
 
-    mpECP_clear(a);
     mpECurve_clear(cv);
 END_TEST
 
@@ -91,9 +92,6 @@ START_TEST(test_mpECP_affine)
     mpECurve_t cv;
     mpECP_t a, b, c;
     mpECurve_init(cv);
-    mpECP_init(a);
-    mpECP_init(b);
-    mpECP_init(c);
     
     ncurves = sizeof(test_curve) / sizeof(test_curve[0]);
     for (i = 0 ; i < ncurves; i++) {
@@ -102,6 +100,9 @@ START_TEST(test_mpECP_affine)
         mpz_init(y);
         error = mpECurve_set_named(cv, test_curve[i]);
         assert(error == 0);
+        mpECP_init(a, cv);
+        mpECP_init(b, cv);
+        mpECP_init(c, cv);
         mpECP_set_mpz(a, cv->G[0], cv->G[1], cv);
         printf("Exporting affine base point for curve %s:\n", test_curve[i]);
         mpz_set_mpECP_affine_x(x, a);
@@ -113,11 +114,11 @@ START_TEST(test_mpECP_affine)
         assert(mpECP_cmp(a,b) == 0);
         mpz_clear(y);
         mpz_clear(x);
+        mpECP_clear(c);
+        mpECP_clear(b);
+        mpECP_clear(a);
     }
 
-    mpECP_clear(c);
-    mpECP_clear(b);
-    mpECP_clear(a);
     mpECurve_clear(cv);
 END_TEST
 
@@ -127,7 +128,6 @@ START_TEST(test_mpECP_infinity)
     mpECurve_t cv;
     mpECP_t a;
     mpECurve_init(cv);
-    mpECP_init(a);
     
     ncurves = sizeof(test_curve) / sizeof(test_curve[0]);
     for (i = 0 ; i < ncurves; i++) {
@@ -135,6 +135,7 @@ START_TEST(test_mpECP_infinity)
         char *buffer;
         error = mpECurve_set_named(cv, test_curve[i]);
         assert(error == 0);
+        mpECP_init(a, cv);
         mpECP_set_neutral(a, cv);
         printf("Exporting neutral point for curve %s:\n", test_curve[i]);
         slen = mpECP_out_strlen(a, 1);
@@ -149,9 +150,9 @@ START_TEST(test_mpECP_infinity)
         mpECP_out_str(buffer, a, 0);
         assert(strlen(buffer) == slen);
         printf("Uncompressed : %s\n", buffer);
+        mpECP_clear(a);
     }
 
-    mpECP_clear(a);
     mpECurve_clear(cv);
 END_TEST
 
@@ -162,7 +163,6 @@ START_TEST(test_mpECP_urandom)
     mpECP_t a;
     mpz_t x, y;
     mpECurve_init(cv);
-    mpECP_init(a);
     mpz_init(x);
     mpz_init(y);
     
@@ -172,6 +172,7 @@ START_TEST(test_mpECP_urandom)
         char *buffer;
         error = mpECurve_set_named(cv, test_curve[i]);
         assert(error == 0);
+        mpECP_init(a, cv);
         mpECP_set_neutral(a, cv);
         slen = mpECP_out_strlen(a, 0);
         buffer = malloc((slen + 1)* sizeof(char));
@@ -192,11 +193,11 @@ START_TEST(test_mpECP_urandom)
             printf("Uncompressed : %s\n", buffer);
         }
         free(buffer);
+        mpECP_clear(a);
     }
 
     mpz_clear(y);
     mpz_clear(x);
-    mpECP_clear(a);
     mpECurve_clear(cv);
 END_TEST
 
@@ -206,8 +207,6 @@ START_TEST(test_mpECP_export_import)
     mpECurve_t cv;
     mpECP_t a, b;
     mpECurve_init(cv);
-    mpECP_init(a);
-    mpECP_init(b);
     
     ncurves = sizeof(test_curve) / sizeof(test_curve[0]);
     for (i = 0 ; i < ncurves; i++) {
@@ -215,6 +214,8 @@ START_TEST(test_mpECP_export_import)
         char *buffer;
         error = mpECurve_set_named(cv, test_curve[i]);
         assert(error == 0);
+        mpECP_init(a, cv);
+        mpECP_init(b, cv);
         mpECP_set_mpz(a, cv->G[0], cv->G[1], cv);
         // printf("Exporting base point for curve %s:\n", test_curve[i]);
         slen = mpECP_out_strlen(a, 0);
@@ -249,7 +250,7 @@ START_TEST(test_mpECP_export_import)
         //assert(mpFp_cmp(a->y, b->y) == 0);
         //assert(mpFp_cmp(a->z, b->z) == 0);
         assert(a->is_neutral == b->is_neutral);
-        assert(a->cv->type == b->cv->type);
+        assert(a->cvp->type == b->cvp->type);
         assert(mpECP_cmp(a, b) == 0);
         mpECP_set_neutral(a, cv);
         // printf("Exporting neutral for curve %s:\n", test_curve[i]);
@@ -277,10 +278,10 @@ START_TEST(test_mpECP_export_import)
         // printf("Export/import: %s\n", buffer);
         assert(error == 0);
         assert(mpECP_cmp(a, b) == 0);
+        mpECP_clear(b);
+        mpECP_clear(a);
     }
 
-    mpECP_clear(b);
-    mpECP_clear(a);
     mpECurve_clear(cv);
 END_TEST
 
@@ -418,11 +419,7 @@ START_TEST(test_mpECP_add)
     mpECurve_t cv;
     mpECP_t a, b, c, d;
     mpECurve_init(cv);
-    mpECP_init(a);
-    mpECP_init(b);
-    mpECP_init(c);
-    mpECP_init(d);
-    
+
     npoints = sizeof(test_point) / sizeof(test_point[0]);
     for (i = 0 ; i < npoints ; i++) {
         int slen;
@@ -430,6 +427,10 @@ START_TEST(test_mpECP_add)
 
         error = mpECurve_set_named(cv, test_point[i].curve);
         assert(error == 0);
+        mpECP_init(a, cv);
+        mpECP_init(b, cv);
+        mpECP_init(c, cv);
+        mpECP_init(d, cv);
         error = mpECP_set_str(a, test_point[i].pub, cv);
         assert(error == 0);
         slen = mpECP_out_strlen(a, 0);
@@ -460,12 +461,12 @@ START_TEST(test_mpECP_add)
             assert(mpECP_cmp(a, b) == 0);
         }
         free(buffer);
+        mpECP_clear(d);
+        mpECP_clear(c);
+        mpECP_clear(b);
+        mpECP_clear(a);
     }
 
-    mpECP_clear(d);
-    mpECP_clear(c);
-    mpECP_clear(b);
-    mpECP_clear(a);
     mpECurve_clear(cv);
 END_TEST
 
@@ -474,9 +475,6 @@ START_TEST(test_mpECP_double)
     mpECurve_t cv;
     mpECP_t a, b, c;
     mpECurve_init(cv);
-    mpECP_init(a);
-    mpECP_init(b);
-    mpECP_init(c);
     
     npoints = sizeof(test_point) / sizeof(test_point[0]);
     for (i = 0 ; i < npoints; i++) {
@@ -485,6 +483,9 @@ START_TEST(test_mpECP_double)
         
         error = mpECurve_set_named(cv, test_point[i].curve);
         assert(error == 0);
+        mpECP_init(a, cv);
+        mpECP_init(b, cv);
+        mpECP_init(c, cv);
         error = mpECP_set_str(a, test_point[i].pub, cv);
         assert(error == 0);
         slen = mpECP_out_strlen(a, 0);
@@ -509,11 +510,11 @@ START_TEST(test_mpECP_double)
         // printf("=A: %s\n\n", buffer);
         assert(mpECP_cmp(a, b) == 0);
         free(buffer);
+        mpECP_clear(c);
+        mpECP_clear(b);
+        mpECP_clear(a);
     }
 
-    mpECP_clear(c);
-    mpECP_clear(b);
-    mpECP_clear(a);
     mpECurve_clear(cv);
 END_TEST
 
@@ -524,15 +525,16 @@ START_TEST(test_mpECP_add_mul)
     mpECP_t a, b, c;
     mpz_t r;
     mpECurve_init(cv);
-    mpECP_init(a);
-    mpECP_init(b);
-    mpECP_init(c);
     mpz_init(r);
 
     ncurves = sizeof(test_curve) / sizeof(test_curve[0]);
     for (i = 0 ; i < ncurves; i++) {
+        printf("testing add / mul for curve %s\n", test_curve[i]);
         error = mpECurve_set_named(cv, test_curve[i]);
         assert(error == 0);
+        mpECP_init(a, cv);
+        mpECP_init(b, cv);
+        mpECP_init(c, cv);
         mpECP_set_mpz(a, cv->G[0], cv->G[1], cv);
         for (j = 0; j < 200; j++) {
             mpz_set_ui(r, j);
@@ -551,21 +553,21 @@ START_TEST(test_mpECP_add_mul)
                 //mpECP_out_str(buffer, a, 0);
                 //printf(" A: %s\n", buffer);
                 //printf("---------\n");
-                if (mpECP_cmp(b, c) != 0) {
-                    mpECP_out_str(buffer, b, 0);
-                    printf(" B: %s\n", buffer);
-                }
-                mpECP_out_str(buffer, c, 0);
+                mpECP_out_str(buffer, b, 0);
                 printf("%s\n", buffer);
+                if (mpECP_cmp(b, c) != 0) {
+                    mpECP_out_str(buffer, c, 0);
+                    printf(" C: %s\n", buffer);
+                }
                 
             }
             assert (mpECP_cmp(b, c) == 0);
         }
+        mpECP_clear(c);
+        mpECP_clear(b);
+        mpECP_clear(a);
     }
     mpz_clear(r);
-    mpECP_clear(c);
-    mpECP_clear(b);
-    mpECP_clear(a);
     mpECurve_clear(cv);
 END_TEST
 
@@ -575,9 +577,6 @@ START_TEST(test_mpECP_scalar_mul)
     mpECP_t a, b, c;
     mpz_t r;
     mpECurve_init(cv);
-    mpECP_init(a);
-    mpECP_init(b);
-    mpECP_init(c);
     mpz_init(r);
     
     npoints = sizeof(test_point) / sizeof(test_point[0]);
@@ -587,6 +586,9 @@ START_TEST(test_mpECP_scalar_mul)
         
         error = mpECurve_set_named(cv, test_point[i].curve);
         assert(error == 0);
+        mpECP_init(a, cv);
+        mpECP_init(b, cv);
+        mpECP_init(c, cv);
         mpECP_set_mpz(a, cv->G[0], cv->G[1], cv);
         slen = mpECP_out_strlen(a, 0);
         buffer = malloc((slen + 1)* sizeof(char));
@@ -606,12 +608,12 @@ START_TEST(test_mpECP_scalar_mul)
         // printf("=C: %s\n\n", buffer);
         assert(mpECP_cmp(b, c) == 0);
         free(buffer);
+        mpECP_clear(c);
+        mpECP_clear(b);
+        mpECP_clear(a);
     }
 
     mpz_clear(r);
-    mpECP_clear(c);
-    mpECP_clear(b);
-    mpECP_clear(a);
     mpECurve_clear(cv);
 END_TEST
 
@@ -621,13 +623,13 @@ START_TEST(test_mpECP_scalar_base_mul)
     mpECP_t a, b, c;
     mpz_t r;
     mpECurve_init(cv);
-    mpECP_init(a);
-    mpECP_init(b);
-    mpECP_init(c);
     mpz_init(r);
     
     error = mpECurve_set_named(cv, test_point[0].curve);
     assert(error == 0);
+    mpECP_init(a, cv);
+    mpECP_init(b, cv);
+    mpECP_init(c, cv);
     mpECP_set_mpz(a, cv->G[0], cv->G[1], cv);
     mpECP_scalar_base_mul_setup(a);
     npoints = sizeof(test_point) / sizeof(test_point[0]);
@@ -637,8 +639,14 @@ START_TEST(test_mpECP_scalar_base_mul)
         
         if (i > 0) {
             if (strcmp(test_point[i].curve, test_point[i-1].curve) != 0) {
+                mpECP_clear(c);
+                mpECP_clear(b);
+                mpECP_clear(a);
                 error = mpECurve_set_named(cv, test_point[i].curve);
                 assert(error == 0);
+                mpECP_init(a, cv);
+                mpECP_init(b, cv);
+                mpECP_init(c, cv);
                 mpECP_set_mpz(a, cv->G[0], cv->G[1], cv);
                 mpECP_scalar_base_mul_setup(a);
             }
@@ -681,12 +689,12 @@ static Suite *mpECP_test_suite(void) {
     tcase_add_test(tc, test_mpECP_str_out);
     tcase_add_test(tc, test_mpECP_affine);
     tcase_add_test(tc, test_mpECP_infinity);
-    tcase_add_test(tc, test_mpECP_urandom);
     tcase_add_test(tc, test_mpECP_export_import);
     tcase_add_test(tc, test_mpECP_add);
     tcase_add_test(tc, test_mpECP_double);
     tcase_add_test(tc, test_mpECP_add_mul);
     tcase_add_test(tc, test_mpECP_scalar_mul);
+    tcase_add_test(tc, test_mpECP_urandom);
     tcase_add_test(tc, test_mpECP_scalar_base_mul);
     suite_add_tcase(s, tc);
     return s;
