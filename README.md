@@ -8,6 +8,13 @@ ecclib provides basic handling of math within the multiplicative field of
 integers modulo an odd prime p (i.e. the ring Z/pZ, also denoted Zp) and extends that
 capability to elliptic curve points over that ring, i.e. E(Fp).
 
+The implementation leverages complete addition formulae for all curve types, The Edwards
+and Twisted Edwards addition laws are complete by default. The short Weierstrass
+implementation uses the Renes, Costello and Batina formula which is complete. In order
+to provide the full set of operations Montgomery curves are transformed to short
+Weierstrass and use the same formula. In all cases the multiplication is via the 
+Brier-Joye ladder.
+
 ## capabilities
 
 Basic operations:
