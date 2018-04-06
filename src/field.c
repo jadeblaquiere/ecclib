@@ -231,13 +231,26 @@ int mpFp_cmp_ui(mpFp_t a, unsigned long b) {
 void mpFp_neg(mpFp_t c, mpFp_t a) {
     mpFp_field_ptr fp;
     mp_limb_t borrow;
+    int i;
     PARANOID_ASSERT(a->fp == c->fp);
     fp = a->fp;
     //mpz_realloc(c->i, fp->p2size);
     mpFp_realloc(c);
 
-    borrow = mpn_sub_n(c->i->_mp_d, fp->p->_mp_d, a->i->_mp_d, fp->psize);
-    PARANOID_ASSERT(borrow == 0);
+    // -0 = 0, need to detect 0
+    borrow = 0;
+    for (i = 0; i < a->fp->psize; i++) {
+        borrow |= a->i->_mp_d[i];
+    }
+
+    if (__GMP_UNLIKELY(borrow == 0)) {
+        for (i = 0; i < a->fp->psize; i++) {
+            c->i->_mp_d[i] = 0;
+        }
+    } else {
+        borrow = mpn_sub_n(c->i->_mp_d, fp->p->_mp_d, a->i->_mp_d, fp->psize);
+        PARANOID_ASSERT(borrow == 0);
+    }
 
     c->i->_mp_size = fp->psize;
     //c->fp = fp;

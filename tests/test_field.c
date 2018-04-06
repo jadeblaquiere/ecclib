@@ -108,6 +108,43 @@ unsigned long int ui_urandom(unsigned long int max) {
     return value;
 }
 
+START_TEST(test_mpFp_neg_basic)
+    mpFp_t a, b, c;
+    mpz_t p;
+    mpz_t d;
+    mpz_init(p);
+    mpz_init(d);
+
+    mpz_set_ui(p, 17);
+    mpz_set_ui(d, 12);
+
+    mpFp_init(a, p);
+    mpFp_init(b, p);
+    mpFp_init(c, p);
+
+    mpFp_set_mpz(a, d, p);
+    mpFp_set_ui(b, 9, p);
+    mpFp_neg(c, a);
+    assert(mpFp_cmp_ui(c, 5) == 0);
+    mpFp_neg(c, b);
+    assert(mpFp_cmp_ui(c, 8) == 0);
+    mpFp_set_ui(b, 0, p);
+    mpFp_neg(c, b);
+    assert(mpFp_cmp_ui(c, 0) == 0);
+    mpFp_set_ui(b, 1, p);
+    mpFp_neg(c, b);
+    assert(mpFp_cmp_ui(c, 16) == 0);
+    mpFp_set_ui(b, 16, p);
+    mpFp_neg(c, b);
+    assert(mpFp_cmp_ui(c, 1) == 0);
+
+    mpz_clear(d);
+    mpz_clear(p);
+    mpFp_clear(c);
+    mpFp_clear(b);
+    mpFp_clear(a);
+END_TEST
+
 START_TEST(test_mpFp_add_basic)
     int64_t i,j;
     mpFp_t a, b, c;
@@ -1690,6 +1727,7 @@ static Suite *mpFp_test_suite(void) {
     s = suite_create("Multi-Precision over Prime Fields");
     tc = tcase_create("arithmetic");
 
+    tcase_add_test(tc, test_mpFp_neg_basic);
     tcase_add_test(tc, test_mpFp_add_basic);
     tcase_add_test(tc, test_mpFp_add_extended);
     tcase_add_test(tc, test_mpFp_sub_basic);
