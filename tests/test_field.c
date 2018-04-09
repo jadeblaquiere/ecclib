@@ -216,7 +216,7 @@ START_TEST(test_mpFp_add_basic)
             if (mpz_cmp(aa, p) >= 0) {
                 mpz_sub(aa, aa, p);
             }
-            assert(mpz_cmp(a->i, aa) == 0);
+            assert(mpFp_cmp_mpz(a, aa) == 0);
         }
     }
 

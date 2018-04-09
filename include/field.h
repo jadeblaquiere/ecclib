@@ -112,6 +112,7 @@ int mpFp_inv(mpFp_t rop, mpFp_t op);
 
 int mpFp_cmp(mpFp_t op1, mpFp_t op2);
 int mpFp_cmp_ui(mpFp_t op1, unsigned long op2);
+int mpFp_cmp_mpz(mpFp_t op1, mpz_t op2);
 
 /* modular square root - return nonzero if not quadratic residue */ 
 

@@ -228,6 +228,29 @@ int mpFp_cmp_ui(mpFp_t a, unsigned long b) {
     return cmp;
 }
 
+int mpFp_cmp_mpz(mpFp_t a, mpz_t b) {
+    mpFp_field_ptr fp;
+    int compare = 0;
+    int i;
+
+    fp = a->fp;
+
+    // a cannot represent negative
+    if (b->_mp_size < 0) return 1;
+    // if b contains more nonzero limbs it must be different
+    if (b->_mp_size > fp->psize) return 1;
+    
+    for (i = 0; i < b->_mp_size; i++) {
+        compare |= (a->i->_mp_d[i] != b->_mp_d[i]);
+    }
+    
+    for (i = b->_mp_size; i < fp->psize; i++) {
+        compare |= (a->i->_mp_d[i] != 0);
+    }
+
+    return compare;
+}
+
 void mpFp_neg(mpFp_t c, mpFp_t a) {
     mpFp_field_ptr fp;
     mp_limb_t borrow;
