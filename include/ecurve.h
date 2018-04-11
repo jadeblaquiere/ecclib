@@ -138,7 +138,7 @@ int mpECurve_cmp(mpECurve_t op1, mpECurve_t op2);
 the curve names. This call returns the list, it is the responsibility of the
 caller to free the individual names and then the list itself. The curve list
 returned is NULL terminated. This is primarily intended for testing*/
-char **_mpECurve_list_standard_curves();
+char **_mpECurve_list_standard_curves(void);
 
 #ifdef __cplusplus
 }

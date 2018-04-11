@@ -30,6 +30,7 @@
 
 #include <gmp.h>
 #include <pyfield.h>
+#include <pygmplong.h>
 #include <Python.h>
 #include <structmember.h>
 
@@ -39,102 +40,6 @@ static inline void mpFp_realloc(mpFp_t c) {
     if (__GMP_UNLIKELY(c->i->_mp_alloc < c->fp->p2size)) {
         mpz_realloc(c->i, c->fp->p2size);
     }
-}
-
-static int _pylong_to_mpz(PyLongObject *pobj, mpz_t pmpz) {
-	mp_limb_t pdata[_MPFP_MAX_LIMBS];
-	size_t psz;
-	int status;
-	int negative;
-
-	if (pobj == NULL) {
-    	return -1;
-	}
-
-	if (!PyLong_Check(pobj)) {
-		return -1;
-	}
-
-	// calculate the byte length of p
-	psz = _PyLong_NumBits((PyObject*)pobj);
-	//printf("psz = %d\n", psz);
-	psz >>= 3;
-
-	if (psz > sizeof(pdata)) {
-		return -1;
-	}
-	
-	// convert to bytes, initial 1 implies little endian, final 1 implies signed
-	status = _PyLong_AsByteArray(pobj, (unsigned char *)pdata, psz+1, 1, 1);
-
-	//{
-	//	int i;
-	//	printf("p= 0x");
-	//	for (i = 0; i <= psz; i++) {
-	//		printf("%02X", ((unsigned char *)pdata)[i]);
-	//	}
-	//	printf("\n");
-	//}
-
-	if (status != 0) {
-		return -1;
-	}
-
-	// mpz_import is inherently unsigned... detect sign
-	negative = (((unsigned char *)pdata)[psz] & 0x80) != 0;
-	
-	// take 1's complement if negative
-	if (negative) {
-		int i;
-		for (i = 0; i <= psz; i++) {
-			((unsigned char *)pdata)[i] ^= 0xFF;
-		}
-	}
-
-	// convert bytes to mpz, -1 implies little endian (wordwise and bytewise), 0 implies no "nails"
-	mpz_import(pmpz, psz+1, -1, sizeof(unsigned char), -1, 0, (void *)pdata);
-
-	// convert to 2's complement and negate 	
-	if (negative) {
-		mpz_add_ui(pmpz, pmpz, 1);
-		mpz_neg(pmpz, pmpz);
-	}
-	
-	return 0;
-}
-
-static int _pylong_to_mpz_unsigned(PyLongObject *pobj, mpz_t pmpz) {
-	mp_limb_t pdata[_MPFP_MAX_LIMBS];
-	size_t psz;
-	int status;
-
-	if (pobj == NULL) {
-    	return -1;
-	}
-
-	if (!PyLong_Check(pobj)) {
-		return -1;
-	}
-
-	// calculate the byte length of p
-	psz = _PyLong_NumBits((PyObject*)pobj);
-	psz >>= 3;
-
-	if (psz > sizeof(pdata)) {
-		return -1;
-	}
-
-	// convert to bytes, 1 implies little endian, 0 implies unsigned
-	status = _PyLong_AsByteArray(pobj, (unsigned char *)pdata, psz+1, 1, 0);
-
-	if (status != 0) {
-		return -1;
-	}
-
-	// convert bytes to mpz, -1 implies little endian (wordwise and bytewise), 0 implies no "nails"
-	mpz_import(pmpz, psz+1, -1, sizeof(unsigned char), -1, 0, (void *)pdata);
-	
-	return 0;
 }
 
 PyDoc_STRVAR(FieldElement__doc__,
@@ -210,23 +115,18 @@ static void FieldElement_dealloc(FieldElement *self) {
 }
 
 static PyObject *FieldElement_op_int(FieldElement *self, PyObject *none) {
-	mp_limb_t pdata[_MPFP_MAX_LIMBS];
+	PyObject *rop;
 	mpz_t t;
-	size_t countp;
 
 	mpz_init(t);
-	countp = sizeof(pdata);
 
 	// convert mpz to bytes, -1 implies little endian (wordwise and bytewise), 0 implies no "nails"
 	mpz_set_mpFp(t, self->fp);
-
-	mpz_export((void *)pdata, &countp, -1, sizeof(unsigned char), -1, 0, self->fp->i);
+	rop = _mpz_to_pylong(t);
 
 	mpz_clear(t);
 
-	// convert from bytes, 1 implies little endian, 0 implies unsigned
-	// note, the mpz zero repr (no data written to pdata and countp=0 is correctly handled)
-	return _PyLong_FromByteArray((unsigned char*)pdata, countp, 1, 0);
+	return rop;
 }
 
 static PyObject *FieldElement_op_add_pylong(FieldElement *op1, PyLongObject *op2) {
@@ -321,8 +221,8 @@ static PyObject *FieldElement_op_sub(FieldElement *op1, FieldElement *op2) {
 				return NULL;
 			}
 			rop = (FieldElement *)FieldElement_op_sub((FieldElement *)nop2, (FieldElement *)nop1);
-			//Py_TYPE(nop2)->tp_dealloc(nop2);
-			//Py_TYPE(nop1)->tp_dealloc(nop1);
+			Py_DECREF(nop1);
+			Py_DECREF(nop2);
 			return (PyObject *)rop;
 		}
 		PyErr_SetString(PyExc_TypeError, "expected FieldElement, got something else.");
@@ -485,7 +385,7 @@ static PyObject *FieldElement_urandom(PyObject *type, PyObject *plong) {
 static PyObject *FieldElement_richcompare(PyObject *a, PyObject *b, int op) {
 	int result = 0;
 
-	assert(PyObject_TypeCheck(a, &FieldElementType));
+	assert(PyObject_TypeCheck(a, &FieldElementType) != 0);
 
 	if (PyLong_Check(b)) {
 		mpz_t bmpz;
@@ -515,7 +415,7 @@ static PyObject *FieldElement_richcompare(PyObject *a, PyObject *b, int op) {
 		}
 		mpz_clear(bmpz);
 	} else {
-		if (!PyObject_TypeCheck((PyObject *)a, &FieldElementType)) {
+		if (!PyObject_TypeCheck((PyObject *)b, &FieldElementType)) {
 			PyErr_SetString(PyExc_TypeError, "FieldElement Comparison (=, !=) only supported for PyLong, FieldElement type");
 			return NULL;
 		}
@@ -541,7 +441,6 @@ static PyObject *FieldElement_richcompare(PyObject *a, PyObject *b, int op) {
 	}
 	Py_RETURN_FALSE;
 }
-
 
 static PyObject *FieldElement_op_power(FieldElement *a, FieldElement *b, PyObject *c) {
 	FieldElement *rop;
@@ -578,15 +477,31 @@ static PyObject *FieldElement_op_power(FieldElement *a, FieldElement *b, PyObjec
     return (PyObject *)rop;
 }
 
+static PyObject *FieldElement_repr(PyObject *a) {
+	PyObject *i;
+	PyObject *p;
+	PyObject *rep;
+	assert(PyObject_TypeCheck(a, &FieldElementType) != 0);
+	
+	i = _mpz_to_pylong(((FieldElement *)a)->fp->i);
+	assert(i != NULL);
+	p = _mpz_to_pylong(((FieldElement *)a)->fp->fp->p);
+	assert(p != NULL);
+	rep = PyUnicode_FromFormat("ECC.FieldElement(%S, %S)", i, p);
+	Py_DECREF(p);
+	Py_DECREF(i);
+	return rep;
+}
+
 static PyMemberDef FieldElement_members[] = {
 	{NULL}
 };
 
 static PyMethodDef FieldElement_methods[] = {
 	//{"getvalue", (PyCFunction)FieldElement_getvalue, METH_NOARGS, "get value of element as an integer"},
-	{"urandom", (PyCFunction)FieldElement_urandom, METH_O|METH_CLASS, FieldElement_urandom__doc__},
 	{"inverse", (PyCFunction)FieldElement_op_multiplicative_inverse, METH_NOARGS, "return modular multiplicative inverse of value. return None if no inverse exists."},
 	{"sqrt", (PyCFunction)FieldElement_op_sqrt, METH_NOARGS, "return square root of value. returns None if the value is not a quadratic residue."},
+	{"urandom", (PyCFunction)FieldElement_urandom, METH_O|METH_CLASS, FieldElement_urandom__doc__},
 	{NULL}
 };
 
@@ -638,7 +553,7 @@ PyTypeObject FieldElementType = {
 	0,                                  /*tp_getattr*/
 	0,                                  /*tp_setattr*/
 	0,			                        /*tp_reserved*/
-	0,                                  /*tp_repr*/
+	FieldElement_repr,                                  /*tp_repr*/
 	&FieldElement_num_meths,                                  /*tp_as_number*/
 	0,                                  /*tp_as_sequence*/
 	0,                                  /*tp_as_mapping*/
@@ -668,40 +583,3 @@ PyTypeObject FieldElementType = {
 	0,                                  /* tp_alloc */
 	FieldElement_new,                         /* tp_new */
 };
-
-//
-// Module Implementation
-//
-
-// Module Global Methods
-static PyMethodDef ECC_methods[] = {
-	//{"get_random_prime", get_random_prime, METH_VARARGS, "get a random n-bit prime"},
-	{NULL, NULL, 0, NULL}
-};
-
-static PyModuleDef ECC_module = {
-	PyModuleDef_HEAD_INIT,
-	"ECC",
-	"ECC",
-	-1,
-	ECC_methods
-};
-
-PyMODINIT_FUNC
-PyInit_ECC(void) 
-{
-	PyObject* m;
-
-	if (PyType_Ready(&FieldElementType) < 0)
-		return NULL;
-
-	m = PyModule_Create(&ECC_module);
-
-	if (m == NULL)
-		return NULL;
-
-	Py_INCREF(&FieldElementType);
-	// add the objects
-	PyModule_AddObject(m, "FieldElement", (PyObject *)&FieldElementType);
-	return m;
-}

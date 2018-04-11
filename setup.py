@@ -35,7 +35,7 @@ module1 = Extension('ECC',
     libraries = ['ecc', 'gmp'],
     library_dirs = ['src/.libs'],
     extra_compile_args = ["-Wall"],
-    sources = ['python/pyfield.c'])
+    sources = ['python/pygmplong.c', 'python/pyfield.c', 'python/pycurve.c', 'python/pyeccmodule.c'])
 
 setup (name = 'ECC',
     version = '1.0',

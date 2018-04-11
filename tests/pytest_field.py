@@ -29,6 +29,7 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import unittest
+import ECC
 from ECC import FieldElement
 #from binascii import hexlify, unhexlify
 
@@ -171,6 +172,19 @@ class TestFieldElement(unittest.TestCase):
                 f = pow(e,j)
                 g = pow(int(e), j, self.p)
                 self.assertEqual(f, g)
+
+    def test_repr(self):
+        e = FieldElement(0,self.p)
+        g = repr(e)
+        self.assertEqual(eval(g), e)
+        f = FieldElement(1,self.p)
+        g = repr(f)
+        self.assertEqual(eval(g), 1)
+        for i in range(0,10000):
+            e = FieldElement.urandom(self.p)
+            f = repr(e)
+            g = eval(f)
+            self.assertEqual(e, g)
 
 
 if __name__ == '__main__':
