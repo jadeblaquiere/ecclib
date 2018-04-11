@@ -161,7 +161,7 @@ ConversionError:
 
 PyDoc_STRVAR(ECurve_create_ws__doc__, 
 	"ShortWeierstrass(p, a, b, n , h, gx, gy, bits) -> Ecurve\n\n"
-	"Class Method to generate an elliptic curve using Short Weierstrass notation "
+	"Static Method to generate an elliptic curve using Short Weierstrass notation "
 	"(y**2 = x**3 + a * x + b) with order n, cofactor h and generator point"
 	"(gx, gy) where p is of size bits.");
 
@@ -239,7 +239,7 @@ ConversionError:
 
 PyDoc_STRVAR(ECurve_create_ed__doc__, 
 	"Edwards(p, c, d, n , h, gx, gy, bits) -> Ecurve\n\n"
-	"Class Method to generate an elliptic curve using Edwards notation "
+	"Static Method to generate an elliptic curve using Edwards notation "
 	"(x**2 + y**2 = c**2 * (1 + d * x**2 * y**2)) with order n, cofactor h and"
 	"generator point (gx, gy) where p is of size bits.");
 
@@ -316,8 +316,8 @@ ConversionError:
 //                      mpz_t h, mpz_t Gx, mpz_t Gy, unsigned int bits);
 
 PyDoc_STRVAR(ECurve_create_mo__doc__, 
-	"Edwards(p, B, A, n , h, gx, gy, bits) -> Ecurve\n\n"
-	"Class Method to generate an elliptic curve using Montgomery notation "
+	"Montgomery(p, B, A, n , h, gx, gy, bits) -> Ecurve\n\n"
+	"Static Method to generate an elliptic curve using Montgomery notation "
 	"(B * y**2 = x**3 + A * x**2 + x) with order n, cofactor h and"
 	"generator point (gx, gy) where p is of size bits.");
 
@@ -395,7 +395,7 @@ ConversionError:
 
 PyDoc_STRVAR(ECurve_create_te__doc__, 
 	"TwistedEdwards(p, a, d, n , h, gx, gy, bits) -> Ecurve\n\n"
-	"Class Method to generate an elliptic curve using Twisted Edwards notation "
+	"Static Method to generate an elliptic curve using Twisted Edwards notation "
 	"(a * x**2 + y**2 = 1 + d * x**2 * y**2) with order n, cofactor h and"
 	"generator point (gx, gy) where p is of size bits.");
 

@@ -354,10 +354,10 @@ static PyObject *FieldElement_op_sqrt(FieldElement *op1, PyObject *none) {
 // FieldElement.urandom(p=PyLongObject)
 PyDoc_STRVAR(FieldElement_urandom__doc__, 
 	"urandom(p) -> FieldElement\n\n"
-	"Class Method to generate a random element in the prime field Fp defined by p. "
+	"Static Method to generate a random element in the prime field Fp defined by p. "
 	"The field order p must be an integer (or long integer) value. "
 	"urandom uses /dev/urandom to obtain a cryptographically secure random.");
-static PyObject *FieldElement_urandom(PyObject *type, PyObject *plong) {
+static PyObject *FieldElement_urandom(PyObject *none, PyObject *plong) {
 	FieldElement *rop;
 	mpz_t pmpz;
 	int status;
@@ -501,7 +501,7 @@ static PyMethodDef FieldElement_methods[] = {
 	//{"getvalue", (PyCFunction)FieldElement_getvalue, METH_NOARGS, "get value of element as an integer"},
 	{"inverse", (PyCFunction)FieldElement_op_multiplicative_inverse, METH_NOARGS, "return modular multiplicative inverse of value. return None if no inverse exists."},
 	{"sqrt", (PyCFunction)FieldElement_op_sqrt, METH_NOARGS, "return square root of value. returns None if the value is not a quadratic residue."},
-	{"urandom", (PyCFunction)FieldElement_urandom, METH_O|METH_CLASS, FieldElement_urandom__doc__},
+	{"urandom", (PyCFunction)FieldElement_urandom, METH_O|METH_STATIC, FieldElement_urandom__doc__},
 	{NULL}
 };
 

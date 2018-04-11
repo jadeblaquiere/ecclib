@@ -41,7 +41,7 @@ Supported elliptic curve point mathematical operations:
 Supported elliptic curve types:
 * short Weierstrass
 * Edwards
-* Twisted Edwards
+* twisted Edwards
 * Montgomery (implemented internally via transform to short Weierstrass form)
 
 ## build and install
@@ -62,3 +62,15 @@ $ sudo make install
 
 Note: if you want to run the benchmarks you'll need to install libsodium and
 also pass the `--enable-benchmarks` option to configure
+
+## python bindings
+
+Once you have installed the underlying C libraries you can install the python
+API interface. This interface is only tested with python3. The python API can
+be installed with commands like:
+
+```
+$ sudo pip3 install --upgrade .
+$ python3 ./tests/pytest_field.py
+$ python3 ./tests/pytest_ecurve.py
+```

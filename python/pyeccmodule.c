@@ -44,10 +44,17 @@ static PyMethodDef ECC_methods[] = {
 	{NULL, NULL, 0, NULL}
 };
 
+PyDoc_STRVAR(ECC_module__doc__, 
+	"Elliptic Curve Cryptography (ECC) primitive math library. ECC implements "
+	"the basic mathematical operations to support math in prime fields, "
+	"curve parameterization and elliptic curve point operations. The "
+	"fundamental math operations provide the necessary underpinnings to "
+	"implement cryptographic systems like ECDH and ECDSA.");
+
 static PyModuleDef ECC_module = {
 	PyModuleDef_HEAD_INIT,
 	"ECC",
-	"ECC",
+	ECC_module__doc__,
 	-1,
 	ECC_methods
 };
