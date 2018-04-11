@@ -42,6 +42,7 @@ extern "C" {
 int _pylong_to_mpz(PyLongObject *pobj, mpz_t pmpz);
 int _pylong_to_mpz_unsigned(PyLongObject *pobj, mpz_t pmpz);
 PyObject *_mpz_to_pylong(mpz_t pmpz);
+PyObject *_mpFp_to_pylong(mpFp_t pFp);
 
 #ifdef __cplusplus
 }

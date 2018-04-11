@@ -142,3 +142,18 @@ PyObject *_mpz_to_pylong(mpz_t pmpz) {
 	// note, the mpz zero repr (no data written to pdata and countp=0 is correctly handled)
 	return _PyLong_FromByteArray((unsigned char*)pdata, countp, 1, (pmpz->_mp_size < 0));
 }
+
+PyObject *_mpFp_to_pylong(mpFp_t pFp) {
+    mpz_t pmpz;
+	PyObject *p;
+
+    mpz_init(pmpz);
+
+    mpz_set_mpFp(pmpz, pFp);
+    p = _mpz_to_pylong(pmpz);
+
+    mpz_clear(pmpz);
+
+	return p;
+}
+

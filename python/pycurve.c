@@ -498,6 +498,71 @@ static PyObject *ECurve_list_curve_names(PyObject *type, PyObject *none) {
     return clist;
 }
 
+//typedef enum {EQTypeNone, EQTypeUninitialized, EQTypeShortWeierstrass, EQTypeEdwards, EQTypeMontgomery, EQTypeTwistedEdwards} _mpECurve_eq_type;
+static PyObject *ECurve_repr(PyObject *a) {
+	PyObject *p, *c1, *c2, *n, *h, *gx, *gy;
+	unsigned int bits;
+	PyObject *rep;
+	assert(PyObject_TypeCheck(a, &ECurveType) != 0);
+	
+	p = _mpz_to_pylong(((ECurve *)a)->ec->fp->p);
+	assert(p != NULL);
+	n = _mpz_to_pylong(((ECurve *)a)->ec->n);
+	assert(p != NULL);
+	h = _mpz_to_pylong(((ECurve *)a)->ec->h);
+	assert(p != NULL);
+	gx = _mpz_to_pylong(((ECurve *)a)->ec->G[0]);
+	assert(p != NULL);
+	gy = _mpz_to_pylong(((ECurve *)a)->ec->G[1]);
+	assert(p != NULL);
+	bits = ((ECurve *)a)->ec->bits;
+	c1 = NULL;
+	c2 = NULL;
+	switch (((ECurve *)a)->ec->type) {
+    case EQTypeShortWeierstrass:
+    	c1 = _mpFp_to_pylong(((ECurve *)a)->ec->coeff.ws.a);
+    	assert(c1 != NULL);
+    	c2 = _mpFp_to_pylong(((ECurve *)a)->ec->coeff.ws.b);
+    	assert(c2 != NULL);
+        rep = PyUnicode_FromFormat("ECC.ECurve.ShortWeierstrass(%S, %S, %S, %S, %S, %S, %S, %d)", p, c1, c2, n, h, gx, gy, bits);
+        break;
+    case EQTypeEdwards:
+    	c1 = _mpFp_to_pylong(((ECurve *)a)->ec->coeff.ed.c);
+    	assert(c1 != NULL);
+    	c2 = _mpFp_to_pylong(((ECurve *)a)->ec->coeff.ed.d);
+    	assert(c2 != NULL);
+        rep = PyUnicode_FromFormat("ECC.ECurve.Edwards(%S, %S, %S, %S, %S, %S, %S, %d)", p, c1, c2, n, h, gx, gy, bits);
+        break;
+    case EQTypeMontgomery:
+    	c1 = _mpFp_to_pylong(((ECurve *)a)->ec->coeff.mo.B);
+    	assert(c1 != NULL);
+    	c2 = _mpFp_to_pylong(((ECurve *)a)->ec->coeff.mo.A);
+    	assert(c2 != NULL);
+        rep = PyUnicode_FromFormat("ECC.ECurve.Montgomery(%S, %S, %S, %S, %S, %S, %S, %d)", p, c1, c2, n, h, gx, gy, bits);
+        break;
+    case EQTypeTwistedEdwards:
+    	c1 = _mpFp_to_pylong(((ECurve *)a)->ec->coeff.te.a);
+    	assert(c1 != NULL);
+    	c2 = _mpFp_to_pylong(((ECurve *)a)->ec->coeff.te.d);
+    	assert(c2 != NULL);
+        rep = PyUnicode_FromFormat("ECC.ECurve.TwistedEdwards(%S, %S, %S, %S, %S, %S, %S, %d)", p, c1, c2, n, h, gx, gy, bits);
+        break;
+    default:
+        PyErr_SetString(PyExc_AssertionError, "ECurve object has unknown/uninitialized type");
+        rep = NULL;
+	}
+	Py_DECREF(gy);
+	Py_DECREF(gx);
+	Py_DECREF(h);
+	Py_DECREF(n);
+	if (c2 != NULL) Py_DECREF(c2);
+	if (c1 != NULL) Py_DECREF(c1);
+	Py_DECREF(p);
+	return rep;
+}
+
+
+
 static PyMemberDef ECurve_members[] = {
 	{NULL}
 };
@@ -523,7 +588,7 @@ PyTypeObject ECurveType = {
 	0,                                  /*tp_getattr*/
 	0,                                  /*tp_setattr*/
 	0,			                        /*tp_reserved*/
-	0,                                  /*tp_repr*/
+	ECurve_repr,                                  /*tp_repr*/
 	0,                                  /*tp_as_number*/
 	0,                                  /*tp_as_sequence*/
 	0,                                  /*tp_as_mapping*/
