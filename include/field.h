@@ -36,7 +36,6 @@
 
 #include <gmp.h>
 #include <assert.h>
-#include <mpzmod.h>
 
 #ifdef __cplusplus
 extern "C" {
