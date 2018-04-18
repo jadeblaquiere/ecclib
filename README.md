@@ -67,10 +67,11 @@ also pass the `--enable-benchmarks` option to configure
 
 Once you have installed the underlying C libraries you can install the python
 API interface. This interface is only tested with python3. The python API can
-be installed with commands like:
+be installed (and tested) with commands like:
 
 ```
 $ sudo pip3 install --upgrade .
 $ python3 ./tests/pytest_field.py
 $ python3 ./tests/pytest_ecurve.py
+$ python3 ./tests/pytest_ecpoint.py
 ```
