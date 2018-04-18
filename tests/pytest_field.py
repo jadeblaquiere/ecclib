@@ -37,7 +37,7 @@ from ECC import FieldElement
 class TestFieldElement(unittest.TestCase):
 
     def setUp(self):
-        self.p = (2 ** 414) - 17;
+        self.p = (2 ** 414) - 17
 
     def test_as_int(self):
         e = FieldElement(0,self.p)

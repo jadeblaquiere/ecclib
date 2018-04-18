@@ -128,6 +128,34 @@ class TestECurve(unittest.TestCase):
             0)
         self.assertEqual(status, False)
 
+    def test_getattr(self):
+        curves = ECurve._CurveNames()
+        for c in curves:
+            cva = ECurve(c)
+            p = cva.p
+            n = cva.n
+            h = cva.h
+            G = cva.G
+            bits = cva.bits
+            ctype = cva.ctype
+            if ctype == 'ShortWeierstrass':
+                a = cva.a
+                b = cva.b
+                cvb = ECurve.ShortWeierstrass(p, a, b, n, h, G[0], G[1], bits)
+            elif ctype == 'Edwards':
+                c = cva.c
+                d = cva.d
+                cvb = ECurve.Edwards(p, c, d, n, h, G[0], G[1], bits)
+            elif ctype == 'Montgomery':
+                B = cva.B
+                A = cva.A
+                cvb = ECurve.Montgomery(p, B, A, n, h, G[0], G[1], bits)
+            else:
+                self.assertEqual(ctype, "TwistedEdwards")
+                a = cva.a
+                d = cva.d
+                cvb = ECurve.TwistedEdwards(p, a, d, n ,h, G[0], G[1], bits)
+            self.assertEqual(cva, cvb)
 
 if __name__ == '__main__':
     unittest.main()

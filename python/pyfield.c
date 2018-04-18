@@ -28,6 +28,11 @@
 //OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 //OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+// this code relies strongly on assert() which would be suppressed
+#ifdef NDEBUG
+#undef NDEBUG
+#endif
+
 #include <gmp.h>
 #include <pyfield.h>
 #include <pygmplong.h>
@@ -168,8 +173,7 @@ static PyObject *FieldElement_op_add(FieldElement *op1, FieldElement *op2) {
 	}
 	
 	if(!PyObject_TypeCheck((PyObject *)op2, &FieldElementType)) {
-		PyErr_SetString(PyExc_TypeError, "unsupported operand type(s) for FieldElement addition(+)");
-		return NULL;
+		Py_RETURN_NOTIMPLEMENTED;
 	}
 	
 	if (op1->fp->fp != op2->fp->fp) {
@@ -234,8 +238,7 @@ static PyObject *FieldElement_op_sub(FieldElement *op1, FieldElement *op2) {
 	}
 	
 	if(!PyObject_TypeCheck((PyObject *)op2, &FieldElementType)) {
-		PyErr_SetString(PyExc_TypeError, "unsupported operand type(s) for FieldElement addition(+)");
-		return NULL;
+		Py_RETURN_NOTIMPLEMENTED;
 	}
 	
 	if (op1->fp->fp != op2->fp->fp) {
@@ -290,8 +293,7 @@ static PyObject *FieldElement_op_mul(FieldElement *op1, FieldElement *op2) {
 	}
 	
 	if(!PyObject_TypeCheck((PyObject *)op2, &FieldElementType)) {
-		PyErr_SetString(PyExc_TypeError, "unsupported operand type(s) for FieldElement addition(+)");
-		return NULL;
+		Py_RETURN_NOTIMPLEMENTED;
 	}
 	
 	if (op1->fp->fp != op2->fp->fp) {
@@ -410,14 +412,12 @@ static PyObject *FieldElement_richcompare(PyObject *a, PyObject *b, int op) {
 			}
 			break;
 		default:
-			PyErr_SetString(PyExc_TypeError, "Relative comparison (<, <=, >=, >) not valid for FieldElement type");
-			return NULL;
+			Py_RETURN_NOTIMPLEMENTED;
 		}
 		mpz_clear(bmpz);
 	} else {
 		if (!PyObject_TypeCheck((PyObject *)b, &FieldElementType)) {
-			PyErr_SetString(PyExc_TypeError, "FieldElement Comparison (=, !=) only supported for PyLong, FieldElement type");
-			return NULL;
+			Py_RETURN_NOTIMPLEMENTED;
 		}
 		switch (op) {
 		case Py_EQ:
@@ -431,8 +431,7 @@ static PyObject *FieldElement_richcompare(PyObject *a, PyObject *b, int op) {
 			}
 			break;
 		default:
-			PyErr_SetString(PyExc_TypeError, "Relative comparison (<, <=, >=, >) not valid for FieldElement type");
-			return NULL;
+			Py_RETURN_NOTIMPLEMENTED;
 		}
 	}
 

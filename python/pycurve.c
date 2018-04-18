@@ -28,6 +28,11 @@
 //OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 //OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+// this code relies strongly on assert() which would be suppressed
+#ifdef NDEBUG
+#undef NDEBUG
+#endif
+
 #include <gmp.h>
 #include <pycurve.h>
 #include <pygmplong.h>
@@ -94,9 +99,9 @@ static PyObject *ECurve_richcompare(PyObject *a, PyObject *b, int op) {
 	assert(PyObject_TypeCheck(a, &ECurveType) != 0);
 
 	if (!PyObject_TypeCheck((PyObject *)b, &ECurveType)) {
-		PyErr_SetString(PyExc_TypeError, "ECurve Comparison (=, !=) only supported for ECurve type");
-		return NULL;
+		Py_RETURN_NOTIMPLEMENTED;
 	}
+
 	switch (op) {
 	case Py_EQ:
 		if (mpECurve_cmp(((ECurve *)a)->ec, ((ECurve *)b)->ec) == 0) {
@@ -109,8 +114,7 @@ static PyObject *ECurve_richcompare(PyObject *a, PyObject *b, int op) {
 		}
 		break;
 	default:
-		PyErr_SetString(PyExc_TypeError, "Relative comparison (<, <=, >=, >) not valid for ECurve type");
-		return NULL;
+		Py_RETURN_NOTIMPLEMENTED;
 	}
 
 	if (result != 0) {
@@ -125,7 +129,7 @@ static PyObject *ECurve_check_point(PyObject *cv, PyObject *args) {
     int valid;
     int status;
 
-	assert(PyObject_TypeCheck(a, &ECurveType) != 0);
+	assert(PyObject_TypeCheck(cv, &ECurveType) != 0);
 
 	if (!PyArg_ParseTuple(args, "OO", &x, &y)) {
 		PyErr_SetString(PyExc_TypeError, "Error parsing ECurve_init arguments");
@@ -561,7 +565,123 @@ static PyObject *ECurve_repr(PyObject *a) {
 	return rep;
 }
 
+static PyObject *ECurve_getattr(PyObject *o, char *attr_name) {
+    ECurve *cv;
+    
+	assert(PyObject_TypeCheck(o, &ECurveType) != 0);
+	cv = (ECurve *)o;
 
+    if (strcmp(attr_name, "p") == 0) {
+        return _mpz_to_pylong(cv->ec->fp->p);
+    }
+
+    if (strcmp(attr_name, "n") == 0) {
+        return _mpz_to_pylong(cv->ec->n);
+    }
+
+    if (strcmp(attr_name, "h") == 0) {
+        return _mpz_to_pylong(cv->ec->h);
+    }
+
+    if (strcmp(attr_name, "G") == 0) {
+        PyObject *gx;
+        PyObject *gy;
+        PyObject *t;
+        int status;
+
+        gx = _mpz_to_pylong(cv->ec->G[0]);
+        gy = _mpz_to_pylong(cv->ec->G[1]);
+        assert(gx != NULL);
+        assert(gy != NULL);
+        
+        t = PyTuple_New(2);
+        assert(t != NULL);
+
+        status = PyTuple_SetItem(t, 0, gx);
+        assert(status == 0);
+        Py_INCREF(gx);
+        status = PyTuple_SetItem(t, 1, gy);
+        assert(status == 0);
+        Py_INCREF(gy);
+
+        return t;
+    }
+    
+    if (strcmp(attr_name, "bits") == 0) {
+        return PyLong_FromUnsignedLong(cv->ec->bits);
+    }
+
+    switch (cv->ec->type) {
+    case EQTypeShortWeierstrass:
+        if (strcmp(attr_name, "ctype") == 0) {
+            return PyUnicode_FromString("ShortWeierstrass");
+        }
+        if (strcmp(attr_name, "a") == 0) {
+            return _mpFp_to_pylong(cv->ec->coeff.ws.a);
+        }
+        if (strcmp(attr_name, "b") == 0) {
+            return _mpFp_to_pylong(cv->ec->coeff.ws.b);
+        }
+        break;
+    case EQTypeEdwards:
+        if (strcmp(attr_name, "ctype") == 0) {
+            return PyUnicode_FromString("Edwards");
+        }
+        if (strcmp(attr_name, "c") == 0) {
+            return _mpFp_to_pylong(cv->ec->coeff.ed.c);
+        }
+        if (strcmp(attr_name, "d") == 0) {
+            return _mpFp_to_pylong(cv->ec->coeff.ed.d);
+        }
+        break;
+    case EQTypeMontgomery:
+        if (strcmp(attr_name, "ctype") == 0) {
+            return PyUnicode_FromString("Montgomery");
+        }
+        if (strcmp(attr_name, "B") == 0) {
+            return _mpFp_to_pylong(cv->ec->coeff.mo.B);
+        }
+        if (strcmp(attr_name, "A") == 0) {
+            return _mpFp_to_pylong(cv->ec->coeff.mo.A);
+        }
+        break;
+    case EQTypeTwistedEdwards:
+        if (strcmp(attr_name, "ctype") == 0) {
+            return PyUnicode_FromString("TwistedEdwards");
+        }
+        if (strcmp(attr_name, "a") == 0) {
+            return _mpFp_to_pylong(cv->ec->coeff.te.a);
+        }
+        if (strcmp(attr_name, "d") == 0) {
+            return _mpFp_to_pylong(cv->ec->coeff.te.d);
+        }
+        break;
+    default:
+        break;
+    }
+
+    PyErr_SetString(PyExc_ValueError, "ECurve_getattr: Unknown attribute");
+    return NULL;
+}
+
+static PyObject *ECurve_getattro(PyObject *o, PyObject *attr_name) {
+    PyObject *tmp;
+    char *attr_nm_c;
+
+    if (!(tmp = PyObject_GenericGetAttr(o, attr_name))) {
+        if (!PyErr_ExceptionMatches(PyExc_AttributeError))
+            return NULL;
+        PyErr_Clear();
+    }
+    else {
+        return tmp;
+    }
+
+	assert(PyUnicode_Check(attr_name) != 0);
+    attr_nm_c = PyUnicode_AsUTF8(attr_name);
+
+    return ECurve_getattr(o, attr_nm_c);
+}
 
 static PyMemberDef ECurve_members[] = {
 	{NULL}
@@ -585,7 +705,7 @@ PyTypeObject ECurveType = {
 	0,                                  /*tp_itemsize*/
 	(destructor)ECurve_dealloc,         /*tp_dealloc*/
 	0,                                  /*tp_print*/
-	0,                                  /*tp_getattr*/
+	ECurve_getattr,                                  /*tp_getattr*/
 	0,                                  /*tp_setattr*/
 	0,			                        /*tp_reserved*/
 	ECurve_repr,                                  /*tp_repr*/
@@ -595,7 +715,7 @@ PyTypeObject ECurveType = {
 	0,                                  /*tp_hash */
 	0,                                  /*tp_call*/
 	0,                                  /*tp_str*/
-	0,                                  /*tp_getattro*/
+	ECurve_getattro,                                  /*tp_getattro*/
 	0,                                  /*tp_setattro*/
 	0,                                  /*tp_as_buffer*/
 	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, /*tp_flags*/

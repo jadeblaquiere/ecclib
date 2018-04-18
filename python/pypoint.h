@@ -28,61 +28,29 @@
 //OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 //OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+#ifndef _EC_PY_POINT_H_INCLUDED_
+#define _EC_PY_POINT_H_INCLUDED_
+
 #include <gmp.h>
-#include <pycurve.h>
-#include <pyfield.h>
-#include <pypoint.h>
+#include <ecpoint.h>
+#include <ecurve.h>
 #include <Python.h>
-//#include <structmember.h>
 
-//
-// Module Implementation
-//
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-// Module Global Methods
-static PyMethodDef ECC_methods[] = {
-	//{"get_random_prime", get_random_prime, METH_VARARGS, "get a random n-bit prime"},
-	{NULL, NULL, 0, NULL}
-};
+typedef struct {
+    PyObject_HEAD
+    mpECP_t ecp;
+    ECurve  *cv;
+    int ready;
+} ECPoint;
 
-PyDoc_STRVAR(ECC_module__doc__, 
-	"Elliptic Curve Cryptography (ECC) primitive math library. ECC implements "
-	"the basic mathematical operations to support math in prime fields, "
-	"curve parameterization and elliptic curve point operations. The "
-	"fundamental math operations provide the necessary underpinnings to "
-	"implement cryptographic systems like ECDH and ECDSA.");
+extern PyTypeObject ECPointType;
 
-static PyModuleDef ECC_module = {
-	PyModuleDef_HEAD_INIT,
-	"ECC",
-	ECC_module__doc__,
-	-1,
-	ECC_methods
-};
-
-PyMODINIT_FUNC
-PyInit_ECC(void) 
-{
-	PyObject* m;
-
-	if (PyType_Ready(&FieldElementType) < 0)
-		return NULL;
-	if (PyType_Ready(&ECurveType) < 0)
-		return NULL;
-	if (PyType_Ready(&ECPointType) < 0)
-		return NULL;
-
-	m = PyModule_Create(&ECC_module);
-
-	if (m == NULL)
-		return NULL;
-
-	Py_INCREF(&FieldElementType);
-	Py_INCREF(&ECurveType);
-	Py_INCREF(&ECPointType);
-	// add the objects
-	PyModule_AddObject(m, "FieldElement", (PyObject *)&FieldElementType);
-	PyModule_AddObject(m, "ECurve", (PyObject *)&ECurveType);
-	PyModule_AddObject(m, "ECPoint", (PyObject *)&ECPointType);
-	return m;
+#ifdef __cplusplus
 }
+#endif
+
+#endif // _EC_PY_POINT_H_INCLUDED_
