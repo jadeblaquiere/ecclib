@@ -46,12 +46,12 @@ PyDoc_STRVAR(ECurve__doc__,
 static PyObject *ECurve_new(PyTypeObject *type, PyObject *args, PyObject *kwds) {
 	// create the new Parameterss object
 	ECurve *self = (ECurve *)type->tp_alloc(type, 0);
-	self->ready = 0;
 	// make sure it actually worked
 	if (!self) {
 		PyErr_SetString(PyExc_TypeError, "could not create ECurve object.");
 		return NULL;
 	}
+	self->ready = 0;
 
 	// cast and return
 	return (PyObject *)self;

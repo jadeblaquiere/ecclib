@@ -1,4 +1,4 @@
-#BSD 3-Clause License
+# BSD 3-Clause License
 #
 # Copyright (c) 2018, Joseph deBlaquiere <jadeblaquiere@yahoo.com>
 # All rights reserved
@@ -31,7 +31,6 @@
 import unittest
 import ECC
 from ECC import FieldElement
-#from binascii import hexlify, unhexlify
 
 
 class TestFieldElement(unittest.TestCase):
@@ -40,31 +39,31 @@ class TestFieldElement(unittest.TestCase):
         self.p = (2 ** 414) - 17
 
     def test_as_int(self):
-        e = FieldElement(0,self.p)
+        e = FieldElement(0, self.p)
         self.assertEqual(int(e), 0)
-        f = FieldElement(1,self.p)
+        f = FieldElement(1, self.p)
         self.assertEqual(int(f), 1)
-        g = FieldElement(-1,self.p)
+        g = FieldElement(-1, self.p)
         self.assertEqual(int(g), self.p - 1)
 
     def test_urandom(self):
-        for i in range(0,10000):
+        for i in range(0, 10000):
             e = FieldElement.urandom(self.p)
             self.assertGreaterEqual(int(e), 0)
             self.assertLess(int(e), self.p)
 
     def test_add(self):
-        e = FieldElement(0,self.p)
-        f = FieldElement(1,self.p)
+        e = FieldElement(0, self.p)
+        f = FieldElement(1, self.p)
         g = e + f
         self.assertEqual(int(g), 1)
-        e = FieldElement(1,self.p)
+        e = FieldElement(1, self.p)
         g = e + f
         self.assertEqual(int(g), 2)
-        e = FieldElement(-1,self.p)
+        e = FieldElement(-1, self.p)
         g = e + f
         self.assertEqual(int(g), 0)
-        for i in range(0,10000):
+        for i in range(0, 10000):
             e = FieldElement.urandom(self.p)
             f = FieldElement.urandom(self.p)
             g = (int(e) + int(f)) % self.p
@@ -72,32 +71,32 @@ class TestFieldElement(unittest.TestCase):
             self.assertEqual(int(f + e), g)
 
     def test_neg(self):
-        e = FieldElement(0,self.p)
+        e = FieldElement(0, self.p)
         g = -e
         self.assertEqual(int(g), 0)
-        e = FieldElement(1,self.p)
+        e = FieldElement(1, self.p)
         g = -e
         self.assertEqual(int(g), self.p - 1)
-        e = FieldElement(-1,self.p)
+        e = FieldElement(-1, self.p)
         g = -e
         self.assertEqual(int(g), 1)
-        for i in range(0,10000):
+        for i in range(0, 10000):
             e = FieldElement.urandom(self.p)
             g = (-int(e)) % self.p
             self.assertEqual(int(-e), g)
 
     def test_sub(self):
-        e = FieldElement(0,self.p)
-        f = FieldElement(1,self.p)
+        e = FieldElement(0, self.p)
+        f = FieldElement(1, self.p)
         g = e - f
         self.assertEqual(int(g), self.p - 1)
-        e = FieldElement(1,self.p)
+        e = FieldElement(1, self.p)
         g = e - f
         self.assertEqual(int(g), 0)
-        f = FieldElement(-1,self.p)
+        f = FieldElement(-1, self.p)
         g = e - f
         self.assertEqual(int(g), 2)
-        for i in range(0,10000):
+        for i in range(0, 10000):
             e = FieldElement.urandom(self.p)
             f = FieldElement.urandom(self.p)
             g = (int(e) - int(f)) % self.p
@@ -106,17 +105,17 @@ class TestFieldElement(unittest.TestCase):
             self.assertEqual(int(f - e), g)
 
     def test_mul(self):
-        e = FieldElement(0,self.p)
-        f = FieldElement(1,self.p)
+        e = FieldElement(0, self.p)
+        f = FieldElement(1, self.p)
         g = e * f
         self.assertEqual(int(g), 0)
-        e = FieldElement(1,self.p)
+        e = FieldElement(1, self.p)
         g = e * f
         self.assertEqual(int(g), 1)
-        f = FieldElement(-1,self.p)
+        f = FieldElement(-1, self.p)
         g = e * f
         self.assertEqual(int(g), self.p - 1)
-        for i in range(0,10000):
+        for i in range(0, 10000):
             e = FieldElement.urandom(self.p)
             f = FieldElement.urandom(self.p)
             g = (int(e) * int(f)) % self.p
@@ -124,13 +123,13 @@ class TestFieldElement(unittest.TestCase):
             self.assertEqual(int(f * e), g)
 
     def test_inv(self):
-        e = FieldElement(0,self.p)
+        e = FieldElement(0, self.p)
         g = e.inverse()
         self.assertEqual(g, None)
-        f = FieldElement(1,self.p)
+        f = FieldElement(1, self.p)
         g = f.inverse()
         self.assertEqual(int(g), 1)
-        for i in range(0,10000):
+        for i in range(0, 10000):
             e = FieldElement.urandom(self.p)
             f = e.inverse()
             if f is None:
@@ -140,14 +139,14 @@ class TestFieldElement(unittest.TestCase):
                 self.assertEqual(int(g), 1)
 
     def test_sqrt(self):
-        e = FieldElement(0,self.p)
+        e = FieldElement(0, self.p)
         g = e.sqrt()
         self.assertEqual(g, None)
-        f = FieldElement(1,self.p)
+        f = FieldElement(1, self.p)
         g = f.inverse()
         self.assertEqual(int(g * g), 1)
         self.assertEqual(int(g * g), f)
-        for i in range(0,10000):
+        for i in range(0, 10000):
             e = FieldElement.urandom(self.p)
             f = e.sqrt()
             if f is not None:
@@ -156,31 +155,31 @@ class TestFieldElement(unittest.TestCase):
                 self.assertEqual(g, e)
 
     def test_pow(self):
-        e = FieldElement(0,self.p)
+        e = FieldElement(0, self.p)
         g = pow(e, 2)
         self.assertEqual(g, 0)
         g = e ** 2
         self.assertEqual(g, 0)
-        f = FieldElement(1,self.p)
+        f = FieldElement(1, self.p)
         g = pow(f, 3)
         self.assertEqual(g, 1)
         g = f ** 3
         self.assertEqual(g, 1)
-        for i in range(0,100):
+        for i in range(0, 100):
             e = FieldElement.urandom(self.p)
-            for j in range(0,10):
-                f = pow(e,j)
+            for j in range(0, 10):
+                f = pow(e, j)
                 g = pow(int(e), j, self.p)
                 self.assertEqual(f, g)
 
     def test_repr(self):
-        e = FieldElement(0,self.p)
+        e = FieldElement(0, self.p)
         g = repr(e)
         self.assertEqual(eval(g), e)
-        f = FieldElement(1,self.p)
+        f = FieldElement(1, self.p)
         g = repr(f)
         self.assertEqual(eval(g), 1)
-        for i in range(0,10000):
+        for i in range(0, 10000):
             e = FieldElement.urandom(self.p)
             f = repr(e)
             g = eval(f)

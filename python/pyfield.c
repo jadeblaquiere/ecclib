@@ -54,12 +54,12 @@ PyDoc_STRVAR(FieldElement__doc__,
 static PyObject *FieldElement_new(PyTypeObject *type, PyObject *args, PyObject *kwds) {
 	// create the new Parameterss object
 	FieldElement *self = (FieldElement *)type->tp_alloc(type, 0);
-	self->ready = 0;
 	// make sure it actually worked
 	if (!self) {
 		PyErr_SetString(PyExc_TypeError, "could not create FieldElement object.");
 		return NULL;
 	}
+	self->ready = 0;
 
 	// cast and return
 	return (PyObject *)self;
@@ -96,8 +96,8 @@ static int FieldElement_init(FieldElement *self, PyObject *args, PyObject *kwarg
 		return -1;
 	}
 
-    mpFp_init(self->fp, pmpz);
-    mpFp_set_mpz_fp(self->fp, impz, self->fp->fp);
+    mpFp_init(self->fe, pmpz);
+    mpFp_set_mpz_fp(self->fe, impz, self->fe->fp);
 
     mpz_clear(impz);
     mpz_clear(pmpz);
@@ -112,7 +112,7 @@ static int FieldElement_init(FieldElement *self, PyObject *args, PyObject *kwarg
 static void FieldElement_dealloc(FieldElement *self) {
 	// clear the internal element
 	if (self->ready){
-		mpFp_clear(self->fp);
+		mpFp_clear(self->fe);
 	}
 
 	// free the object
@@ -126,7 +126,7 @@ static PyObject *FieldElement_op_int(FieldElement *self, PyObject *none) {
 	mpz_init(t);
 
 	// convert mpz to bytes, -1 implies little endian (wordwise and bytewise), 0 implies no "nails"
-	mpz_set_mpFp(t, self->fp);
+	mpz_set_mpFp(t, self->fe);
 	rop = _mpz_to_pylong(t);
 
 	mpz_clear(t);
@@ -140,16 +140,16 @@ static PyObject *FieldElement_op_add_pylong(FieldElement *op1, PyLongObject *op2
 	mpFp_t op2f;
 
 	mpz_init(op2z);
-	mpFp_init_fp(op2f, op1->fp->fp);
+	mpFp_init_fp(op2f, op1->fe->fp);
 
 	_pylong_to_mpz(op2, op2z);
-	mpFp_set_mpz_fp(op2f, op2z, op1->fp->fp);
+	mpFp_set_mpz_fp(op2f, op2z, op1->fe->fp);
 
 	rop = (FieldElement *)FieldElement_new( &FieldElementType, NULL, NULL);
-	mpz_init(rop->fp->i);
-    rop->fp->fp = op1->fp->fp;
-    mpFp_realloc(rop->fp);
-    mpFp_add(rop->fp, op1->fp, op2f);
+	mpz_init(rop->fe->i);
+    rop->fe->fp = op1->fe->fp;
+    mpFp_realloc(rop->fe);
+    mpFp_add(rop->fe, op1->fe, op2f);
 
     mpFp_clear(op2f);
     mpz_clear(op2z);
@@ -176,16 +176,16 @@ static PyObject *FieldElement_op_add(FieldElement *op1, FieldElement *op2) {
 		Py_RETURN_NOTIMPLEMENTED;
 	}
 	
-	if (op1->fp->fp != op2->fp->fp) {
+	if (op1->fe->fp != op2->fe->fp) {
 		PyErr_SetString(PyExc_ValueError, "FieldElement order mismatch");
 		return NULL;
 	}
 	
 	rop = (FieldElement *)FieldElement_new( &FieldElementType, NULL, NULL);
-	mpz_init(rop->fp->i);
-    rop->fp->fp = op1->fp->fp;
-    mpFp_realloc(rop->fp);
-    mpFp_add(rop->fp, op1->fp, op2->fp);
+	mpz_init(rop->fe->i);
+    rop->fe->fp = op1->fe->fp;
+    mpFp_realloc(rop->fe);
+    mpFp_add(rop->fe, op1->fe, op2->fe);
     return (PyObject *)rop;
 }
 
@@ -195,16 +195,16 @@ static PyObject *FieldElement_op_sub_pylong(FieldElement *op1, PyLongObject *op2
 	mpFp_t op2f;
 
 	mpz_init(op2z);
-	mpFp_init_fp(op2f, op1->fp->fp);
+	mpFp_init_fp(op2f, op1->fe->fp);
 
 	_pylong_to_mpz(op2, op2z);
-	mpFp_set_mpz_fp(op2f, op2z, op1->fp->fp);
+	mpFp_set_mpz_fp(op2f, op2z, op1->fe->fp);
 
 	rop = (FieldElement *)FieldElement_new( &FieldElementType, NULL, NULL);
-	mpz_init(rop->fp->i);
-    rop->fp->fp = op1->fp->fp;
-    mpFp_realloc(rop->fp);
-    mpFp_sub(rop->fp, op1->fp, op2f);
+	mpz_init(rop->fe->i);
+    rop->fe->fp = op1->fe->fp;
+    mpFp_realloc(rop->fe);
+    mpFp_sub(rop->fe, op1->fe, op2f);
 
     mpFp_clear(op2f);
     mpz_clear(op2z);
@@ -241,16 +241,16 @@ static PyObject *FieldElement_op_sub(FieldElement *op1, FieldElement *op2) {
 		Py_RETURN_NOTIMPLEMENTED;
 	}
 	
-	if (op1->fp->fp != op2->fp->fp) {
+	if (op1->fe->fp != op2->fe->fp) {
 		PyErr_SetString(PyExc_ValueError, "FieldElement order mismatch");
 		return NULL;
 	}
 	
 	rop = (FieldElement *)FieldElement_new( &FieldElementType, NULL, NULL);
-	mpz_init(rop->fp->i);
-    rop->fp->fp = op1->fp->fp;
-    mpFp_realloc(rop->fp);
-    mpFp_sub(rop->fp, op1->fp, op2->fp);
+	mpz_init(rop->fe->i);
+    rop->fe->fp = op1->fe->fp;
+    mpFp_realloc(rop->fe);
+    mpFp_sub(rop->fe, op1->fe, op2->fe);
     return (PyObject *)rop;
 }
 
@@ -260,16 +260,16 @@ static PyObject *FieldElement_op_mul_pylong(FieldElement *op1, PyLongObject *op2
 	mpFp_t op2f;
 
 	mpz_init(op2z);
-	mpFp_init_fp(op2f, op1->fp->fp);
+	mpFp_init_fp(op2f, op1->fe->fp);
 
 	_pylong_to_mpz(op2, op2z);
-	mpFp_set_mpz_fp(op2f, op2z, op1->fp->fp);
+	mpFp_set_mpz_fp(op2f, op2z, op1->fe->fp);
 
 	rop = (FieldElement *)FieldElement_new( &FieldElementType, NULL, NULL);
-	mpz_init(rop->fp->i);
-    rop->fp->fp = op1->fp->fp;
-    mpFp_realloc(rop->fp);
-    mpFp_mul(rop->fp, op1->fp, op2f);
+	mpz_init(rop->fe->i);
+    rop->fe->fp = op1->fe->fp;
+    mpFp_realloc(rop->fe);
+    mpFp_mul(rop->fe, op1->fe, op2f);
 
     mpFp_clear(op2f);
     mpz_clear(op2z);
@@ -296,16 +296,16 @@ static PyObject *FieldElement_op_mul(FieldElement *op1, FieldElement *op2) {
 		Py_RETURN_NOTIMPLEMENTED;
 	}
 	
-	if (op1->fp->fp != op2->fp->fp) {
+	if (op1->fe->fp != op2->fe->fp) {
 		PyErr_SetString(PyExc_ValueError, "FieldElement order mismatch");
 		return NULL;
 	}
 	
 	rop = (FieldElement *)FieldElement_new( &FieldElementType, NULL, NULL);
-	mpz_init(rop->fp->i);
-    rop->fp->fp = op1->fp->fp;
-    mpFp_realloc(rop->fp);
-    mpFp_mul(rop->fp, op1->fp, op2->fp);
+	mpz_init(rop->fe->i);
+    rop->fe->fp = op1->fe->fp;
+    mpFp_realloc(rop->fe);
+    mpFp_mul(rop->fe, op1->fe, op2->fe);
     return (PyObject *)rop;
 }
 
@@ -313,10 +313,10 @@ static PyObject *FieldElement_op_neg(FieldElement *op1) {
 	FieldElement *rop;
 	
 	rop = (FieldElement *)FieldElement_new( &FieldElementType, NULL, NULL);
-	mpz_init(rop->fp->i);
-    rop->fp->fp = op1->fp->fp;
-    mpFp_realloc(rop->fp);
-    mpFp_neg(rop->fp, op1->fp);
+	mpz_init(rop->fe->i);
+    rop->fe->fp = op1->fe->fp;
+    mpFp_realloc(rop->fe);
+    mpFp_neg(rop->fe, op1->fe);
     return (PyObject *)rop;
 }
 
@@ -325,12 +325,12 @@ static PyObject *FieldElement_op_multiplicative_inverse(FieldElement *op1, PyObj
 	int status;
 	
 	rop = (FieldElement *)FieldElement_new( &FieldElementType, NULL, NULL);
-	mpz_init(rop->fp->i);
-    rop->fp->fp = op1->fp->fp;
-    mpFp_realloc(rop->fp);
-    status = mpFp_inv(rop->fp, op1->fp);
+	mpz_init(rop->fe->i);
+    rop->fe->fp = op1->fe->fp;
+    mpFp_realloc(rop->fe);
+    status = mpFp_inv(rop->fe, op1->fe);
     if (__GMP_UNLIKELY(status != 0)) {
-		mpz_clear(rop->fp->i);
+		mpz_clear(rop->fe->i);
     	Py_RETURN_NONE;
     }
     return (PyObject *)rop;
@@ -341,12 +341,12 @@ static PyObject *FieldElement_op_sqrt(FieldElement *op1, PyObject *none) {
 	int status;
 	
 	rop = (FieldElement *)FieldElement_new( &FieldElementType, NULL, NULL);
-	mpz_init(rop->fp->i);
-    rop->fp->fp = op1->fp->fp;
-    mpFp_realloc(rop->fp);
-    status = mpFp_sqrt(rop->fp, op1->fp);
+	mpz_init(rop->fe->i);
+    rop->fe->fp = op1->fe->fp;
+    mpFp_realloc(rop->fe);
+    status = mpFp_sqrt(rop->fe, op1->fe);
     if (status != 0) {
-		mpz_clear(rop->fp->i);
+		mpz_clear(rop->fe->i);
     	Py_RETURN_NONE;
     }
     return (PyObject *)rop;
@@ -374,7 +374,7 @@ static PyObject *FieldElement_urandom(PyObject *none, PyObject *plong) {
 	}
 
 	rop = (FieldElement *)FieldElement_new( &FieldElementType, NULL, NULL);
-    mpFp_urandom(rop->fp, pmpz);
+    mpFp_urandom(rop->fe, pmpz);
 
     mpz_clear(pmpz);
 
@@ -402,12 +402,12 @@ static PyObject *FieldElement_richcompare(PyObject *a, PyObject *b, int op) {
 		}
 		switch (op) {
 		case Py_EQ:
-			if (mpFp_cmp_mpz(((FieldElement *)a)->fp, bmpz) == 0) {
+			if (mpFp_cmp_mpz(((FieldElement *)a)->fe, bmpz) == 0) {
 				result = 1;
 			}
 			break;
 		case Py_NE:
-			if (mpFp_cmp_mpz(((FieldElement *)a)->fp, bmpz) != 0) {
+			if (mpFp_cmp_mpz(((FieldElement *)a)->fe, bmpz) != 0) {
 				result = 1;
 			}
 			break;
@@ -421,12 +421,12 @@ static PyObject *FieldElement_richcompare(PyObject *a, PyObject *b, int op) {
 		}
 		switch (op) {
 		case Py_EQ:
-			if (mpFp_cmp(((FieldElement *)a)->fp, ((FieldElement *)b)->fp) == 0) {
+			if (mpFp_cmp(((FieldElement *)a)->fe, ((FieldElement *)b)->fe) == 0) {
 				result = 1;
 			}
 			break;
 		case Py_NE:
-			if (mpFp_cmp(((FieldElement *)a)->fp, ((FieldElement *)b)->fp) != 0) {
+			if (mpFp_cmp(((FieldElement *)a)->fe, ((FieldElement *)b)->fe) != 0) {
 				result = 1;
 			}
 			break;
@@ -469,10 +469,10 @@ static PyObject *FieldElement_op_power(FieldElement *a, FieldElement *b, PyObjec
 	mpz_clear(bmpz);
 	
 	rop = (FieldElement *)FieldElement_new( &FieldElementType, NULL, NULL);
-	mpz_init(rop->fp->i);
-    rop->fp->fp = a->fp->fp;
-    mpFp_realloc(rop->fp);
-    mpFp_pow_ui(rop->fp, a->fp, bui);
+	mpz_init(rop->fe->i);
+    rop->fe->fp = a->fe->fp;
+    mpFp_realloc(rop->fe);
+    mpFp_pow_ui(rop->fe, a->fe, bui);
     return (PyObject *)rop;
 }
 
@@ -482,9 +482,9 @@ static PyObject *FieldElement_repr(PyObject *a) {
 	PyObject *rep;
 	assert(PyObject_TypeCheck(a, &FieldElementType) != 0);
 	
-	i = _mpz_to_pylong(((FieldElement *)a)->fp->i);
+	i = _mpz_to_pylong(((FieldElement *)a)->fe->i);
 	assert(i != NULL);
-	p = _mpz_to_pylong(((FieldElement *)a)->fp->fp->p);
+	p = _mpz_to_pylong(((FieldElement *)a)->fe->fp->p);
 	assert(p != NULL);
 	rep = PyUnicode_FromFormat("ECC.FieldElement(%S, %S)", i, p);
 	Py_DECREF(p);

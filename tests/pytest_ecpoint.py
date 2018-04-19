@@ -1,4 +1,4 @@
-#BSD 3-Clause License
+# BSD 3-Clause License
 #
 # Copyright (c) 2018, Joseph deBlaquiere <jadeblaquiere@yahoo.com>
 # All rights reserved
@@ -31,7 +31,7 @@
 import unittest
 import ECC
 from ECC import FieldElement, ECurve, ECPoint
-#from binascii import hexlify, unhexlify
+
 
 class TestECPoint(unittest.TestCase):
 
@@ -56,7 +56,6 @@ class TestECPoint(unittest.TestCase):
 
     def test_repr(self):
         pts = []
-        rpts = []
         for c in self.cv:
             G = c.G
             pG = ECPoint(c, G)
@@ -90,7 +89,7 @@ class TestECPoint(unittest.TestCase):
                 self.assertEqual(pI, pII)
                 self.assertEqual(pI + pIn, p0)
                 pA = p0
-                for j in range(0,i):
+                for _ in range(0, i):
                     pA += pG
                 self.assertEqual(pI, pA)
 
@@ -98,7 +97,6 @@ class TestECPoint(unittest.TestCase):
         for c in self.cv:
             G = c.G
             pG = ECPoint(c, G)
-            p0 = ECPoint(c)
             pGb = ECPoint(c, G)
             pGb.setup_basemult()
             self.assertEqual(pG, pGb)
@@ -110,17 +108,17 @@ class TestECPoint(unittest.TestCase):
 
     # there is a finite (but extremely small) probability that this test
     # fails because two random draws are identical (or 0; or 1)
-    # but that probabibilty is essentially 102 / c.n, where c.n is 
-    # >100 bits long..., so if it happens once in your life you are truly lucky!
+    # but that probabibilty is essentially 102 / c.n, where c.n is
+    # >100 bits long..., so if it happens once in your life you are... lucky!
     def test_urandom(self):
         for c in self.cv:
             G = c.G
             pG = ECPoint(c, G)
             pN = ECPoint(c)
             pR = []
-            for i in range(0,100):
+            for i in range(0, 100):
                 pR.append(ECPoint.urandom(c))
-            for i in range(0,100):
+            for i in range(0, 100):
                 pC = ECPoint(c, str(pR[i]))
                 self.assertEqual(pC, pR[i])
                 self.assertNotEqual(pC, pG)
@@ -139,6 +137,7 @@ class TestECPoint(unittest.TestCase):
             B = b * pG
             self.assertNotEqual(A, B)
             self.assertEqual(A * b, a * B)
+
 
 if __name__ == '__main__':
     unittest.main()

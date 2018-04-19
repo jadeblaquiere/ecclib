@@ -41,7 +41,7 @@ extern "C" {
 
 typedef struct {
     PyObject_HEAD
-    mpFp_t fp;
+    mpFp_t fe;
     int ready;
 } FieldElement;
 

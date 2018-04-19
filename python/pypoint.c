@@ -49,12 +49,12 @@ PyDoc_STRVAR(ECPoint__doc__,
 static PyObject *ECPoint_new(PyTypeObject *type, PyObject *args, PyObject *kwds) {
 	// create the new Parameterss object
 	ECPoint *self = (ECPoint *)type->tp_alloc(type, 0);
-	self->ready = 0;
 	// make sure it actually worked
 	if (!self) {
 		PyErr_SetString(PyExc_TypeError, "could not create ECPoint object.");
 		return NULL;
 	}
+	self->ready = 0;
 
 	// cast and return
 	return (PyObject *)self;
@@ -120,19 +120,19 @@ static int ECPoint_init(ECPoint *self, PyObject *args, PyObject *kwargs) {
                 mpz_clear(ixmpz);
             } else {
                 if ((!PyObject_TypeCheck(ix, &FieldElementType)) || 
-                    (!PyObject_TypeCheck(ix, &FieldElementType))) {
+                    (!PyObject_TypeCheck(iy, &FieldElementType))) {
         		    PyErr_SetString(PyExc_TypeError, "initializer tuple type mismatch");
         		    return -1;
                 }
 
-                if ((((FieldElement *)ix)->fp->fp != ((ECurve *)curve)->ec->fp) || 
-                    (((FieldElement *)ix)->fp->fp != ((ECurve *)curve)->ec->fp)) {
+                if ((((FieldElement *)ix)->fe->fp != ((ECurve *)curve)->ec->fp) || 
+                    (((FieldElement *)iy)->fe->fp != ((ECurve *)curve)->ec->fp)) {
         		    PyErr_SetString(PyExc_ValueError, "initializer tuple field order mismatch");
         		    return -1;
                 }
 
-                mpECP_set_mpFp(self->ecp, ((FieldElement *)ix)->fp,
-                    ((FieldElement *)iy)->fp, ((ECurve *)curve)->ec);
+                mpECP_set_mpFp(self->ecp, ((FieldElement *)ix)->fe,
+                    ((FieldElement *)iy)->fe, ((ECurve *)curve)->ec);
             }
         } else {
             if (PyUnicode_Check(initial)) {
@@ -309,7 +309,6 @@ static PyObject *ECPoint_op_neg(ECPoint *op1) {
 static PyObject *ECPoint_op_mul(PyObject *op1, PyObject *op2) {
 	ECPoint *rop, *p;
 	mpz_t scalar;
-	int status;
 	int negative = 0;
 
 	if(!PyObject_TypeCheck(op1, &ECPointType)) {
@@ -323,6 +322,8 @@ static PyObject *ECPoint_op_mul(PyObject *op1, PyObject *op2) {
 
 	mpz_init(scalar);
 	if(PyLong_Check(op2)) {
+	    int status;
+
 		status = _pylong_to_mpz((PyLongObject *)op2, scalar);
 		assert(status == 0);
 		if (mpz_cmp_ui(scalar, 0) < 0) {
@@ -330,7 +331,7 @@ static PyObject *ECPoint_op_mul(PyObject *op1, PyObject *op2) {
 		    mpz_neg(scalar, scalar);
 		}
 	} else if(PyObject_TypeCheck((PyObject *)op2, &FieldElementType)) {
-	    mpz_set_mpFp(scalar, ((FieldElement *)op2)->fp);
+	    mpz_set_mpFp(scalar, ((FieldElement *)op2)->fe);
     } else {
 		Py_RETURN_NOTIMPLEMENTED;
 	}
