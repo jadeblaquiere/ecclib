@@ -43,15 +43,9 @@
 
 int main(int argc, char** argv) {
     int i, j, k;
-    int status;
     mpz_t n[BENCH_SZ];
-    mpECP_t pt[BENCH_SZ];
-    mpECP_t rpt;
-    double cpu_time;
-    double mul_rate;
-    mpECurve_t cv;
     char **clist;
-    int64_t start_time, stop_time;
+    mpECurve_t cv;
 
     printf("\"curve\", \"num_iter\", \"time\", \"rate\",\n");
 
@@ -63,6 +57,13 @@ int main(int argc, char** argv) {
     clist = _mpECurve_list_standard_curves();
     i = 0;
     while (clist[i] != NULL) {
+        int status;
+        int64_t start_time, stop_time;
+        double cpu_time;
+        double mul_rate;
+        mpECP_t rpt;
+        mpECP_t pt[BENCH_SZ];
+
         status = mpECurve_set_named(cv, clist[i]);
         assert(status == 0);
 

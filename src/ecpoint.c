@@ -284,12 +284,12 @@ int mpECP_set_str(mpECP_t rpt, char *s, mpECurve_t cv) {
     int bytes;
     char *buffer;
 
+    if (s[0] != '0') return -1;
     bytes = _bytelen(cv->bits);
     buffer = (char *)malloc((strlen(s) + 1) * sizeof(char));
     assert(buffer != NULL);
     strcpy(buffer, s);
     if (strlen(s) < (2 + (2*bytes))) return -1;
-    if (s[0] != '0') return -1;
     switch (s[1]) {
         case '0':
             mpECP_set_neutral(rpt, cv);
@@ -333,6 +333,7 @@ int mpECP_set_str(mpECP_t rpt, char *s, mpECurve_t cv) {
                                 mpFp_clear(y);
                                 mpFp_clear(x);
                                 mpz_clear(xz);
+                                free(buffer);
                                 return -1;
                             }
                         }
@@ -361,6 +362,7 @@ int mpECP_set_str(mpECP_t rpt, char *s, mpECurve_t cv) {
                                 mpFp_clear(y);
                                 mpFp_clear(x);
                                 mpz_clear(xz);
+                                free(buffer);
                                 return -1;
                             }
                         }
@@ -390,6 +392,7 @@ int mpECP_set_str(mpECP_t rpt, char *s, mpECurve_t cv) {
                                 mpFp_clear(y);
                                 mpFp_clear(x);
                                 mpz_clear(xz);
+                                free(buffer);
                                 return -1;
                             }
                         }
@@ -412,6 +415,7 @@ int mpECP_set_str(mpECP_t rpt, char *s, mpECurve_t cv) {
                                 mpFp_clear(y);
                                 mpFp_clear(x);
                                 mpz_clear(xz);
+                                free(buffer);
                                 return -1;
                             }
                         }
@@ -431,8 +435,10 @@ int mpECP_set_str(mpECP_t rpt, char *s, mpECurve_t cv) {
                 mpFp_clear(x);
                 mpz_clear(xz);
             }
+            free(buffer);
             return 0;
         default:
+            free(buffer);
             return -1;
     }
     assert(0);
@@ -449,7 +455,7 @@ int  mpECP_out_strlen(mpECP_t pt, int compress) {
 }
 
 void mpECP_out_str(char *s, mpECP_t pt, int compress) {
-    int i, bytes;
+    int bytes;
     char format[32];
     _mpECP_to_affine(pt);
     bytes = _bytelen(pt->cvp->bits);
@@ -458,6 +464,8 @@ void mpECP_out_str(char *s, mpECP_t pt, int compress) {
     //printf("mp_ECP_out_str format: %s\n", format);
     s[0] = '0';
     if (pt->is_neutral) {
+        int i;
+
         if (compress == 0) bytes *= 2;
         for (i = 1; i < ((2*bytes) + 2); i++) {
             s[i] = '0';
