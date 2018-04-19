@@ -47,7 +47,7 @@ class TestFieldElement(unittest.TestCase):
         self.assertEqual(int(g), self.p - 1)
 
     def test_urandom(self):
-        for i in range(0, 10000):
+        for _ in range(0, 10000):
             e = FieldElement.urandom(self.p)
             self.assertGreaterEqual(int(e), 0)
             self.assertLess(int(e), self.p)
@@ -63,7 +63,7 @@ class TestFieldElement(unittest.TestCase):
         e = FieldElement(-1, self.p)
         g = e + f
         self.assertEqual(int(g), 0)
-        for i in range(0, 10000):
+        for _ in range(0, 10000):
             e = FieldElement.urandom(self.p)
             f = FieldElement.urandom(self.p)
             g = (int(e) + int(f)) % self.p
@@ -80,7 +80,7 @@ class TestFieldElement(unittest.TestCase):
         e = FieldElement(-1, self.p)
         g = -e
         self.assertEqual(int(g), 1)
-        for i in range(0, 10000):
+        for _ in range(0, 10000):
             e = FieldElement.urandom(self.p)
             g = (-int(e)) % self.p
             self.assertEqual(int(-e), g)
@@ -96,7 +96,7 @@ class TestFieldElement(unittest.TestCase):
         f = FieldElement(-1, self.p)
         g = e - f
         self.assertEqual(int(g), 2)
-        for i in range(0, 10000):
+        for _ in range(0, 10000):
             e = FieldElement.urandom(self.p)
             f = FieldElement.urandom(self.p)
             g = (int(e) - int(f)) % self.p
@@ -115,7 +115,7 @@ class TestFieldElement(unittest.TestCase):
         f = FieldElement(-1, self.p)
         g = e * f
         self.assertEqual(int(g), self.p - 1)
-        for i in range(0, 10000):
+        for _ in range(0, 10000):
             e = FieldElement.urandom(self.p)
             f = FieldElement.urandom(self.p)
             g = (int(e) * int(f)) % self.p
@@ -129,7 +129,7 @@ class TestFieldElement(unittest.TestCase):
         f = FieldElement(1, self.p)
         g = f.inverse()
         self.assertEqual(int(g), 1)
-        for i in range(0, 10000):
+        for _ in range(0, 10000):
             e = FieldElement.urandom(self.p)
             f = e.inverse()
             if f is None:
@@ -146,7 +146,7 @@ class TestFieldElement(unittest.TestCase):
         g = f.inverse()
         self.assertEqual(int(g * g), 1)
         self.assertEqual(int(g * g), f)
-        for i in range(0, 10000):
+        for _ in range(0, 10000):
             e = FieldElement.urandom(self.p)
             f = e.sqrt()
             if f is not None:
@@ -165,7 +165,7 @@ class TestFieldElement(unittest.TestCase):
         self.assertEqual(g, 1)
         g = f ** 3
         self.assertEqual(g, 1)
-        for i in range(0, 100):
+        for _ in range(0, 100):
             e = FieldElement.urandom(self.p)
             for j in range(0, 10):
                 f = pow(e, j)
@@ -179,7 +179,7 @@ class TestFieldElement(unittest.TestCase):
         f = FieldElement(1, self.p)
         g = repr(f)
         self.assertEqual(eval(g), 1)
-        for i in range(0, 10000):
+        for _ in range(0, 10000):
             e = FieldElement.urandom(self.p)
             f = repr(e)
             g = eval(f)

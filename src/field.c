@@ -408,9 +408,7 @@ int mpFp_inv(mpFp_t c, mpFp_t a) {
     return (rstatus == 0);
 }
 
-#if 1
 void mpFp_mul(mpFp_t c, mpFp_t a, mpFp_t b) {
-    int i;
     mpFp_field_ptr fp;
     mpz_t t;
     mp_limb_t tl[_MPFP_MAX_LIMBS*2];
@@ -427,6 +425,8 @@ void mpFp_mul(mpFp_t c, mpFp_t a, mpFp_t b) {
     // mpn_tdiv_qr(u->_mp_d, c->i->_mp_d, 0, t->_mp_d, fp->p2size, fp->p->_mp_d, fp->psize);
     mpz_mod(c->i, t, fp->p);
     if (__GMP_UNLIKELY(c->i->_mp_size < fp->psize)) {
+        int i;
+
         for (i = c->i->_mp_size; i < fp->psize; i++) {
             c->i->_mp_d[i] = 0;
         }
@@ -438,7 +438,6 @@ void mpFp_mul(mpFp_t c, mpFp_t a, mpFp_t b) {
 }
 
 void mpFp_mul_ui(mpFp_t c, mpFp_t a, unsigned long int b) {
-    int i;
     mpFp_field_ptr fp;
     mpz_t t;
     mp_limb_t b_limb;
@@ -457,6 +456,8 @@ void mpFp_mul_ui(mpFp_t c, mpFp_t a, unsigned long int b) {
     // mpn_tdiv_qr(u->_mp_d, c->i->_mp_d, 0, t->_mp_d, fp->p2size, fp->p->_mp_d, fp->psize);
     mpz_mod(c->i, t, fp->p);
     if (__GMP_UNLIKELY(c->i->_mp_size < fp->psize)) {
+        int i;
+
         for (i = c->i->_mp_size; i < fp->psize; i++) {
             c->i->_mp_d[i] = 0;
         }
@@ -466,51 +467,8 @@ void mpFp_mul_ui(mpFp_t c, mpFp_t a, unsigned long int b) {
     //c->fp = fp;
     return;
 }
-#else
-void mpFp_mul(mpFp_t c, mpFp_t a, mpFp_t b) {
-    int i;
-    mpFp_field_ptr fp;
-    PARANOID_ASSERT(a->fp == b->fp);
-    PARANOID_ASSERT(a->fp == c->fp);
-    fp = a->fp;
-
-    mpz_mul(c->i, a->i, b->i);
-    mpz_mod(c->i, c->i, fp->p);
-    mpFp_realloc(c);
-    if (__GMP_UNLIKELY(c->i->_mp_size < fp->psize)) {
-        for (i = c->i->_mp_size; i < fp->psize; i++) {
-            c->i->_mp_d[i] = 0;
-        }
-    }
-
-    c->i->_mp_size = fp->psize;
-    //c->fp = fp;
-    return;
-}
-
-void mpFp_mul_ui(mpFp_t c, mpFp_t a, unsigned long int b) {
-    int i;
-    mpFp_field_ptr fp;
-    PARANOID_ASSERT(a->fp == c->fp);
-    fp = a->fp;
-
-    mpz_mul_ui(c->i, a->i, b);
-    mpz_mod(c->i, c->i, fp->p);
-    mpFp_realloc(c);
-    if (__GMP_UNLIKELY(c->i->_mp_size < fp->psize)) {
-        for (i = c->i->_mp_size; i < fp->psize; i++) {
-            c->i->_mp_d[i] = 0;
-        }
-    }
-
-    c->i->_mp_size = fp->psize;
-    //c->fp = fp;
-    return;
-}
-#endif
 
 void mpFp_sqr(mpFp_t c, mpFp_t a) {
-    int i;
     mpFp_field_ptr fp;
     mpz_t t;
     mp_limb_t tl[_MPFP_MAX_LIMBS*2];
@@ -526,6 +484,8 @@ void mpFp_sqr(mpFp_t c, mpFp_t a) {
     // mpn_tdiv_qr(u->_mp_d, c->i->_mp_d, 0, t->_mp_d, fp->p2size, fp->p->_mp_d, fp->psize);
     mpz_mod(c->i, t, fp->p);
     if (__GMP_UNLIKELY(c->i->_mp_size < fp->psize)) {
+        int i;
+
         for (i = c->i->_mp_size; i < fp->psize; i++) {
             c->i->_mp_d[i] = 0;
         }
@@ -537,7 +497,6 @@ void mpFp_sqr(mpFp_t c, mpFp_t a) {
 }
 
 void mpFp_pow_ui(mpFp_t c, mpFp_t a, unsigned long int b) {
-    int i;
     mpFp_field_ptr fp;
     fp = a->fp;
     PARANOID_ASSERT(a->fp == c->fp);
@@ -545,6 +504,8 @@ void mpFp_pow_ui(mpFp_t c, mpFp_t a, unsigned long int b) {
 
     mpz_powm_ui(c->i, a->i, b, fp->p);
     if (__GMP_UNLIKELY(c->i->_mp_size < fp->psize)) {
+        int i;
+
         for (i = c->i->_mp_size; i < fp->psize; i++) {
             c->i->_mp_d[i] = 0;
         }
@@ -657,7 +618,7 @@ void mpFp_urandom(mpFp_t a, mpz_t p) {
 /* modular square root - return nonzero if not quadratic residue */ 
 
 int mpFp_sqrt(mpFp_t rop, mpFp_t op) {
-    int i, s;
+    int s;
     mpz_t t, q, opi, ropi;
     mpz_init(opi);
     mpz_set_mpFp(opi, op);
@@ -682,7 +643,7 @@ int mpFp_sqrt(mpFp_t rop, mpFp_t op) {
         mpFp_realloc(rop);
         mpz_powm(rop->i, opi, t, op->fp->p);
     } else {
-        int m, i;
+        int m;
         mpz_t z, c, r, b;
         mpz_init(z);
         mpz_init(c);
@@ -700,6 +661,8 @@ int mpFp_sqrt(mpFp_t rop, mpFp_t op) {
         mpz_powm(t, opi, q, op->fp->p);
         m = s;
         while (1) {
+            int i;
+
             if (mpz_cmp_ui(t, 1) == 0) {
                 break;
             }
@@ -733,6 +696,8 @@ int mpFp_sqrt(mpFp_t rop, mpFp_t op) {
     mpz_clear(opi);
 
     if (__GMP_UNLIKELY(rop->i->_mp_size < op->fp->psize)) {
+        int i;
+
         for (i = rop->i->_mp_size; i < op->fp->psize; i++) {
             rop->i->_mp_d[i] = 0;
         }

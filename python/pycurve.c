@@ -475,7 +475,6 @@ ConversionError:
 static PyObject *ECurve_list_curve_names(PyObject *type, PyObject *none) {
     char **list;
     PyObject *clist;
-    int status;
     int i = 0;
 
     assert(none == NULL);
@@ -486,6 +485,7 @@ static PyObject *ECurve_list_curve_names(PyObject *type, PyObject *none) {
     clist = PyList_New(0);
     assert(clist != NULL);
     while (list[i] != NULL) {
+        int status;
         PyObject *pstr;
 
         pstr = PyUnicode_FromString(list[i]);
