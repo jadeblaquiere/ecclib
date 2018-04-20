@@ -255,7 +255,7 @@ void mpFp_neg(mpFp_t c, mpFp_t a) {
     mpFp_field_ptr fp;
     mp_limb_t borrow;
     int i;
-    PARANOID_ASSERT(a->fp == c->fp);
+    c->fp = a->fp;
     fp = a->fp;
     //mpz_realloc(c->i, fp->p2size);
     mpFp_realloc(c);
@@ -284,7 +284,7 @@ void mpFp_add(mpFp_t c, mpFp_t a, mpFp_t b) {
     mpFp_field_ptr fp;
     mp_limb_t carry, borrow;
     PARANOID_ASSERT(a->fp == b->fp);
-    PARANOID_ASSERT(a->fp == c->fp);
+    c->fp = a->fp;
     fp = a->fp;
     //mpz_realloc(c->i, fp->p2size);
     mpFp_realloc(c);
@@ -303,7 +303,7 @@ void mpFp_add(mpFp_t c, mpFp_t a, mpFp_t b) {
 void mpFp_add_ui(mpFp_t c, mpFp_t a, unsigned long int b) {
     mpFp_field_ptr fp;
     mp_limb_t carry, borrow;
-    PARANOID_ASSERT(a->fp == c->fp);
+    c->fp = a->fp;
     fp = a->fp;
     //mpz_realloc(c->i, fp->p2size);
     mpFp_realloc(c);
@@ -328,7 +328,7 @@ void mpFp_sub(mpFp_t c, mpFp_t a, mpFp_t b) {
     mpFp_field_ptr fp;
     mp_limb_t carry, borrow;
     PARANOID_ASSERT(a->fp == b->fp);
-    PARANOID_ASSERT(a->fp == c->fp);
+    c->fp = a->fp;
     fp = a->fp;
     //mpz_realloc(c->i, fp->p2size);
     mpFp_realloc(c);
@@ -347,7 +347,7 @@ void mpFp_sub(mpFp_t c, mpFp_t a, mpFp_t b) {
 void mpFp_sub_ui(mpFp_t c, mpFp_t a, unsigned long int b) {
     mpFp_field_ptr fp;
     mp_limb_t carry, borrow;
-    PARANOID_ASSERT(a->fp == c->fp);
+    c->fp = a->fp;
     fp = a->fp;
     //mpz_realloc(c->i, fp->p2size);
     mpFp_realloc(c);
@@ -374,7 +374,7 @@ int mpFp_inv(mpFp_t c, mpFp_t a) {
     mpFp_field_ptr fp;
     mp_limb_t tl[_MPFP_MAX_LIMBS*2];
     fp = a->fp;
-    PARANOID_ASSERT(a->fp == c->fp);
+    c->fp = a->fp;
     PARANOID_ASSERT(a->i->_mp_size == fp->psize);
     PARANOID_ASSERT(fp->psize <= _MPFP_MAX_LIMBS);
     mpFp_realloc(c);
@@ -415,7 +415,7 @@ void mpFp_mul(mpFp_t c, mpFp_t a, mpFp_t b) {
     fp = a->fp;
     PARANOID_ASSERT(fp->psize <= _MPFP_MAX_LIMBS);
     PARANOID_ASSERT(a->fp == b->fp);
-    PARANOID_ASSERT(a->fp == c->fp);
+    c->fp = a->fp;
     mpFp_realloc(c);
 
     mpn_mul_n(tl, a->i->_mp_d, b->i->_mp_d, fp->psize);
@@ -444,7 +444,7 @@ void mpFp_mul_ui(mpFp_t c, mpFp_t a, unsigned long int b) {
     mp_limb_t tl[_MPFP_MAX_LIMBS*2];
     fp = a->fp;
     PARANOID_ASSERT(fp->psize <= _MPFP_MAX_LIMBS);
-    PARANOID_ASSERT(a->fp == c->fp);
+    c->fp = a->fp;
     mpFp_realloc(c);
 
     b_limb = b;
@@ -474,7 +474,7 @@ void mpFp_sqr(mpFp_t c, mpFp_t a) {
     mp_limb_t tl[_MPFP_MAX_LIMBS*2];
     fp = a->fp;
     PARANOID_ASSERT(fp->psize <= _MPFP_MAX_LIMBS);
-    PARANOID_ASSERT(a->fp == c->fp);
+    c->fp = a->fp;
     mpFp_realloc(c);
 
     mpn_sqr(tl, a->i->_mp_d, fp->psize);
@@ -499,7 +499,7 @@ void mpFp_sqr(mpFp_t c, mpFp_t a) {
 void mpFp_pow_ui(mpFp_t c, mpFp_t a, unsigned long int b) {
     mpFp_field_ptr fp;
     fp = a->fp;
-    PARANOID_ASSERT(a->fp == c->fp);
+    c->fp = a->fp;
     mpFp_realloc(c);
 
     mpz_powm_ui(c->i, a->i, b, fp->p);
