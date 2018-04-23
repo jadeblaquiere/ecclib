@@ -31,8 +31,6 @@
 package ecgo
 
 // #cgo LDFLAGS: -lecc -lgmp
-// #include <ecurve.h>
-// #include <ecpoint.h>
 // #include <field.h>
 // #include <gmp.h>
 // #include <stdlib.h>
@@ -51,6 +49,10 @@ package ecgo
 //
 // __mpz_struct *_p_of_fe(mpFp_t p) {
 //     return p->fp->p;
+// }
+//
+// int _local_mpz_sgn(mpz_t p) {
+//     return mpz_sgn(p);
 // }
 //
 // size_t _mpz_sizeinbytes(mpz_t a) {
@@ -84,24 +86,76 @@ type FieldElement struct {
 	fe *C._mpFp_struct
 }
 
+func bigint_to_c_mpz_unsigned(m *C.__mpz_struct, a *big.Int) error {
+	abytes := a.Bytes()
+
+	if a.Cmp(big.NewInt(0)) < 0 {
+		return errors.New("negative input to bigint_to_c_mpz_unsigned")
+	}
+
+	if len(abytes) == 0 {
+		C.mpz_set_ui(m, 0)
+	} else {
+		C.mpz_import(m, C.size_t(len(abytes)), 1, C.sizeof_char, 1, 0, unsafe.Pointer(&abytes[0]))
+	}
+	return nil
+}
+
+func bigint_to_c_mpz_signed(m *C.__mpz_struct, a *big.Int) {
+	var negative bool
+
+	if a.Cmp(big.NewInt(0)) < 0 {
+		negative = true
+		a.Neg(a)
+	}
+
+	abytes := a.Bytes()
+
+	if len(abytes) == 0 {
+		C.mpz_set_ui(m, 0)
+	} else {
+		C.mpz_import(m, C.size_t(len(abytes)), 1, C.sizeof_char, 1, 0, unsafe.Pointer(&abytes[0]))
+	}
+
+	if negative {
+		C.mpz_neg(m, m)
+	}
+}
+
+func c_mpz_to_bigint(m *C.__mpz_struct) (z *big.Int) {
+	var bsz C.size_t
+	var negative bool
+
+	z = new(big.Int)
+	sz := C._mpz_sizeinbytes(m)
+	buf := make([]byte, sz, sz*2)
+	if C._local_mpz_sgn(m) < 0 {
+		negative = true
+		C.mpz_neg(m, m)
+	}
+	C.mpz_export(unsafe.Pointer(&buf[0]), &bsz, 1, C.sizeof_char, 1, 0, m)
+	z.SetBytes(buf)
+	if negative {
+		z.Neg(z)
+	}
+	return z
+}
+
 func NewFieldElement(value, field *big.Int) (z *FieldElement) {
 	var vmpz, pmpz C.__mpz_struct
-
-	vbytes := value.Bytes()
-	pbytes := field.Bytes()
+	var err error
 
 	C.mpz_init(&vmpz)
 	C.mpz_init(&pmpz)
 
-	if len(vbytes) == 0 {
-		C.mpz_set_ui(&vmpz, 0)
-	} else {
-		C.mpz_import(&vmpz, C.size_t(len(vbytes)), 1, C.sizeof_char, 1, 0, unsafe.Pointer(&vbytes[0]))
-	}
-	if len(pbytes) == 0 {
+	if field.Cmp(big.NewInt(0)) == 0 {
 		panic("cannot operate on field of order 0")
 	}
-	C.mpz_import(&pmpz, C.size_t(len(pbytes)), 1, C.sizeof_char, 1, 0, unsafe.Pointer(&pbytes[0]))
+	bigint_to_c_mpz_signed(&vmpz, value)
+	err = bigint_to_c_mpz_unsigned(&pmpz, field)
+	if err != nil {
+		return nil
+	}
 
 	// fmt.Println("imported value as:")
 	// C.print_mpz_hex(&vmpz)
@@ -121,12 +175,15 @@ func NewFieldElement(value, field *big.Int) (z *FieldElement) {
 
 func NewFieldElementUI(value uint64, field *big.Int) (z *FieldElement) {
 	var pmpz C.__mpz_struct
+	var err error
 
-	pbytes := field.Bytes()
-
-	C.mpz_init(&pmpz)
-
-	C.mpz_import(&pmpz, C.size_t(len(pbytes)), 1, C.sizeof_char, 1, 0, unsafe.Pointer(&pbytes[0]))
+	if field.Cmp(big.NewInt(0)) == 0 {
+		panic("cannot operate on field of order 0")
+	}
+	err = bigint_to_c_mpz_unsigned(&pmpz, field)
+	if err != nil {
+		return nil
+	}
 
 	// fmt.Println("imported field as:")
 	// C.print_mpz_hex(&pmpz)
@@ -143,12 +200,15 @@ func NewFieldElementUI(value uint64, field *big.Int) (z *FieldElement) {
 
 func NewFieldElementURandom(field *big.Int) (z *FieldElement) {
 	var pmpz C.__mpz_struct
+	var err error
 
-	pbytes := field.Bytes()
-
-	C.mpz_init(&pmpz)
-
-	C.mpz_import(&pmpz, C.size_t(len(pbytes)), 1, C.sizeof_char, 1, 0, unsafe.Pointer(&pbytes[0]))
+	if field.Cmp(big.NewInt(0)) == 0 {
+		panic("cannot operate on field of order 0")
+	}
+	err = bigint_to_c_mpz_unsigned(&pmpz, field)
+	if err != nil {
+		return nil
+	}
 
 	// fmt.Println("imported field as:")
 	// C.print_mpz_hex(&pmpz)
@@ -168,32 +228,20 @@ func fieldElement_clear(z *FieldElement) {
 	C.free_FieldElement(z.fe)
 }
 
-func (z *FieldElement) AsInt() *big.Int {
+func (z *FieldElement) AsInt() (r *big.Int) {
 	var impz C.__mpz_struct
-	var bsz C.size_t
 
-	r := new(big.Int)
 	C.mpz_init(&impz)
 	C.mpz_set_mpFp(&impz, z.fe)
-	sz := C._mpz_sizeinbytes(&impz)
-	buf := make([]byte, sz, sz*2)
-
-	C.mpz_export(unsafe.Pointer(&buf[0]), &bsz, 1, C.sizeof_char, 1, 0, &impz)
+	r = c_mpz_to_bigint(&impz)
 	C.mpz_clear(&impz)
-	r.SetBytes(buf)
 	return r
 }
 
-func (z *FieldElement) Order() *big.Int {
-	var bsz C.size_t
-
-	r := new(big.Int)
+func (z *FieldElement) Order() (r *big.Int) {
 	impz := C._p_of_fe(z.fe)
-	sz := C._mpz_sizeinbytes(impz)
-	buf := make([]byte, sz, sz*2)
-
-	C.mpz_export(unsafe.Pointer(&buf[0]), &bsz, 1, C.sizeof_char, 1, 0, impz)
-	r.SetBytes(buf)
+	r = c_mpz_to_bigint(impz)
+	C.mpz_clear(impz)
 	return r
 }
 
