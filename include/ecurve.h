@@ -110,22 +110,22 @@ void mpECurve_clear(mpECurve_t c);
 
 void mpECurve_set(mpECurve_t rop, mpECurve_t op);
 
-void mpECurve_set_str_ws(mpECurve_t cv, char *p, char *a, char *b, char *n,
+int mpECurve_set_str_ws(mpECurve_t cv, char *p, char *a, char *b, char *n,
                       char *h, char *Gx, char *Gy, unsigned int bits);
-void mpECurve_set_str_ed(mpECurve_t cv, char *p, char *c, char *d, char *n,
+int mpECurve_set_str_ed(mpECurve_t cv, char *p, char *c, char *d, char *n,
                       char *h, char *Gx, char *Gy, unsigned int bits);
-void mpECurve_set_str_mo(mpECurve_t cv, char *p, char *B, char *A, char *n,
+int mpECurve_set_str_mo(mpECurve_t cv, char *p, char *B, char *A, char *n,
                       char *h, char *Gx, char *Gy, unsigned int bits);
-void mpECurve_set_str_te(mpECurve_t cv, char *p, char *a, char *d, char *n,
+int mpECurve_set_str_te(mpECurve_t cv, char *p, char *a, char *d, char *n,
                       char *h, char *Gx, char *Gy, unsigned int bits);
 
-void mpECurve_set_mpz_ws(mpECurve_t cv, mpz_t p, mpz_t a, mpz_t b, mpz_t n,
+int mpECurve_set_mpz_ws(mpECurve_t cv, mpz_t p, mpz_t a, mpz_t b, mpz_t n,
                       mpz_t h, mpz_t Gx, mpz_t Gy, unsigned int bits);
-void mpECurve_set_mpz_ed(mpECurve_t cv, mpz_t p, mpz_t c, mpz_t d, mpz_t n,
+int mpECurve_set_mpz_ed(mpECurve_t cv, mpz_t p, mpz_t c, mpz_t d, mpz_t n,
                       mpz_t h, mpz_t Gx, mpz_t Gy, unsigned int bits);
-void mpECurve_set_mpz_mo(mpECurve_t cv, mpz_t p, mpz_t B, mpz_t A, mpz_t n,
+int mpECurve_set_mpz_mo(mpECurve_t cv, mpz_t p, mpz_t B, mpz_t A, mpz_t n,
                       mpz_t h, mpz_t Gx, mpz_t Gy, unsigned int bits);
-void mpECurve_set_mpz_te(mpECurve_t cv, mpz_t p, mpz_t a, mpz_t d, mpz_t n,
+int mpECurve_set_mpz_te(mpECurve_t cv, mpz_t p, mpz_t a, mpz_t d, mpz_t n,
                       mpz_t h, mpz_t Gx, mpz_t Gy, unsigned int bits);
 
 int mpECurve_set_named(mpECurve_t c, char *name);

@@ -214,7 +214,14 @@ static PyObject *ECurve_create_ws(PyObject *none, PyObject *args) {
     
 	rop = (ECurve *)ECurve_new( &ECurveType, NULL, NULL);
 	mpECurve_init(rop->ec);
-    mpECurve_set_mpz_ws(rop->ec, pmpz, ampz, bmpz, nmpz, hmpz, gxmpz, gympz, bits);
+    status = mpECurve_set_mpz_ws(rop->ec, pmpz, ampz, bmpz, nmpz, hmpz, gxmpz, gympz, bits);
+	rop->ready = 1;
+
+	if (status != 0) {
+	    Py_DECREF(rop);
+	    PyErr_SetString(PyExc_ValueError, "Invalid curve parameters");
+	    rop = NULL;
+	}
 
     mpz_clear(gympz);
     mpz_clear(gxmpz);
@@ -292,7 +299,14 @@ static PyObject *ECurve_create_ed(PyObject *none, PyObject *args) {
     
 	rop = (ECurve *)ECurve_new( &ECurveType, NULL, NULL);
 	mpECurve_init(rop->ec);
-    mpECurve_set_mpz_ed(rop->ec, pmpz, cmpz, dmpz, nmpz, hmpz, gxmpz, gympz, bits);
+    status = mpECurve_set_mpz_ed(rop->ec, pmpz, cmpz, dmpz, nmpz, hmpz, gxmpz, gympz, bits);
+	rop->ready = 1;
+
+	if (status != 0) {
+	    Py_DECREF(rop);
+	    PyErr_SetString(PyExc_ValueError, "Invalid curve parameters");
+	    rop = NULL;
+	}
 
     mpz_clear(gympz);
     mpz_clear(gxmpz);
@@ -370,7 +384,14 @@ static PyObject *ECurve_create_mo(PyObject *none, PyObject *args) {
     
 	rop = (ECurve *)ECurve_new( &ECurveType, NULL, NULL);
 	mpECurve_init(rop->ec);
-    mpECurve_set_mpz_mo(rop->ec, pmpz, Bmpz, Ampz, nmpz, hmpz, gxmpz, gympz, bits);
+    status = mpECurve_set_mpz_mo(rop->ec, pmpz, Bmpz, Ampz, nmpz, hmpz, gxmpz, gympz, bits);
+	rop->ready = 1;
+
+	if (status != 0) {
+	    Py_DECREF(rop);
+	    PyErr_SetString(PyExc_ValueError, "Invalid curve parameters");
+	    rop = NULL;
+	}
 
     mpz_clear(gympz);
     mpz_clear(gxmpz);
@@ -448,7 +469,14 @@ static PyObject *ECurve_create_te(PyObject *none, PyObject *args) {
     
 	rop = (ECurve *)ECurve_new( &ECurveType, NULL, NULL);
 	mpECurve_init(rop->ec);
-    mpECurve_set_mpz_te(rop->ec, pmpz, ampz, dmpz, nmpz, hmpz, gxmpz, gympz, bits);
+    status = mpECurve_set_mpz_te(rop->ec, pmpz, ampz, dmpz, nmpz, hmpz, gxmpz, gympz, bits);
+	rop->ready = 1;
+
+	if (status != 0) {
+	    Py_DECREF(rop);
+	    PyErr_SetString(PyExc_ValueError, "Invalid curve parameters");
+	    rop = NULL;
+	}
 
     mpz_clear(gympz);
     mpz_clear(gxmpz);

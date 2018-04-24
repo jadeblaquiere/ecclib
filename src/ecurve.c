@@ -812,10 +812,12 @@ void mpECurve_set(mpECurve_t rop, mpECurve_t op){
     return;
 }
 
-void mpECurve_set_str_ws(mpECurve_t cv, char *p, char *a, char *b, char *n,
+int mpECurve_set_str_ws(mpECurve_t cv, char *p, char *a, char *b, char *n,
 char *h, char *Gx, char *Gy, unsigned int bits){
+    int status;
     mpFp_field_ptr fp;
     mpz_t t;
+
     mpz_init(t);
     mpz_set_str(t, p, 0);
     fp = _mpFp_field_lookup(t);
@@ -836,15 +838,17 @@ char *h, char *Gx, char *Gy, unsigned int bits){
     mpz_set_str(cv->G[0], Gx, 0);
     mpz_set_str(cv->G[1], Gy, 0);
     cv->bits = bits;
-    assert(mpECurve_point_check(cv, cv->G[0], cv->G[1]));
+    status = (mpECurve_point_check(cv, cv->G[0], cv->G[1]) == 0);
     mpz_clear(t);
-    return;
+    return status;
 }
 
-void mpECurve_set_str_ed(mpECurve_t cv, char *p, char *c, char *d, char *n,
+int mpECurve_set_str_ed(mpECurve_t cv, char *p, char *c, char *d, char *n,
 char *h, char *Gx, char *Gy, unsigned int bits){
+    int status;
     mpFp_field_ptr fp;
     mpz_t t;
+
     mpz_init(t);
     mpz_set_str(t, p, 0);
     fp = _mpFp_field_lookup(t);
@@ -864,14 +868,16 @@ char *h, char *Gx, char *Gy, unsigned int bits){
     mpz_set_str(cv->G[0], Gx, 0);
     mpz_set_str(cv->G[1], Gy, 0);
     cv->bits = bits;
-    assert(mpECurve_point_check(cv, cv->G[0], cv->G[1]));
+    status = (mpECurve_point_check(cv, cv->G[0], cv->G[1]) == 0);
     mpz_clear(t);
-    return;
+    return status;
 }
 
-void mpECurve_set_str_mo(mpECurve_t cv, char *p, char *B, char *A, char *n,
+int mpECurve_set_str_mo(mpECurve_t cv, char *p, char *B, char *A, char *n,
 char *h, char *Gx, char *Gy, unsigned int bits){
+    int status;
     mpz_t zp, zB, zA, zn, zh, zGx, zGy;
+
     mpz_init(zp);
     mpz_init(zB);
     mpz_init(zA);
@@ -888,7 +894,7 @@ char *h, char *Gx, char *Gy, unsigned int bits){
     mpz_set_str(zGx, Gx, 0);
     mpz_set_str(zGy, Gy, 0);
 
-    mpECurve_set_mpz_mo(cv, zp, zB, zA, zn, zh, zGx, zGy, bits);
+    status = mpECurve_set_mpz_mo(cv, zp, zB, zA, zn, zh, zGx, zGy, bits);
 
     mpz_clear(zGy);
     mpz_clear(zGx);
@@ -897,13 +903,15 @@ char *h, char *Gx, char *Gy, unsigned int bits){
     mpz_clear(zA);
     mpz_clear(zB);
     mpz_clear(zp);
-    return;
+    return status;
 }
 
-void mpECurve_set_str_te(mpECurve_t cv, char *p, char *a, char *d, char *n,
+int mpECurve_set_str_te(mpECurve_t cv, char *p, char *a, char *d, char *n,
 char *h, char *Gx, char *Gy, unsigned int bits){
+    int status;
     mpFp_field_ptr fp;
     mpz_t t;
+
     mpz_init(t);
     mpz_set_str(t, p, 0);
     fp = _mpFp_field_lookup(t);
@@ -923,15 +931,17 @@ char *h, char *Gx, char *Gy, unsigned int bits){
     mpz_set_str(cv->G[0], Gx, 0);
     mpz_set_str(cv->G[1], Gy, 0);
     cv->bits = bits;
-    assert(mpECurve_point_check(cv, cv->G[0], cv->G[1]));
+    status = (mpECurve_point_check(cv, cv->G[0], cv->G[1]) == 0);
     mpz_clear(t);
-    return;
+    return status;
 }
 
-void mpECurve_set_mpz_ws(mpECurve_t cv, mpz_t p, mpz_t a, mpz_t b, mpz_t n,
+int mpECurve_set_mpz_ws(mpECurve_t cv, mpz_t p, mpz_t a, mpz_t b, mpz_t n,
 mpz_t h, mpz_t Gx, mpz_t Gy, unsigned int bits){
+    int status;
     mpFp_field_ptr fp;
     mpz_t t;
+
     mpz_init(t);
     fp = _mpFp_field_lookup(p);
     cv->fp = fp;
@@ -950,15 +960,17 @@ mpz_t h, mpz_t Gx, mpz_t Gy, unsigned int bits){
     mpz_set(cv->G[0], Gx);
     mpz_set(cv->G[1], Gy);
     cv->bits = bits;
-    assert(mpECurve_point_check(cv, cv->G[0], cv->G[1]));
+    status = (mpECurve_point_check(cv, cv->G[0], cv->G[1]) == 0);
     mpz_clear(t);
-    return;
+    return status;
 }
 
-void mpECurve_set_mpz_ed(mpECurve_t cv, mpz_t p, mpz_t c, mpz_t d, mpz_t n,
+int mpECurve_set_mpz_ed(mpECurve_t cv, mpz_t p, mpz_t c, mpz_t d, mpz_t n,
 mpz_t h, mpz_t Gx, mpz_t Gy, unsigned int bits){
+    int status;
     mpFp_field_ptr fp;
     mpz_t t;
+
     mpz_init(t);
     fp = _mpFp_field_lookup(p);
     cv->fp = fp;
@@ -977,15 +989,17 @@ mpz_t h, mpz_t Gx, mpz_t Gy, unsigned int bits){
     mpz_set(cv->G[0], Gx);
     mpz_set(cv->G[1], Gy);
     cv->bits = bits;
-    assert(mpECurve_point_check(cv, cv->G[0], cv->G[1]));
+    status = (mpECurve_point_check(cv, cv->G[0], cv->G[1]) == 0);
     mpz_clear(t);
-    return;
+    return status;
 }
 
-void mpECurve_set_mpz_mo(mpECurve_t cv, mpz_t p, mpz_t B, mpz_t A, mpz_t n,
+int mpECurve_set_mpz_mo(mpECurve_t cv, mpz_t p, mpz_t B, mpz_t A, mpz_t n,
 mpz_t h, mpz_t Gx, mpz_t Gy, unsigned int bits){
+    int status;
     mpFp_field_ptr fp;
     mpz_t t;
+
     mpz_init(t);
     fp = _mpFp_field_lookup(p);
     _mpECurve_clear_coeff(cv);
@@ -1044,15 +1058,17 @@ mpz_t h, mpz_t Gx, mpz_t Gy, unsigned int bits){
     mpz_set(cv->G[0], Gx);
     mpz_set(cv->G[1], Gy);
     cv->bits = bits;
-    assert(mpECurve_point_check(cv, cv->G[0], cv->G[1]));
+    status = (mpECurve_point_check(cv, cv->G[0], cv->G[1]) == 0);
     mpz_clear(t);
-    return;
+    return status;
 }
 
-void mpECurve_set_mpz_te(mpECurve_t cv, mpz_t p, mpz_t a, mpz_t d, mpz_t n,
+int mpECurve_set_mpz_te(mpECurve_t cv, mpz_t p, mpz_t a, mpz_t d, mpz_t n,
 mpz_t h, mpz_t Gx, mpz_t Gy, unsigned int bits){
+    int status;
     mpFp_field_ptr fp;
     mpz_t t;
+
     mpz_init(t);
     fp = _mpFp_field_lookup(p);
     cv->fp = fp;
@@ -1071,46 +1087,54 @@ mpz_t h, mpz_t Gx, mpz_t Gy, unsigned int bits){
     mpz_set(cv->G[0], Gx);
     mpz_set(cv->G[1], Gy);
     cv->bits = bits;
-    assert(mpECurve_point_check(cv, cv->G[0], cv->G[1]));
+    status = (mpECurve_point_check(cv, cv->G[0], cv->G[1]) == 0);
     mpz_clear(t);
-    return;
+    return status;
 }
 
+// note, assert used to check status here... since we're using a table
+// lookup, if the curve parameters are in error this represents an internal
+// error in the library
 int mpECurve_set_named(mpECurve_t cv, char *name) {
-    int i, ncurves;
+    int i, ncurves, status;
+
     ncurves = sizeof(_std_ws_curve) / sizeof(_std_ws_curve[0]);
     for (i = 0 ; i < ncurves; i++) {
         if (strcmp(_std_ws_curve[i].name, name) == 0) {
-            mpECurve_set_str_ws(cv, _std_ws_curve[i].p, _std_ws_curve[i].a,
+            status = mpECurve_set_str_ws(cv, _std_ws_curve[i].p, _std_ws_curve[i].a,
                 _std_ws_curve[i].b,_std_ws_curve[i].n,_std_ws_curve[i].h,
                 _std_ws_curve[i].Gx,_std_ws_curve[i].Gy,_std_ws_curve[i].bits);
+            assert (status == 0);
             return 0;
         }
     }
     ncurves = sizeof(_std_ed_curve) / sizeof(_std_ed_curve[0]);
     for (i = 0 ; i < ncurves; i++) {
         if (strcmp(_std_ed_curve[i].name, name) == 0) {
-            mpECurve_set_str_ed(cv, _std_ed_curve[i].p, _std_ed_curve[i].c,
+            status = mpECurve_set_str_ed(cv, _std_ed_curve[i].p, _std_ed_curve[i].c,
                 _std_ed_curve[i].d,_std_ed_curve[i].n,_std_ed_curve[i].h,
                 _std_ed_curve[i].Gx,_std_ed_curve[i].Gy,_std_ed_curve[i].bits);
+            assert (status == 0);
             return 0;
         }
     }
     ncurves = sizeof(_std_mo_curve) / sizeof(_std_mo_curve[0]);
     for (i = 0 ; i < ncurves; i++) {
         if (strcmp(_std_mo_curve[i].name, name) == 0) {
-            mpECurve_set_str_mo(cv, _std_mo_curve[i].p, _std_mo_curve[i].B,
+            status = mpECurve_set_str_mo(cv, _std_mo_curve[i].p, _std_mo_curve[i].B,
                 _std_mo_curve[i].A,_std_mo_curve[i].n,_std_mo_curve[i].h,
                 _std_mo_curve[i].Gx,_std_mo_curve[i].Gy,_std_mo_curve[i].bits);
+            assert (status == 0);
             return 0;
         }
     }
     ncurves = sizeof(_std_te_curve) / sizeof(_std_te_curve[0]);
     for (i = 0 ; i < ncurves; i++) {
         if (strcmp(_std_te_curve[i].name, name) == 0) {
-            mpECurve_set_str_te(cv, _std_te_curve[i].p, _std_te_curve[i].a,
+            status = mpECurve_set_str_te(cv, _std_te_curve[i].p, _std_te_curve[i].a,
                 _std_te_curve[i].d,_std_te_curve[i].n,_std_te_curve[i].h,
                 _std_te_curve[i].Gx,_std_te_curve[i].Gy,_std_te_curve[i].bits);
+            assert (status == 0);
             return 0;
         }
     }

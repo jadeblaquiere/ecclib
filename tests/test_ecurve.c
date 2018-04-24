@@ -36,6 +36,7 @@
 #include <stdlib.h>
 
 START_TEST(test_mpECurve_create)
+    int status;
     mpECurve_t a;
     mpECurve_init(a);
 
@@ -48,7 +49,7 @@ START_TEST(test_mpECurve_create)
 //    n: 0xDB7C_2ABF62E3_5E7628DF_AC6561C5,
 //    h: 1
 
-    mpECurve_set_str_ws(a, 
+    status = mpECurve_set_str_ws(a, 
         "0xDB7C2ABF62E35E668076BEAD208B",
         "0xDB7C2ABF62E35E668076BEAD2088",
         "0x659EF8BA043916EEDE8911702B22",
@@ -57,11 +58,13 @@ START_TEST(test_mpECurve_create)
         "0x09487239995A5EE76B55F9C2F098",
         "0xA89CE5AF8724C0A23E0E0FF77500",
         112);
+    assert(status == 0);
 
     mpECurve_clear(a);
 END_TEST
 
 START_TEST(test_mpECurve_cmp)
+    int status;
     mpECurve_t a, b, c, d;
     mpECurve_init(a);
     mpECurve_init(b);
@@ -77,7 +80,7 @@ START_TEST(test_mpECurve_cmp)
 //    n: 0xDB7C_2ABF62E3_5E7628DF_AC6561C5,
 //    h: 1
 
-    mpECurve_set_str_ws(a, 
+    status = mpECurve_set_str_ws(a, 
         "0xDB7C2ABF62E35E668076BEAD208B",
         "0xDB7C2ABF62E35E668076BEAD2088",
         "0x659EF8BA043916EEDE8911702B22",
@@ -86,6 +89,7 @@ START_TEST(test_mpECurve_cmp)
         "0x09487239995A5EE76B55F9C2F098",
         "0xA89CE5AF8724C0A23E0E0FF77500",
         112);
+    assert(status == 0);
 
 //    name: 'secp112r2',
 //    p: 0xDB7C_2ABF62E3_5E668076_BEAD208B,
@@ -96,7 +100,7 @@ START_TEST(test_mpECurve_cmp)
 //    n: 0x36DF_0AAFD8B8_D7597CA1_0520D04B,
 //    h: 4
 
-    mpECurve_set_str_ws(b, 
+    status = mpECurve_set_str_ws(b, 
         "0xDB7C2ABF62E35E668076BEAD208B",
         "0x6127C24C05F38A0AAAF65C0EF02C",
         "0x51DEF1815DB5ED74FCC34C85D709",
@@ -105,8 +109,9 @@ START_TEST(test_mpECurve_cmp)
         "0x4BA30AB5E892B4E1649DD0928643",
         "0xADCD46F5882E3747DEF36E956E97",
         112);
+    assert(status == 0);
 
-    mpECurve_set_str_ws(c, 
+    status = mpECurve_set_str_ws(c, 
         "0xDB7C2ABF62E35E668076BEAD208B",
         "0xDB7C2ABF62E35E668076BEAD2088",
         "0x659EF8BA043916EEDE8911702B22",
@@ -115,6 +120,7 @@ START_TEST(test_mpECurve_cmp)
         "0x09487239995A5EE76B55F9C2F098",
         "0xA89CE5AF8724C0A23E0E0FF77500",
         112);
+    assert(status == 0);
 
     mpECurve_set(d, b);
 
@@ -144,7 +150,7 @@ START_TEST(test_mpECurve_named)
 END_TEST
 
 START_TEST(test_mpECurve_all_named)
-    int i, error;
+    int i, error, status;
     mpECurve_t a;
     char **clist;
     mpECurve_init(a);
@@ -160,20 +166,28 @@ START_TEST(test_mpECurve_all_named)
         assert(error == 0);
         switch(a->type) {
             case EQTypeShortWeierstrass:
-                    mpECurve_set_mpz_ws(b, a->fp->p, a->coeff.ws.a->i, a->coeff.ws.b->i,
-                        a->n, a->h, a->G[0], a->G[1], a->bits);
+                    status = mpECurve_set_mpz_ws(b, a->fp->p, a->coeff.ws.a->i,
+                        a->coeff.ws.b->i, a->n, a->h, a->G[0], a->G[1],
+                        a->bits);
+                    assert(status == 0);
                 break;
             case EQTypeEdwards:
-                    mpECurve_set_mpz_ed(b, a->fp->p, a->coeff.ed.c->i, a->coeff.ed.d->i,
-                        a->n, a->h, a->G[0], a->G[1], a->bits);
+                    status = mpECurve_set_mpz_ed(b, a->fp->p, a->coeff.ed.c->i,
+                        a->coeff.ed.d->i, a->n, a->h, a->G[0], a->G[1],
+                        a->bits);
+                    assert(status == 0);
                 break;
             case EQTypeMontgomery:
-                    mpECurve_set_mpz_mo(b, a->fp->p, a->coeff.mo.B->i, a->coeff.mo.A->i,
-                        a->n, a->h, a->G[0], a->G[1], a->bits);
+                    status = mpECurve_set_mpz_mo(b, a->fp->p, a->coeff.mo.B->i,
+                        a->coeff.mo.A->i, a->n, a->h, a->G[0], a->G[1],
+                        a->bits);
+                    assert(status == 0);
                 break;
             case EQTypeTwistedEdwards:
-                    mpECurve_set_mpz_te(b, a->fp->p, a->coeff.te.a->i, a->coeff.te.d->i,
-                        a->n, a->h, a->G[0], a->G[1], a->bits);
+                    status = mpECurve_set_mpz_te(b, a->fp->p, a->coeff.te.a->i,
+                        a->coeff.te.d->i, a->n, a->h, a->G[0], a->G[1],
+                        a->bits);
+                    assert(status == 0);
                 break;
             default:
                 assert(0);
