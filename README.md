@@ -63,7 +63,7 @@ $ sudo make install
 Note: if you want to run the benchmarks you'll need to install libsodium and
 also pass the `--enable-benchmarks` option to configure
 
-## python bindings
+## Python bindings
 
 Once you have installed the underlying C libraries you can install the python
 API interface. This interface is only tested with python3. The python API can
@@ -74,4 +74,14 @@ $ sudo pip3 install --upgrade .
 $ python3 ./tests/pytest_field.py
 $ python3 ./tests/pytest_ecurve.py
 $ python3 ./tests/pytest_ecpoint.py
+```
+
+## Go bindings
+
+Once the underlying C libraries are installed, you can install the golang
+API (which attempts to follow the semantics of math/big) to use the library in
+Go programs.
+
+```
+$ go get github.com/jadeblaquiere/ecclib/ecgo
 ```
