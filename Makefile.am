@@ -2,4 +2,4 @@ ACLOCAL_AMFLAGS=-I m4
 if COND_BENCHMARKS
   MAYBE_BENCHMARKS = benchmark
 endif
-SUBDIRS=src tests include $(MAYBE_BENCHMARKS)
+SUBDIRS=src tests include examples $(MAYBE_BENCHMARKS)

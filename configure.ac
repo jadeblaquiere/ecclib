@@ -20,4 +20,4 @@ AM_CONDITIONAL([HAVE_LIBRELIC], [test "x$ac_cv_lib_relic_ep_curve_set_plain" = x
 PKG_CHECK_MODULES([CHECK], [check])
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_MACRO_DIR([m4])
-AC_OUTPUT([Makefile src/Makefile tests/Makefile include/Makefile benchmark/Makefile])
+AC_OUTPUT([Makefile src/Makefile tests/Makefile include/Makefile examples/Makefile benchmark/Makefile])

@@ -39,6 +39,8 @@
 
 #define _MPECP_BASE_BITS    (8)
 
+static char *_hexlut = "0123456789ABCDEF";
+
 static inline int _mpECP_n_base_pt_levels(mpECP_t pt) {
     return (pt->cvp->bits + pt->base_bits - 1) / pt->base_bits;
 }
@@ -281,44 +283,66 @@ static inline int _bytelen(int bits) {
 }
 
 int mpECP_set_str(mpECP_t rpt, char *s, mpECurve_t cv) {
-    int bytes;
-    char *buffer;
+    size_t slen;
+    size_t blen;
+    int i;
+    int status;
+    unsigned char *buf;
 
-    if (s[0] != '0') return -1;
+    slen = strlen(s);
+    if ((slen & 0x01) != 0) return -1;
+    blen = slen >> 1;
+    buf = (unsigned char *)malloc(blen * sizeof(char));
+    assert(buf != NULL);
+
+    for (i = 0; i < blen; i++) {
+        unsigned int btmp;
+        sscanf(&s[2 * i], "%2X", &btmp);
+        assert(btmp >= 0);
+        assert(btmp < 256);
+        buf[i] = (unsigned char)btmp;
+        //printf("%02X", buf[i]);
+    }
+    //printf("\n");
+    
+    status = mpECP_set_bytes(rpt, buf, blen, cv);
+    free(buf);
+    return status;
+}
+
+int mpECP_set_bytes(mpECP_t rpt, unsigned char *b, int blen, mpECurve_t cv) {
+    int bytes;
+
     bytes = _bytelen(cv->bits);
-    buffer = (char *)malloc((strlen(s) + 1) * sizeof(char));
-    assert(buffer != NULL);
-    strcpy(buffer, s);
-    if (strlen(s) < (2 + (2*bytes))) return -1;
-    switch (s[1]) {
-        case '0':
+    if (blen < (1 + bytes)) return -1;
+    switch (b[0]) {
+        case 0:
             mpECP_set_neutral(rpt, cv);
             return 0;
-        case '4': {
-                if (strlen(s) != (2 + (4 * bytes))) return -1;
+        case 4: {
+                if (blen != (1 + (2 * bytes))) return -1;
                 mpz_t x, y;
                 mpz_init(x);
                 mpz_init(y);
-                gmp_sscanf(&s[2+(2*bytes)],"%ZX", y);
-                buffer[2+(2*bytes)] = 0;
-                gmp_sscanf(&buffer[2],"%ZX", x);
+                mpz_import(x, bytes, 1, sizeof(unsigned char), 1, 0, &(b[1]));
+                mpz_import(y, bytes, 1, sizeof(unsigned char), 1, 0, &(b[1 + bytes]));
                 mpECP_set_mpz(rpt, x, y, cv);
                 mpz_clear(y);
                 mpz_clear(x);
             }
             return 0;
-        case '2':
-        case '3': {
+        case 2:
+        case 3: {
                 mpz_t xz;
                 mpFp_t x, y;
                 mpFp_t t;
                 int error, odd;
-                if (strlen(s) != (2 + (2 * bytes))) return -1;
+                if (blen != (1 + bytes)) return -1;
                 mpz_init(xz);
                 mpFp_init_fp(x, cv->fp);
                 mpFp_init_fp(y, cv->fp);
                 mpFp_init_fp(t, cv->fp);
-                gmp_sscanf(&s[2],"%ZX", xz);
+                mpz_import(xz, bytes, 1, sizeof(unsigned char), 1, 0, &b[1]);
                 mpFp_set_mpz_fp(x, xz, cv->fp);
                 switch (cv->type) {
                     case EQTypeShortWeierstrass: {
@@ -333,7 +357,6 @@ int mpECP_set_str(mpECP_t rpt, char *s, mpECurve_t cv) {
                                 mpFp_clear(y);
                                 mpFp_clear(x);
                                 mpz_clear(xz);
-                                free(buffer);
                                 return -1;
                             }
                         }
@@ -362,7 +385,6 @@ int mpECP_set_str(mpECP_t rpt, char *s, mpECurve_t cv) {
                                 mpFp_clear(y);
                                 mpFp_clear(x);
                                 mpz_clear(xz);
-                                free(buffer);
                                 return -1;
                             }
                         }
@@ -392,7 +414,6 @@ int mpECP_set_str(mpECP_t rpt, char *s, mpECurve_t cv) {
                                 mpFp_clear(y);
                                 mpFp_clear(x);
                                 mpz_clear(xz);
-                                free(buffer);
                                 return -1;
                             }
                         }
@@ -415,7 +436,6 @@ int mpECP_set_str(mpECP_t rpt, char *s, mpECurve_t cv) {
                                 mpFp_clear(y);
                                 mpFp_clear(x);
                                 mpz_clear(xz);
-                                free(buffer);
                                 return -1;
                             }
                         }
@@ -426,7 +446,7 @@ int mpECP_set_str(mpECP_t rpt, char *s, mpECurve_t cv) {
                 }
                 odd = mpz_tstbit(y->i, 0);
                 // '3' implies odd, '2' even... negate if not matched
-                if ((((s[1] - '2') + odd) & 1) == 1) {
+                if ((b[0] & 0x01) != odd) {
                     mpFp_neg(y, y);
                 }
                 mpECP_set_mpFp(rpt, x, y, cv);
@@ -435,13 +455,21 @@ int mpECP_set_str(mpECP_t rpt, char *s, mpECurve_t cv) {
                 mpFp_clear(x);
                 mpz_clear(xz);
             }
-            free(buffer);
             return 0;
         default:
-            free(buffer);
             return -1;
     }
     assert(0);
+}
+
+int  mpECP_out_bytelen(mpECP_t pt, int compress) {
+    int bytes;
+    bytes = _bytelen(pt->cvp->bits);
+    // use common prefix (02, 03, 04) and then either X or X and Y
+    if (compress == 0) {
+        return (1 + (2 * bytes));
+    }
+    return (1 + bytes);
 }
 
 int  mpECP_out_strlen(mpECP_t pt, int compress) {
@@ -455,22 +483,40 @@ int  mpECP_out_strlen(mpECP_t pt, int compress) {
 }
 
 void mpECP_out_str(char *s, mpECP_t pt, int compress) {
+    int i;
     int bytes;
-    char format[32];
+
+    bytes = mpECP_out_bytelen(pt, compress);
+    mpECP_out_bytes((unsigned char *)s, pt, compress);
+    //for (i = 0; i < bytes; i++){
+    //    printf("%02X", ((unsigned char *)s)[i]);
+    //}
+    //printf("\n");
+    for (i = (bytes-1); i >= 0; i--) {
+        unsigned int value;
+        value = ((unsigned char *)s)[i];
+        assert(value >= 0);
+        assert(value < 256);
+        s[2 * i] = _hexlut[(value >> 4)];
+        s[2 * i + 1] = _hexlut[(value & 0x0F)];
+    }
+    s[2 * bytes] = 0;
+    return;
+}
+
+void mpECP_out_bytes(unsigned char *s, mpECP_t pt, int compress) {
+    int bytes;
+    size_t blen;
+
     _mpECP_to_affine(pt);
     bytes = _bytelen(pt->cvp->bits);
-    // print format for n-bit (big endian) hexadecimal numbers (w/o '0x')
-    sprintf(format,"%%0%dZX", (bytes * 2));
-    //printf("mp_ECP_out_str format: %s\n", format);
-    s[0] = '0';
     if (pt->is_neutral) {
         int i;
 
         if (compress == 0) bytes *= 2;
-        for (i = 1; i < ((2*bytes) + 2); i++) {
-            s[i] = '0';
+        for (i = 0; i < (bytes + 1); i++) {
+            s[i] = 0;
         }
-        s[2 + (2 * bytes)] = 0;
         return;
     }
     if (compress != 0) {
@@ -479,23 +525,14 @@ void mpECP_out_str(char *s, mpECP_t pt, int compress) {
         mpz_set_mpFp(odd, pt->y);
         mpz_mod_ui(odd, odd, 2);
         if (mpz_cmp_ui(odd, 1) == 0) {
-            s[1] = '3';
+            s[0] = 3;
         } else {
-            s[1] = '2';
+            s[0] = 2;
         }
         mpz_clear(odd);
     } else {
-        s[1] = '4';
-//#ifdef _MPECP_USE_RCB
-//        if ((mpFp_cmp_ui(pt->x, 0) == 0) && (mpFp_cmp_ui(pt->y, 0) == 0)) {
-//            s[1] = '0';
-//        }
-//#endif
+        s[0] = 4;
     }
-    //s[2] = 0;
-    //printf("prefix = %s\n", s);
-    //gmp_printf(format, pt->x->i);
-    //printf("\n");
     mpz_t xz;
     mpz_init(xz);
     if (pt->cvp->type == EQTypeMontgomery) {
@@ -507,10 +544,24 @@ void mpECP_out_str(char *s, mpECP_t pt, int compress) {
     } else {
         mpz_set_mpFp(xz, pt->x);
     }
-    gmp_sprintf(&s[2], format, xz);
-    //printf("as string = %s\n", s);
+    mpz_export(&(s[1]), &blen, 1, sizeof(unsigned char), 1, 0, xz);
+    assert(blen <= bytes);
+    if (blen < bytes) {
+        int i;
+        int shift;
+
+        shift = bytes - blen;
+        for (i = (blen - 1); i >= 0; i-- ) {
+            s[1 + i + shift] = s[1+i];
+        }
+        for (i = 0; i < shift; i++) {
+            s[1 + i] = 0;
+        }
+    }
+    
     if (compress == 0) {
         mpz_t yz;
+
         mpz_init(yz);
         if (pt->cvp->type == EQTypeMontgomery) {
             mpFp_t y;
@@ -520,11 +571,21 @@ void mpECP_out_str(char *s, mpECP_t pt, int compress) {
         } else {
             mpz_set_mpFp(yz, pt->y);
         }
-        gmp_sprintf(&s[2 + (2 * bytes)], format, yz);
-        s[2 + (4 * bytes)] = 0;
+        mpz_export(&(s[1 + bytes]), &blen, 1, sizeof(unsigned char), 1, 0, yz);
+        assert(blen <= bytes);
+        if (blen < bytes) {
+            int i;
+            int shift;
+    
+            shift = bytes - blen;
+            for (i = (blen - 1); i >= 0; i-- ) {
+                s[1 + i + shift + bytes] = s[1 + i + bytes];
+            }
+            for (i = 0; i < shift; i++) {
+                s[1 + i + bytes] = 0;
+            }
+        }
         mpz_clear(yz);
-    } else {
-        s[2 + (2 * bytes)] = 0;
     }
     mpz_clear(xz);
     //printf("exported as %s\n", s);

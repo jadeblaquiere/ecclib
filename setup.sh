@@ -14,3 +14,12 @@ autoreconf --install
 make
 sudo make install
 cd ../..
+#####
+# the following are needed for examples only
+#####
+# alternatively git clone git@gitlab.com:gnutls/libtasn1.git
+sudo apt-get -y install libtasn1-6-dev libtasn1-bin
+# alternatively brew install popt
+sudo apt-get -y install libpopt-dev
+# alternatively https://github.com/transmission/libb64.git
+sudo apt-get -y install libb64-dev
