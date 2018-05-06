@@ -144,6 +144,20 @@ static int ECPoint_init(ECPoint *self, PyObject *args, PyObject *kwargs) {
             		PyErr_SetString(PyExc_ValueError, "invalid curve point");
             		return -1;
                 }
+            } else if (PyBytes_Check(initial)) { 
+            	unsigned char *buffer;
+            	Py_ssize_t bsize;
+
+                status = PyBytes_AsStringAndSize(initial, (char **)&buffer, &bsize);
+                if (status != 0) {
+            		PyErr_SetString(PyExc_ValueError, "unable to convert bytes initializer");
+            		return -1;
+                }
+                status = mpECP_set_bytes(self->ecp,buffer, (int)bsize, ((ECurve *)curve)->ec);
+                if (status != 0) {
+            		PyErr_SetString(PyExc_ValueError, "invalid curve point");
+            		return -1;
+                }
             } else {
         		PyErr_SetString(PyExc_TypeError, "initializer type mismatch, expected unicode string");
         		return -1;
@@ -189,6 +203,42 @@ static PyObject *ECPoint_str(PyObject *self) {
 	free(buffer);
 
 	return pointstr;
+}
+
+static PyObject *ECPoint_binary(PyObject *self) {
+    unsigned char *buffer;
+    int bsize;
+    PyObject *pointbin;
+    ECPoint *ecself;
+
+	assert(PyObject_TypeCheck(self, &ECPointType) != 0);
+	ecself = (ECPoint *)self;
+
+	bsize = mpECP_out_bytelen(ecself->ecp, 1);
+	buffer = (unsigned char *)malloc(2*bsize*sizeof(char));
+	mpECP_out_bytes(buffer, ecself->ecp, 1);
+	pointbin = PyBytes_FromStringAndSize((char*)buffer, bsize);
+	free(buffer);
+
+	return pointbin;
+}
+
+static PyObject *ECPoint_binary_full(PyObject *self) {
+    unsigned char *buffer;
+    int bsize;
+    PyObject *pointbin;
+    ECPoint *ecself;
+
+	assert(PyObject_TypeCheck(self, &ECPointType) != 0);
+	ecself = (ECPoint *)self;
+
+	bsize = mpECP_out_bytelen(ecself->ecp, 0);
+	buffer = (unsigned char *)malloc(2*bsize*sizeof(char));
+	mpECP_out_bytes(buffer, ecself->ecp, 0);
+	pointbin = PyBytes_FromStringAndSize((char*)buffer, bsize);
+	free(buffer);
+
+	return pointbin;
 }
 
 static PyObject *ECPoint_repr(PyObject *self) {
@@ -422,6 +472,8 @@ static PyMethodDef ECPoint_methods[] = {
 	//{"getvalue", (PyCFunction)ECPoint_getvalue, METH_NOARGS, "get value of element as an integer"},
 	{"urandom", (PyCFunction)ECPoint_urandom, METH_O | METH_STATIC, ECPoint_urandom__doc__},
 	{"affine", (PyCFunction)ECPoint_affine, METH_NOARGS, "returns point affine coords (x,y) as tuple, affine representation of \"point at infinity\" is undefined"},
+	{"compressed", (PyCFunction)ECPoint_binary, METH_NOARGS, "dump raw (compressed) binary representation of the point"},
+	{"uncompressed", (PyCFunction)ECPoint_binary_full, METH_NOARGS, "dump raw (compressed) binary representation of the point"},
 	{"setup_basemult", (PyCFunction)ECPoint_set_basemult, METH_NOARGS, "set up LUTs for accelerated point multiplication (base point multiplication)"},
 	{NULL}
 };

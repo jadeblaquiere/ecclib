@@ -32,6 +32,7 @@ import ast
 import unittest
 import ECC
 from ECC import FieldElement, ECurve, ECPoint
+from binascii import hexlify, unhexlify
 
 
 class TestECPoint(unittest.TestCase):
@@ -126,6 +127,26 @@ class TestECPoint(unittest.TestCase):
                 self.assertNotEqual(pC, pN)
                 for j in range(i+1, 100):
                     self.assertNotEqual(pC, pR[j])
+
+    def test_str_and_bytes(self):
+        for c in self.cv:
+            G = c.G
+            pG = ECPoint(c, G)
+            pN = ECPoint(c)
+            pR = []
+            for i in range(0, 100):
+                pR.append(ECPoint.urandom(c))
+            for i in range(0, 100):
+                pC = ECPoint(c, str(pR[i]))
+                self.assertEqual(pC, pR[i])
+                self.assertNotEqual(pC, pG)
+                self.assertNotEqual(pC, pN)
+                self.assertEqual(pC.compressed(), unhexlify(str(pC)))
+                pCC = ECPoint(c, pC.compressed())
+                self.assertEqual(pC, pCC)
+                pCC = ECPoint(c, pC.uncompressed())
+                self.assertEqual(pC, pCC)
+
 
     def test_ecdh(self):
         for c in self.cv:
