@@ -66,6 +66,22 @@ package ecgo
 //     return buf;
 // }
 //
+// char *mpECP_alloc_out_bytes(mpECP_t pt, int compress) {
+//     int leng;
+//     char *buf;
+//
+//     leng = mpECP_out_bytelen(pt, compress);
+//     buf = (char *)malloc((leng + 1)*sizeof(char));
+//     assert(buf != NULL);
+//     mpECP_out_bytes(buf, pt, compress);
+//     return buf;
+// }
+//
+// unsigned char *_toUCP(void *p) {
+//     return (unsigned char *)p;
+// }
+//
+//
 // void free_ECPoint(mpECP_ptr pt) {
 //     free(pt);
 // }
@@ -169,6 +185,21 @@ func NewPointFromString(gst string, c *Curve) (z *Point) {
 	return z
 }
 
+func NewPointFromBytes(gby []byte, c *Curve) (z *Point) {
+
+	z = new(Point)
+	z.ecp = C.malloc_ECPoint()
+	z.cv = c
+	C.mpECP_init(z.ecp, c.ec)
+	cby := C.CBytes(gby)
+	l := len(gby)
+	C.mpECP_set_bytes(z.ecp, C._toUCP(cby), C.int(l), c.ec)
+	C.free(cby)
+
+	runtime.SetFinalizer(z, point_clear)
+	return z
+}
+
 func point_clear(z *Point) {
 	C.mpECP_clear(z.ecp)
 	C.free_ECPoint(z.ecp)
@@ -211,6 +242,22 @@ func (z *Point) StringCompressed() string {
 func (z *Point) StringUncompressed() string {
 	cstr := C.mpECP_alloc_out_str(z.ecp, C.int(0))
 	gstr := C.GoString(cstr)
+	C.free(unsafe.Pointer(cstr))
+	return gstr
+}
+
+func (z *Point) BytesCompressed() []byte {
+	blen := C.mpECP_out_bytelen(z.ecp, C.int(1))
+	cstr := C.mpECP_alloc_out_bytes(z.ecp, C.int(1))
+	gstr := C.GoBytes(unsafe.Pointer(cstr), blen)
+	C.free(unsafe.Pointer(cstr))
+	return gstr
+}
+
+func (z *Point) BytesUncompressed() []byte {
+	blen := C.mpECP_out_bytelen(z.ecp, C.int(0))
+	cstr := C.mpECP_alloc_out_bytes(z.ecp, C.int(0))
+	gstr := C.GoBytes(unsafe.Pointer(cstr), blen)
 	C.free(unsafe.Pointer(cstr))
 	return gstr
 }

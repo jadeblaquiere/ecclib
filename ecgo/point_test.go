@@ -31,6 +31,8 @@
 package ecgo
 
 import (
+	"bytes"
+	"encoding/hex"
 	"fmt"
 	"math/big"
 	"testing"
@@ -127,6 +129,37 @@ func TestMathPointURandom(t *testing.T) {
 		ptcopy2 := NewPointFromString(ptstr2, cv)
 		if pt.Cmp(ptcopy2) != 0 {
 			fmt.Println("Error: export/import compressed string failed")
+			t.FailNow()
+		}
+		ptbstr1 := pt.BytesCompressed()
+		//fmt.Println("compressed point: ", ptstr1)
+		ptbcopy1 := NewPointFromBytes(ptbstr1, cv)
+		if pt.Cmp(ptbcopy1) != 0 {
+			fmt.Println("Error: export/import compressed string failed")
+			t.FailNow()
+		}
+		ptbbstr1, err := hex.DecodeString(ptstr1)
+		if err != nil {
+			fmt.Println("Error: unable to decode hex point string")
+			t.FailNow()
+		}
+		if bytes.Compare(ptbbstr1, ptbstr1) != 0 {
+			fmt.Println("Error: mismatch between byte and hex string repr")
+			t.FailNow()
+		}
+		ptbstr2 := pt.BytesUncompressed()
+		ptbcopy2 := NewPointFromBytes(ptbstr2, cv)
+		if pt.Cmp(ptbcopy2) != 0 {
+			fmt.Println("Error: export/import compressed string failed")
+			t.FailNow()
+		}
+		ptbbstr2, err := hex.DecodeString(ptstr2)
+		if err != nil {
+			fmt.Println("Error: unable to decode hex point string")
+			t.FailNow()
+		}
+		if bytes.Compare(ptbbstr2, ptbstr2) != 0 {
+			fmt.Println("Error: mismatch between byte and hex string repr")
 			t.FailNow()
 		}
 		x, y := pt.Affine()
