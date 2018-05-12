@@ -40,6 +40,12 @@
 
 char *_ecdh_der_export_privkey(mpz_t privkey, mpECurve_t cv, size_t *sz);
 int _ecdh_der_import_privkey(mpz_t privkey, mpECurve_t cv, char *der, size_t sz);
+char *_ecdh_der_export_pubkey(mpECP_t pubkey, mpECurve_t cv, size_t *sz);
+int _ecdh_der_init_import_pubkey(mpECP_t pubkey, mpECurve_t cv, char *der, size_t sz);
+char *_ecdhe_der_export_message(mpECP_t pubkey, unsigned char *nonce, size_t nsz, unsigned char *msg, size_t msz, size_t *sz);
+int _ecdhe_der_init_import_message(unsigned char **ptxt, int *psz, 
+    unsigned char **ntxt, int *nsz, unsigned char **ctxt, int *csz,
+    char *der, int sz);
 
 #ifdef __cplusplus
 extern "C" {

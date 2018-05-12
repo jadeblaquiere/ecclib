@@ -33,22 +33,28 @@ ExampleASN DEFINITIONS EXPLICIT TAGS ::=
 BEGIN
 
 ECDHPrivateKey ::= SEQUENCE {
-    privkey  OCTET STRING,
-    curve EllipticCurve
+    privkey OCTET STRING,
+    curve   EllipticCurve
 }
 
 ECDHPublicKey ::= SEQUENCE {
-    privkey  OCTET STRING,
-    curve EllipticCurve
+    pubkey  OCTET STRING,
+    curve   EllipticCurve
+}
+
+ECDHEMessage ::= SEQUENCE {
+    pubkeybytes OCTET STRING,
+    nonce       OCTET STRING,
+    ciphertext  OCTET STRING
 }
 
 EllipticCurve ::= SEQUENCE {
-    p   OCTET STRING,
+    p       OCTET STRING,
     type    EllipticCurveType,
-    param  CurveParams,
-    n   OCTET STRING,
-    h   OCTET STRING,
-    g   XYPoint,
+    param   CurveParams,
+    n       OCTET STRING,
+    h       OCTET STRING,
+    g       XYPoint,
     bits    INTEGER
 }
 

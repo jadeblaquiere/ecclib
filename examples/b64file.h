@@ -42,12 +42,12 @@ extern "C" {
 
 // convert binary data to b64 and write to file wrapped with 
 // "-----BEGIN <wrap>-----" and "-----END <wrap>-----"
-int write_b64wrapped_to_file(FILE *fPtr, char* bindata, int sz, char *wrap);
+int write_b64wrapped_to_file(FILE *fPtr, char* bindata, size_t sz, char *wrap);
 
 // extract b64 data wrapped with "-----BEGIN <wrap>-----" and
 // "-----END <wrap>-----" from file, decode and return buffer and size;
 // returns NULL on error
-char *read_b64wrapped_from_file(FILE *fPtr, char *wrap, int *sz);
+char *read_b64wrapped_from_file(FILE *fPtr, char *wrap, size_t *sz);
 
 #ifdef __cplusplus
 }

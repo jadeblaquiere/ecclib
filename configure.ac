@@ -11,11 +11,22 @@ AC_ARG_ENABLE([benchmarks],
   no)  benchmarks=false ;;
   *) AC_MSG_ERROR([bad value ${enableval} for --enable-benchmarks]) ;;
 esac],[debug=false])
-AM_CONDITIONAL([COND_BENCHMARKS], [test "x$benchmarks" = xtrue])
+AC_ARG_ENABLE([examples],
+[  --enable-examples       build examples @<:@default=no@:>@],
+[case "${enableval}" in
+  yes) examples=true ;;
+  no)  examples=false ;;
+  *) AC_MSG_ERROR([bad value ${enableval} for --enable-examples]) ;;
+esac],[debug=false])
 AC_CHECK_LIB([gmp], [__gmpz_realloc])
-AC_CHECK_LIB([sodium], [crypto_scalarmult_ed25519])
+AM_CONDITIONAL([COND_BENCHMARKS], [test "x$benchmarks" = xtrue])
+AM_CONDITIONAL([COND_EXAMPLES], [test "x$examples" = xtrue])
+AM_CONDITIONAL([COND_NEEDSODIUM], [test "x$benchmarks" = xtrue -o "x$examples" = xtrue])
+AM_COND_IF([COND_EXAMPLES],[AC_CHECK_LIB([popt], [poptGetContext])])
+AM_COND_IF([COND_EXAMPLES],[AC_CHECK_LIB([b64], [base64_init_encodestate])])
+AM_COND_IF([COND_NEEDSODIUM],[AC_CHECK_LIB([sodium], [crypto_scalarmult_ed25519])])
 AM_CONDITIONAL([HAVE_LIBSODIUM], [test "x$ac_cv_lib_sodium_crypto_scalarmult_ed25519" = xyes])
-AC_CHECK_LIB([relic], [ep_curve_set_plain])
+AM_COND_IF([COND_BENCHMARKS],[AC_CHECK_LIB([relic], [ep_curve_set_plain])])
 AM_CONDITIONAL([HAVE_LIBRELIC], [test "x$ac_cv_lib_relic_ep_curve_set_plain" = xyes])
 PKG_CHECK_MODULES([CHECK], [check])
 AC_CONFIG_HEADERS([config.h])

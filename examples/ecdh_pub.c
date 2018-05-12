@@ -40,31 +40,19 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-char *default_curve = "secp256k1";
-
-void print_supported_curves(FILE *fPtr) {
-    char **clist;
-    char **cnext;
-
-    clist = _mpECurve_list_standard_curves();
-    fprintf(fPtr, "Supported Elliptic Curves:\n");
-    for (cnext = clist; *cnext != NULL; cnext++) {
-        fprintf(fPtr, "    %s\n", *cnext);
-    }
-}
-
 int main(int argc, char **argv) {
-    char *curvename = NULL;
-    int list_curves = 0;
+    char *filename = NULL;
+    FILE *fPtr = stdin; 
     poptContext pc;
     struct poptOption po[] = {
-        {"curve", 'c', POPT_ARG_STRING, &curvename, 0, "elliptic curve name, default = secp256k1", "<curve name>"},
-        {"list-curves", 'l', POPT_ARG_NONE, &list_curves, 0, "list the available curve names and exit", "<>"},
+        {"file", 'f', POPT_ARG_STRING, &filename, 0, "read input from filepath instead of stdin", "<file path>"},
         POPT_AUTOHELP
         {NULL}
     };
     mpECurve_t cv;
     mpz_t pmpz;
+    mpECP_t Gpt;
+    mpECP_t Ppt;
     char *der;
     size_t sz;
     int result;
@@ -86,40 +74,50 @@ int main(int argc, char **argv) {
         }
     }
 
-    if (list_curves != 0) {
-        print_supported_curves(stdout);
-        exit(0);
-    }
-
-    if (curvename == NULL) {
-        curvename = default_curve;
+    if (filename != NULL) {
+        fPtr = fopen(filename, "r");
+        if (fPtr == NULL) {
+            fprintf(stderr,"<Error: file open failed for file \"%s\">\n", filename);
+            exit(1);
+        }
     }
 
     // HERE IS WHERE THE ACTUAL EXAMPLE STARTS... everything before is
     // processing and very limited validation of command line options
 
+    der = read_b64wrapped_from_file(fPtr, "ECDH PRIVATE KEY", &sz);
+    if (der == NULL) {
+        fprintf(stderr,"<ParseError>: unable to decode b64 data\n");
+        exit(1);
+    }
+ 
     mpECurve_init(cv);
-    if (mpECurve_set_named(cv, curvename) != 0) {
-        fprintf(stderr,"<Error: Curve not found for name \"%s\">\n", curvename);
-        print_supported_curves(stderr);
+    mpz_init(pmpz);
+    if (_ecdh_der_import_privkey(pmpz, cv, der, sz) != 0) {
+        fprintf(stderr,"<Error>: Unable to import private key\n");
         exit(1);
     }
 
-    // random value between 0 and cv->n (curve order)
-    mpz_init(pmpz);
-    mpz_urandom(pmpz, cv->n);
+    // instantiate generator point for curve
+    mpECP_init(Gpt, cv);
+    mpECP_set_mpz(Gpt, cv->G[0], cv->G[1], cv);
+
+    // public key point = private key scalar * G
+    mpECP_init(Ppt, cv);
+    mpECP_scalar_mul_mpz(Ppt, Gpt, pmpz);
 
     // encode to ASN.1 DER format
-    der = _ecdh_der_export_privkey(pmpz, cv, &sz);
+    der = _ecdh_der_export_pubkey(Ppt, cv, &sz);
     assert(der != NULL);
 
-    result = write_b64wrapped_to_file(stdout, der, sz, "ECDH PRIVATE KEY");
+    result = write_b64wrapped_to_file(stdout, der, sz, "ECDH PUBLIC KEY");
     if (result != 0) {
         fprintf(stderr, "<WriteError>: Error writing output\n");
         exit(1);
     }
 
     free(der);
+    mpECP_clear(Ppt);
     mpz_clear(pmpz);
     mpECurve_clear(cv);
 
