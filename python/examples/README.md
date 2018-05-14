@@ -1,4 +1,4 @@
-# ecclib examples
+# ecclib python examples
 
 These examples are intended to illustrate usage of the basic ECC primatives. 
 They exercise the major features of the Python API for curves and point. There
