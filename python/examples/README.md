@@ -1,18 +1,17 @@
 # ecclib examples
 
 These examples are intended to illustrate usage of the basic ECC primatives. 
-They exercise the major features of the C API for curves and point. (Note, there
-are also [interoperable equivalents using the python API](../python/examples/)
+They exercise the major features of the Python API for curves and point. There
+are also [interoperable equivalents using the C API](../../examples/)
+
 
 # Tutorial
 
-NOTE : the example programs are not built by default. If you want to build the
-examples you need to ensure that you passed **--enable-examples** as a command line
-option to the **configure** script. The examples are intended to be just that,
-examples. While the example programs are intended to demonstrate a practical,
-working and complete cryptosystem, they haven't been audited and implement
-a rudimentary interface which leaves several details (e.g. authenticity of keys,
-securing private keys) up to the user.
+NOTE : The examples are intended to be just that, examples. While the example
+programs are intended to demonstrate a practical, working and complete
+cryptosystem, they haven't been audited and implement a rudimentary interface
+which leaves several details (e.g. authenticity of keys, securing private keys)
+up to the user.
 
 ## Creating Keys
 
@@ -26,9 +25,9 @@ securing private keys) up to the user.
     prime field.
     
     ```
-    ./ecdh_gen --list-curves
-    ./ecdh_gen --curve=Curve41417 > bob.privkey
-    ./ecdh_pub --file bob.privkey > bob.pubkey
+    python3 ecdh_gen.py --list_curves
+    python3 ecdh_gen.py --curve=Curve41417 > bob.privkey
+    python3 ecdh_pub.py --file bob.privkey > bob.pubkey
     cat bob.privkey
     cat bob.pubkey
     ```
@@ -44,7 +43,7 @@ securing private keys) up to the user.
     decoded without access to the private key.
 
     ```
-    echo "Hello, Bob!" | ./ecdh_enc --pubkey=bob.pubkey > a2b.ctxt
+    echo "Hello, Bob!" | python3 ecdh_enc.py --pubkey=bob.pubkey > a2b.ctxt
     cat a2b.ctxt
     ```
     
@@ -58,5 +57,5 @@ securing private keys) up to the user.
     Bob can use his private key to decode the message. Simple enough.
     
     ```
-    cat a2b.ctxt | ./ecdh_dec --privkey=bob.privkey
+    cat a2b.ctxt | python3 ecdh_dec.py --privkey=bob.privkey
     ```
