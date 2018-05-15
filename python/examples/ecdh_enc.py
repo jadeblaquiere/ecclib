@@ -39,7 +39,7 @@ import asn1
 import pysodium
 
 desc = ('ecdh_enc generate a shared ephemeral (ECDHE) key and encrypts a '
-        'message using the ChaCha20 stream cipher using that key. Output is '
+        'message using the XSalsa20 stream cipher using that key. Output is '
         'DER encoded and PEM-wrapped')
 
 parser = ArgumentParser(description=desc)
@@ -83,10 +83,11 @@ SharedPt = Pubkey * eprivkey
 sbytes = SharedPt.compressed()
 key = sha256(sbytes).digest()
 
-nonce = pysodium.randombytes(pysodium.crypto_stream_chacha20_NONCEBYTES)
-assert pysodium.crypto_stream_chacha20_NONCEBYTES == 8
+nonce = pysodium.randombytes(pysodium.crypto_stream_NONCEBYTES)
+assert pysodium.crypto_stream_NONCEBYTES == 24
+assert pysodium.crypto_stream_KEYBYTES == 32
 
-ctext = pysodium.crypto_stream_chacha20_xor(message, nonce, key)
+ctext = pysodium.crypto_stream_xor(message, len(message), nonce, key)
 
 # public key point for ephemeral key
 Gpt = ECPoint(curve, curve.G)
@@ -94,4 +95,4 @@ ePubkey = Gpt * eprivkey
 
 DERmsg = der_encode_message(ePubkey, nonce, ctext)
 
-print(pem_wrap(DERmsg, 'ECDHE_CHACHA20 ENCRYPTED MESSAGE'))
+print(pem_wrap(DERmsg, 'ECDHE_XSALSA20 ENCRYPTED MESSAGE'))

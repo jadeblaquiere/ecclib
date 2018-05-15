@@ -178,7 +178,10 @@ func NewPointFromString(gst string, c *Curve) (z *Point) {
 	z.cv = c
 	C.mpECP_init(z.ecp, c.ec)
 	cstr := C.CString(gst)
-	C.mpECP_set_str(z.ecp, cstr, c.ec)
+	status := C.mpECP_set_str(z.ecp, cstr, c.ec)
+	if status != C.int(0) {
+		return nil
+	}
 	C.free(unsafe.Pointer(cstr))
 
 	runtime.SetFinalizer(z, point_clear)
@@ -193,7 +196,10 @@ func NewPointFromBytes(gby []byte, c *Curve) (z *Point) {
 	C.mpECP_init(z.ecp, c.ec)
 	cby := C.CBytes(gby)
 	l := len(gby)
-	C.mpECP_set_bytes(z.ecp, C._toUCP(cby), C.int(l), c.ec)
+	status := C.mpECP_set_bytes(z.ecp, C._toUCP(cby), C.int(l), c.ec)
+	if status != C.int(0) {
+		return nil
+	}
 	C.free(cby)
 
 	runtime.SetFinalizer(z, point_clear)

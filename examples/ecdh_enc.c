@@ -80,8 +80,8 @@ int main(int argc, char **argv) {
     unsigned long long clen;
     size_t msglen;
 
-    unsigned char shared_hash[crypto_stream_chacha20_KEYBYTES];
-    unsigned char nonce[crypto_stream_chacha20_NONCEBYTES];
+    unsigned char shared_hash[crypto_stream_KEYBYTES];
+    unsigned char nonce[crypto_stream_NONCEBYTES];
 
     // pc is the context for all popt-related functions
     pc = poptGetContext(NULL, argc, (const char **)argv, po, 0);
@@ -192,7 +192,7 @@ int main(int argc, char **argv) {
     mpECP_init(pQpt, cv);
     mpECP_scalar_mul_mpz(pQpt, Qpt, pmpz);
 
-    assert(sizeof(nonce) == 8);
+    assert(sizeof(nonce) == 24);
     assert(sizeof(shared_hash) == 32);
 
     // hash shared key to get a 256-bit key for encryption w/ChaCha
@@ -211,18 +211,16 @@ int main(int argc, char **argv) {
     randombytes_buf(nonce, sizeof(nonce));
 
     // encrypt message
-    // int crypto_stream_xchacha20_xor(unsigned char *c, const unsigned char *m,
-    //                            unsigned long long mlen, const unsigned char *n,
-    //                            const unsigned char *k);
     ctext = (unsigned char *)malloc(msglen*sizeof(unsigned char));
     clen = msglen;
-    crypto_stream_chacha20_xor(ctext, msg, msglen, nonce, shared_hash);
+    // crypto_stream_xor is XSalsa20 with a 192-bit nonce and 64-bit counter
+    crypto_stream_xor(ctext, msg, msglen, nonce, shared_hash);
 
     // encode to ASN.1 DER format
     der = _ecdhe_der_export_message(Ppt, nonce, sizeof(nonce), ctext, clen, &sz);
     assert(der != NULL);
 
-    result = write_b64wrapped_to_file(stdout, der, sz, "ECDHE_CHACHA20 ENCRYPTED MESSAGE");
+    result = write_b64wrapped_to_file(stdout, der, sz, "ECDHE_XSALSA20 ENCRYPTED MESSAGE");
     if (result != 0) {
         fprintf(stderr, "<WriteError>: Error writing output\n");
         exit(1);

@@ -71,8 +71,8 @@ int main(int argc, char **argv) {
     unsigned char *ptxt;
     int psz;
 
-    unsigned char shared_hash[crypto_stream_chacha20_KEYBYTES];
-    unsigned char nonce[crypto_stream_chacha20_NONCEBYTES];
+    unsigned char shared_hash[crypto_stream_KEYBYTES];
+    unsigned char nonce[crypto_stream_NONCEBYTES];
 
     // pc is the context for all popt-related functions
     pc = poptGetContext(NULL, argc, (const char **)argv, po, 0);
@@ -127,7 +127,7 @@ int main(int argc, char **argv) {
     }
     
     free(der);
-    der = read_b64wrapped_from_file(fPtr, "ECDHE_CHACHA20 ENCRYPTED MESSAGE", &sz);
+    der = read_b64wrapped_from_file(fPtr, "ECDHE_XSALSA20 ENCRYPTED MESSAGE", &sz);
     if (der == NULL) {
         fprintf(stderr,"<ParseError>: unable to decode b64 data for message\n");
         exit(1);
@@ -151,7 +151,7 @@ int main(int argc, char **argv) {
     mpECP_init(pQpt, cv);
     mpECP_scalar_mul_mpz(pQpt, Ppt, pmpz);
 
-    assert(sizeof(nonce) == 8);
+    assert(sizeof(nonce) == 24);
     assert(sizeof(shared_hash) == 32);
 
     // hash shared key to get a 256-bit key for encryption w/ChaCha
@@ -171,7 +171,8 @@ int main(int argc, char **argv) {
     //                            const unsigned char *k);
     mtxt = (unsigned char *)malloc(csz*sizeof(unsigned char));
     msz = csz;
-    crypto_stream_chacha20_xor(mtxt, ctxt, csz, ntxt, shared_hash);
+    // crypto_stream_xor is XSalsa20 with a 192-bit nonce and 64-bit counter
+    crypto_stream_xor(mtxt, ctxt, csz, ntxt, shared_hash);
 
     // write decrypted message to stdout
     fwrite(mtxt, sizeof(unsigned char), msz, stdout);

@@ -1,8 +1,9 @@
-# ecclib python examples
+# ecclib python API examples
 
 These examples are intended to illustrate usage of the basic ECC primatives. 
 They exercise the major features of the Python API for curves and point. There
-are also [interoperable equivalents using the C API](../../examples/)
+are also interoperable equivalents using the [C API](../../examples/) and the
+[Go API](../../ecgo/cmd/).
 
 
 # Tutorial

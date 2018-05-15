@@ -71,9 +71,9 @@ else:
     with open(clargs.file, 'r') as msgfile:
         inCtxt=msgfile.read()
 
-ctder = pem_unwrap(inCtxt, 'ECDHE_CHACHA20 ENCRYPTED MESSAGE')
+ctder = pem_unwrap(inCtxt, 'ECDHE_XSALSA20 ENCRYPTED MESSAGE')
 if ctder is None:
-    sys.exit('unable to decode ECDHE_CHACHA20 ENCRYPTED MESSAGE in base64 PEM format')
+    sys.exit('unable to decode ECDHE_XSALSA20 ENCRYPTED MESSAGE in base64 PEM format')
 
 (ePubkeybytes, nonce, ctext) = der_decode_message(ctder)
 
@@ -87,6 +87,6 @@ SharedPt = ePubkey * privkey
 sbytes = SharedPt.compressed()
 key = sha256(sbytes).digest()
 
-ptext = pysodium.crypto_stream_chacha20_xor(ctext, nonce, key)
+ptext = pysodium.crypto_stream_xor(ctext, len(ctext), nonce, key)
 
 print(ptext.decode(), end='')

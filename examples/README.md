@@ -2,7 +2,8 @@
 
 These examples are intended to illustrate usage of the basic ECC primatives. 
 They exercise the major features of the C API for curves and point. (Note, there
-are also [interoperable equivalents using the python API](../python/examples/)
+are also interoperable equivalents using the [python API](../python/examples/)
+and the [Go API](../ecgo/cmd/)
 
 # Tutorial
 

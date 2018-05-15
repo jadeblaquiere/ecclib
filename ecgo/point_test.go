@@ -149,6 +149,10 @@ func TestMathPointURandom(t *testing.T) {
 		}
 		ptbstr2 := pt.BytesUncompressed()
 		ptbcopy2 := NewPointFromBytes(ptbstr2, cv)
+		if ptbcopy2 == nil {
+			fmt.Println("Error: export/import returned nil")
+			t.FailNow()
+		}
 		if pt.Cmp(ptbcopy2) != 0 {
 			fmt.Println("Error: export/import compressed string failed")
 			t.FailNow()
@@ -162,6 +166,18 @@ func TestMathPointURandom(t *testing.T) {
 			fmt.Println("Error: mismatch between byte and hex string repr")
 			t.FailNow()
 		}
+		ptstr3 := "05" + ptstr2[2:]
+		ptcopy3 := NewPointFromString(ptstr3, cv)
+		if ptcopy3 != nil {
+			fmt.Println("Error: import invalid string returned point")
+			t.FailNow()
+		}
+		ptbstr2[0] = '\x5a'
+		ptbcopy3 := NewPointFromBytes(ptbstr2, cv)
+		if ptbcopy3 != nil {
+			fmt.Println("Error: import invalid bytes returned point")
+			t.FailNow()
+		}
 		x, y := pt.Affine()
 		if x.Cmp(cv.GetAttr("gx")) == 0 {
 			fmt.Println("Error: random point matches generator X?")
@@ -171,7 +187,7 @@ func TestMathPointURandom(t *testing.T) {
 			fmt.Println("Error: random point matches generator Y?")
 			t.FailNow()
 		}
-		ptcopy3 := NewPointXY(x, y, cv)
+		ptcopy3 = NewPointXY(x, y, cv)
 		if pt.Cmp(ptcopy3) != 0 {
 			fmt.Println("Error: copy via X, Y failed")
 			t.FailNow()
