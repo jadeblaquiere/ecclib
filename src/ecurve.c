@@ -774,10 +774,10 @@ void mpECurve_clear(mpECurve_t c) {
 }
 
 void mpECurve_set(mpECurve_t rop, mpECurve_t op){
+    rop->fp = op->fp;
     if (rop->type != op->type) {
         _mpECurve_clear_coeff(rop);
         rop->type = op->type;
-        rop->fp = op->fp;
         _mpECurve_init_coeff(rop);
     }
     switch (op->type) {
