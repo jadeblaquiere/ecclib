@@ -913,6 +913,7 @@ START_TEST(test_mpFp_pow_extended)
     static mpFp_t a[ARRAY_SZ];
     static mpFp_t b[ARRAY_SZ];
     static mpz_t aaa[ARRAY_SZ];
+    static mpz_t bbb[ARRAY_SZ];
     static mpz_t ccc[ARRAY_SZ];
     unsigned long int bui[ARRAY_SZ];
     mpFp_t c;
@@ -939,6 +940,7 @@ START_TEST(test_mpFp_pow_extended)
             mpFp_init(a[i], p);
             mpFp_init(b[i], p);
             mpz_init(aaa[i]);
+            mpz_init(bbb[i]);
             mpz_init(ccc[i]);
         }
         mpFp_init(c, p);
@@ -948,16 +950,25 @@ START_TEST(test_mpFp_pow_extended)
             mpFp_urandom(a[i],p);
             mpFp_urandom(b[i],p);
             mpz_set_mpFp(aaa[i], a[i]);
+            mpz_set_mpFp(bbb[i], b[i]);
             bui[i] = ui_urandom(0);
         }
 
         // Exponentiation
         for (i = 0; i < (ARRAY_SZ >> 4); i++) {
             mpFp_pow_ui(c, a[i], bui[i]);
-    
+
             mpz_set_mpFp(aa, a[i]);
             mpz_powm_ui(d, aa, bui[i], p);
-    
+
+            mpz_set_mpFp(aa, c);
+            assert(mpz_cmp(d, aa) == 0);
+
+            mpFp_pow_mpz(c, a[i], bbb[i]);
+
+            mpz_set_mpFp(aa, a[i]);
+            mpz_powm(d, aa, bbb[i], p);
+
             mpz_set_mpFp(aa, c);
             assert(mpz_cmp(d, aa) == 0);
         }

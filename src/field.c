@@ -516,6 +516,26 @@ void mpFp_pow_ui(mpFp_t c, mpFp_t a, unsigned long int b) {
     return;
 }
 
+void mpFp_pow_mpz(mpFp_t c, mpFp_t a, mpz_t b) {
+    mpFp_field_ptr fp;
+    fp = a->fp;
+    c->fp = a->fp;
+    mpFp_realloc(c);
+
+    mpz_powm(c->i, a->i, b, fp->p);
+    if (__GMP_UNLIKELY(c->i->_mp_size < fp->psize)) {
+        int i;
+
+        for (i = c->i->_mp_size; i < fp->psize; i++) {
+            c->i->_mp_d[i] = 0;
+        }
+    }
+
+    c->i->_mp_size = fp->psize;
+    //c->fp = fp;
+    return;
+}
+
 void mpFp_swap(mpFp_t a, mpFp_t b) {
     int i;
     mpFp_field_ptr fp;

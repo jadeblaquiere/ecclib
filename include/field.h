@@ -97,7 +97,7 @@ void mpFp_mul_ui(mpFp_t rop, mpFp_t op1, unsigned long op2);
 
 void mpFp_sqr(mpFp_t rop, mpFp_t op1);
 
-//void mpFp_pow(mpFp_t rop, mpFp_t op1, mpz_t op2);
+void mpFp_pow_mpz(mpFp_t rop, mpFp_t op1, mpz_t op2);
 void mpFp_pow_ui(mpFp_t rop, mpFp_t op1, unsigned long op2);
 
 void mpFp_neg(mpFp_t rop, mpFp_t op);
