@@ -33,11 +33,13 @@ case "$OSTYPE" in
     cd libb64
     make clean
     make
-    sudo install -D -m 644 -o root -g admin include/cdecode.h /usr/local/include/b64/cdecode.h
-    sudo install -D -m 644 -o root -g admin include/cencode.h /usr/local/include/b64/cencode.h
-    sudo install -D -m 644 -o root -g admin include/decode.h /usr/local/include/b64/decode.h
-    sudo install -D -m 644 -o root -g admin include/encode.h /usr/local/include/b64/encode.h
-    sudo install -D -m 644 -o root -g admin src/libb64.a /usr/local/lib/libb64.a
+    sudo mkdir -p -m 755 /usr/local/include/b64
+    sudo chown root.admin /usr/local/include/b64
+    sudo install -m 644 -o root -g admin include/cdecode.h /usr/local/include/b64/cdecode.h
+    sudo install -m 644 -o root -g admin include/cencode.h /usr/local/include/b64/cencode.h
+    sudo install -m 644 -o root -g admin include/decode.h /usr/local/include/b64/decode.h
+    sudo install -m 644 -o root -g admin include/encode.h /usr/local/include/b64/encode.h
+    sudo install -m 644 -o root -g admin src/libb64.a /usr/local/lib/libb64.a
     cd ../..
     ;;
   *)
