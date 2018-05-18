@@ -35,10 +35,10 @@ case "$OSTYPE" in
     make
     sudo mkdir -p -m 755 /usr/local/include/b64
     sudo chown root.admin /usr/local/include/b64
-    sudo install -m 644 -o root -g admin include/cdecode.h /usr/local/include/b64/cdecode.h
-    sudo install -m 644 -o root -g admin include/cencode.h /usr/local/include/b64/cencode.h
-    sudo install -m 644 -o root -g admin include/decode.h /usr/local/include/b64/decode.h
-    sudo install -m 644 -o root -g admin include/encode.h /usr/local/include/b64/encode.h
+    sudo install -m 644 -o root -g admin include/b64/cdecode.h /usr/local/include/b64/cdecode.h
+    sudo install -m 644 -o root -g admin include/b64/cencode.h /usr/local/include/b64/cencode.h
+    sudo install -m 644 -o root -g admin include/b64/decode.h /usr/local/include/b64/decode.h
+    sudo install -m 644 -o root -g admin include/b64/encode.h /usr/local/include/b64/encode.h
     sudo install -m 644 -o root -g admin src/libb64.a /usr/local/lib/libb64.a
     cd ../..
     ;;
@@ -56,7 +56,14 @@ wget http://archive.ubuntu.com/ubuntu/pool/main/libs/libsodium/libsodium_1.0.16.
 tar xvf libsodium_1.0.16.orig.tar.gz
 cd libsodium-1.0.16
 autoreconf --install
-./configure --prefix=/usr
+case "$OSTYPE" in
+  linux*)
+    ./configure --prefix=/usr
+    ;;
+  darwin*)
+    ./configure
+    ;;
+esac
 make
 sudo make install
 cd ../..
