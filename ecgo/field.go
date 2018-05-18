@@ -129,7 +129,7 @@ func c_mpz_to_bigint(m *C.__mpz_struct) (z *big.Int) {
 	z = new(big.Int)
 	sz := C._mpz_sizeinbytes(m)
 	buf := make([]byte, sz, sz*2)
-	if C._local_mpz_sgn(m) < 0 {
+	if int(C._local_mpz_sgn(m)) < 0 {
 		negative = true
 		C.mpz_neg(m, m)
 	}
