@@ -12,7 +12,9 @@ language: c
 
 before_script:
     - autoreconf --install
-    - configure --prefix=/usr --enable-benchmarks --enable-examples
+    - pwd
+    - ls
+    - ./configure --prefix=/usr --enable-benchmarks --enable-examples
 
 script:
     - make clean
