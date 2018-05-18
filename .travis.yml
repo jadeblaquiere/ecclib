@@ -8,23 +8,14 @@ os: linux
 
 install: ./setup.sh
 
-matrix:
-    include:
-        - language: c
-            before_script:
-                - autoreconf --install
-                - configure --prefix=/usr --enable-benchmarks --enable-examples
-            script:
-                - make clean
-                - make
-                - make check
-                - sudo make install
+language: c
 
-        - language: python
-            python: 3.5
-            before_script:
-                - sudo pip3 install --upgrade .
-            script:
-                - python3 ./tests/pytest_field.py
-                - python3 ./tests/pytest_ecurve.py
-                - python3 ./tests/pytest_ecpoint.py
+before_script:
+    - autoreconf --install
+    - configure --prefix=/usr --enable-benchmarks --enable-examples
+
+script:
+    - make clean
+    - make
+    - make check
+    - sudo make install
