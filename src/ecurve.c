@@ -825,7 +825,6 @@ char *h, char *Gx, char *Gy, unsigned int bits){
     assert(fp != NULL);
     if (cv->type != EQTypeShortWeierstrass) {
         _mpECurve_clear_coeff(cv);
-        cv->fp = fp;
         cv->type = EQTypeShortWeierstrass;
         _mpECurve_init_coeff(cv);
     }
@@ -855,7 +854,6 @@ char *h, char *Gx, char *Gy, unsigned int bits){
     cv->fp = fp;
     if (cv->type != EQTypeEdwards) {
         _mpECurve_clear_coeff(cv);
-        cv->fp = fp;
         cv->type = EQTypeEdwards;
         _mpECurve_init_coeff(cv);
     }
@@ -918,7 +916,6 @@ char *h, char *Gx, char *Gy, unsigned int bits){
     cv->fp = fp;
     if (cv->type != EQTypeTwistedEdwards) {
         _mpECurve_clear_coeff(cv);
-        cv->fp = fp;
         cv->type = EQTypeTwistedEdwards;
         _mpECurve_init_coeff(cv);
     }
@@ -940,28 +937,22 @@ int mpECurve_set_mpz_ws(mpECurve_t cv, mpz_t p, mpz_t a, mpz_t b, mpz_t n,
 mpz_t h, mpz_t Gx, mpz_t Gy, unsigned int bits){
     int status;
     mpFp_field_ptr fp;
-    mpz_t t;
 
-    mpz_init(t);
     fp = _mpFp_field_lookup(p);
     cv->fp = fp;
     if (cv->type != EQTypeShortWeierstrass) {
         _mpECurve_clear_coeff(cv);
-        cv->fp = fp;
         cv->type = EQTypeShortWeierstrass;
         _mpECurve_init_coeff(cv);
     }
-    mpz_set(t, a);
-    mpFp_set_mpz_fp(cv->coeff.ws.a, t, cv->fp);
-    mpz_set(t, b);
-    mpFp_set_mpz_fp(cv->coeff.ws.b, t, cv->fp);
+    mpFp_set_mpz_fp(cv->coeff.ws.a, a, cv->fp);
+    mpFp_set_mpz_fp(cv->coeff.ws.b, b, cv->fp);
     mpz_set(cv->n, n);
     mpz_set(cv->h, h);
     mpz_set(cv->G[0], Gx);
     mpz_set(cv->G[1], Gy);
     cv->bits = bits;
     status = (mpECurve_point_check(cv, cv->G[0], cv->G[1]) == 0);
-    mpz_clear(t);
     return status;
 }
 
@@ -969,28 +960,22 @@ int mpECurve_set_mpz_ed(mpECurve_t cv, mpz_t p, mpz_t c, mpz_t d, mpz_t n,
 mpz_t h, mpz_t Gx, mpz_t Gy, unsigned int bits){
     int status;
     mpFp_field_ptr fp;
-    mpz_t t;
 
-    mpz_init(t);
     fp = _mpFp_field_lookup(p);
     cv->fp = fp;
     if (cv->type != EQTypeEdwards) {
         _mpECurve_clear_coeff(cv);
-        cv->fp = fp;
         cv->type = EQTypeEdwards;
         _mpECurve_init_coeff(cv);
     }
-    mpz_set(t, c);
-    mpFp_set_mpz_fp(cv->coeff.ed.c, t, cv->fp);
-    mpz_set(t, d);
-    mpFp_set_mpz_fp(cv->coeff.ed.d, t, cv->fp);
+    mpFp_set_mpz_fp(cv->coeff.ed.c, c, cv->fp);
+    mpFp_set_mpz_fp(cv->coeff.ed.d, d, cv->fp);
     mpz_set(cv->n, n);
     mpz_set(cv->h, h);
     mpz_set(cv->G[0], Gx);
     mpz_set(cv->G[1], Gy);
     cv->bits = bits;
     status = (mpECurve_point_check(cv, cv->G[0], cv->G[1]) == 0);
-    mpz_clear(t);
     return status;
 }
 
@@ -998,18 +983,14 @@ int mpECurve_set_mpz_mo(mpECurve_t cv, mpz_t p, mpz_t B, mpz_t A, mpz_t n,
 mpz_t h, mpz_t Gx, mpz_t Gy, unsigned int bits){
     int status;
     mpFp_field_ptr fp;
-    mpz_t t;
 
-    mpz_init(t);
     fp = _mpFp_field_lookup(p);
     _mpECurve_clear_coeff(cv);
     cv->fp = fp;
     cv->type = EQTypeMontgomery;
     _mpECurve_init_coeff(cv);
-    mpz_set(t, B);
-    mpFp_set_mpz_fp(cv->coeff.mo.B, t, cv->fp);
-    mpz_set(t, A);
-    mpFp_set_mpz_fp(cv->coeff.mo.A, t, cv->fp);
+    mpFp_set_mpz_fp(cv->coeff.mo.B, B, cv->fp);
+    mpFp_set_mpz_fp(cv->coeff.mo.A, A, cv->fp);
     // internal representation of Montgomery curve points is ws
     // to facilitate add/double (not differential)
     // transform is :
@@ -1059,7 +1040,6 @@ mpz_t h, mpz_t Gx, mpz_t Gy, unsigned int bits){
     mpz_set(cv->G[1], Gy);
     cv->bits = bits;
     status = (mpECurve_point_check(cv, cv->G[0], cv->G[1]) == 0);
-    mpz_clear(t);
     return status;
 }
 
@@ -1067,28 +1047,22 @@ int mpECurve_set_mpz_te(mpECurve_t cv, mpz_t p, mpz_t a, mpz_t d, mpz_t n,
 mpz_t h, mpz_t Gx, mpz_t Gy, unsigned int bits){
     int status;
     mpFp_field_ptr fp;
-    mpz_t t;
 
-    mpz_init(t);
     fp = _mpFp_field_lookup(p);
     cv->fp = fp;
     if (cv->type != EQTypeTwistedEdwards) {
         _mpECurve_clear_coeff(cv);
-        cv->fp = fp;
         cv->type = EQTypeTwistedEdwards;
         _mpECurve_init_coeff(cv);
     }
-    mpz_set(t, a);
-    mpFp_set_mpz_fp(cv->coeff.te.a, t, cv->fp);
-    mpz_set(t, d);
-    mpFp_set_mpz_fp(cv->coeff.te.d, t, cv->fp);
+    mpFp_set_mpz_fp(cv->coeff.te.a, a, cv->fp);
+    mpFp_set_mpz_fp(cv->coeff.te.d, d, cv->fp);
     mpz_set(cv->n, n);
     mpz_set(cv->h, h);
     mpz_set(cv->G[0], Gx);
     mpz_set(cv->G[1], Gy);
     cv->bits = bits;
     status = (mpECurve_point_check(cv, cv->G[0], cv->G[1]) == 0);
-    mpz_clear(t);
     return status;
 }
 

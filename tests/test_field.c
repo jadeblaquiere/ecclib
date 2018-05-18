@@ -138,11 +138,11 @@ START_TEST(test_mpFp_neg_basic)
     mpFp_neg(c, b);
     assert(mpFp_cmp_ui(c, 1) == 0);
 
-    mpz_clear(d);
-    mpz_clear(p);
     mpFp_clear(c);
     mpFp_clear(b);
     mpFp_clear(a);
+    mpz_clear(d);
+    mpz_clear(p);
 END_TEST
 
 START_TEST(test_mpFp_add_basic)
@@ -220,13 +220,13 @@ START_TEST(test_mpFp_add_basic)
         }
     }
 
+    mpFp_clear(c);
+    mpFp_clear(b);
+    mpFp_clear(a);
     mpz_clear(bb);
     mpz_clear(aa);
     mpz_clear(d);
     mpz_clear(p);
-    mpFp_clear(c);
-    mpFp_clear(b);
-    mpFp_clear(a);
 END_TEST
 
 START_TEST(test_mpFp_add_extended)

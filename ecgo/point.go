@@ -71,7 +71,7 @@ package ecgo
 //     char *buf;
 //
 //     leng = mpECP_out_bytelen(pt, compress);
-//     buf = (char *)malloc((leng + 1)*sizeof(char));
+//     buf = (char *)malloc(leng*sizeof(char));
 //     assert(buf != NULL);
 //     mpECP_out_bytes(buf, pt, compress);
 //     return buf;

@@ -121,13 +121,13 @@ void mpECP_set_mpz(mpECP_t rpt, mpz_t x, mpz_t y, mpECurve_t cv) {
 }
 
 void mpECP_set_mpFp(mpECP_t rpt, mpFp_t x, mpFp_t y, mpECurve_t cv) {
+    assert(cv->fp == x->fp);
+    assert(cv->fp == y->fp);
     if (rpt->base_bits != 0) _mpECP_base_pts_cleanup(rpt);
     rpt->cvp = &cv[0];
     rpt->is_neutral = 0;
     mpFp_set(rpt->x, x);
     mpFp_set(rpt->y, y);
-    assert(cv->fp == x->fp);
-    assert(cv->fp == y->fp);
     mpFp_set_ui_fp(rpt->z, 1, cv->fp);
     if (cv->type == EQTypeMontgomery) _transform_mo_to_ws(rpt);
     return;
@@ -334,8 +334,7 @@ int mpECP_set_bytes(mpECP_t rpt, unsigned char *b, int blen, mpECurve_t cv) {
         case 2:
         case 3: {
                 mpz_t xz;
-                mpFp_t x, y;
-                mpFp_t t;
+                mpFp_t x, y, t;
                 int error, odd;
                 if (blen != (1 + bytes)) return -1;
                 mpz_init(xz);
@@ -568,6 +567,7 @@ void mpECP_out_bytes(unsigned char *s, mpECP_t pt, int compress) {
             mpFp_init_fp(y, pt->cvp->fp);
             _transform_ws_to_mo_y(y, pt);
             mpz_set_mpFp(yz, y);
+            mpFp_clear(y);
         } else {
             mpz_set_mpFp(yz, pt->y);
         }
@@ -1267,10 +1267,10 @@ void mpECP_scalar_mul(mpECP_t rpt, mpECP_t pt, mpFp_t sc) {
     assert(mpz_cmp(sc->fp->p, pt->cvp->n) == 0);
     for (i = pt->cvp->bits - 1; i >= 0 ; i--) {
         b = mpFp_tstbit(sc, i);
-        mpECP_cswap(R0, R1, b);
+        _mpECP_cswap_safe(R0, R1, b);
         mpECP_add(R1, R1, R0);
         mpECP_double(R0, R0);
-        mpECP_cswap(R0, R1, b);
+        _mpECP_cswap_safe(R0, R1, b);
     }
     mpECP_set(rpt, R0);
     mpECP_clear(R1);
