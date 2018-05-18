@@ -4,7 +4,9 @@ addons:
     apt:
         update: true
 
-os: linux
+os:
+    - linux
+    - osx
 
 install: ./setup.sh
 
@@ -14,7 +16,8 @@ before_script:
     - autoreconf --install
     - pwd
     - ls
-    - ./configure --prefix=/usr --enable-benchmarks --enable-examples
+    - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then ./configure --enable-benchmarks --enable-examples          ; fi
+    - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then ./configure --prefix=/usr --enable-benchmarks --enable-examples          ; fi
 
 script:
     - make clean

@@ -7,7 +7,6 @@ then
     if [ "$LINUX_FLAVOR" = "Ubuntu" ]
     then
         echo "Configuring build for Ubuntu"
-        # ...
         sudo apt-get update
         sudo apt-get -y install check
         # the following are needed for building examples (core library only depends on GMP)
@@ -25,9 +24,22 @@ then
 elif [ "$OSTYPE" = "darwin"* ]
 then
     echo "Configuring build for Mac OSX"
-    echo "Error, not yet implemented"
-    exit 1
-        # Mac OSX
+    brew update
+    brew install check
+    brew install libtasn1
+    brew install popt
+    mkdir libb64-build
+    cd libb64-build
+    git clone https://github.com/transmission/libb64.git
+    cd libb64
+    make clean
+    make
+    sudo install -D -m 644 -o root -g admin include/cdecode.h /usr/local/include/b64/cdecode.h
+    sudo install -D -m 644 -o root -g admin include/cencode.h /usr/local/include/b64/cencode.h
+    sudo install -D -m 644 -o root -g admin include/decode.h /usr/local/include/b64/decode.h
+    sudo install -D -m 644 -o root -g admin include/encode.h /usr/local/include/b64/encode.h
+    sudo install -D -m 644 -o root -g admin src/libb64.a /usr/local/lib/libb64.a
+    cd ../..
 elif [ "$OSTYPE" = "cygwin" ]
 then
     echo "Configuring build for Cygwin"
