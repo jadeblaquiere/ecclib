@@ -1,5 +1,9 @@
 sudo: required
 
+addons:
+    apt:
+        update: true
+
 os: linux
 
 install: ./setup.sh
