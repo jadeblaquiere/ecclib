@@ -39,6 +39,20 @@
 
 #define _MPECP_BASE_BITS    (8)
 
+// defining _MPECP_MPFP_NOMALLOC uses fixed structures for mpFp elements
+// it is of course critical that *_realloc is never called, so _mp_alloc
+// should be set to >= fp->p2size to avoid realloc being called from
+// mpFp_realloc()
+#define _MPECP_MPFP_NOMALLOC
+#ifdef _MPECP_MPFP_NOMALLOC
+
+// this definition should match the one in field.c
+#define _MPFP_MAX_LIMBS   (32)
+
+typedef mp_limb_t __local_limb_t[_MPFP_MAX_LIMBS];
+
+#endif // #ifdef _MPECP_MPFP_NOMALLOC
+
 static char *_hexlut = "0123456789ABCDEF";
 
 static inline int _mpECP_n_base_pt_levels(mpECP_t pt) {
@@ -749,6 +763,16 @@ void mpECP_add(mpECP_t rpt, mpECP_t pt1, mpECP_t pt2) {
                 // 2015 Renes-Costello-Batina "Algorithm 1"
                 // from https://eprint.iacr.org/2015/1060.pdf
                 mpFp_t t0, t1, t2, t3, t4, t5, b3;
+#ifdef _MPECP_MPFP_NOMALLOC
+                __local_limb_t lt0, lt1, lt2, lt3, lt4, lt5, lb3;
+                t0->i->_mp_d = lt0; t0->i->_mp_size = 0; t0->i->_mp_alloc = _MPFP_MAX_LIMBS; t0->fp = pt1->cvp->fp;
+                t1->i->_mp_d = lt1; t1->i->_mp_size = 0; t1->i->_mp_alloc = _MPFP_MAX_LIMBS; t1->fp = pt1->cvp->fp;
+                t2->i->_mp_d = lt2; t2->i->_mp_size = 0; t2->i->_mp_alloc = _MPFP_MAX_LIMBS; t2->fp = pt1->cvp->fp;
+                t3->i->_mp_d = lt3; t3->i->_mp_size = 0; t3->i->_mp_alloc = _MPFP_MAX_LIMBS; t3->fp = pt1->cvp->fp;
+                t4->i->_mp_d = lt4; t4->i->_mp_size = 0; t4->i->_mp_alloc = _MPFP_MAX_LIMBS; t4->fp = pt1->cvp->fp;
+                t5->i->_mp_d = lt5; t5->i->_mp_size = 0; t5->i->_mp_alloc = _MPFP_MAX_LIMBS; t5->fp = pt1->cvp->fp;
+                b3->i->_mp_d = lb3; b3->i->_mp_size = 0; b3->i->_mp_alloc = _MPFP_MAX_LIMBS; b3->fp = pt1->cvp->fp;
+#else
                 mpFp_init_fp(t0, pt1->cvp->fp);
                 mpFp_init_fp(t1, pt1->cvp->fp);
                 mpFp_init_fp(t2, pt1->cvp->fp);
@@ -756,6 +780,7 @@ void mpECP_add(mpECP_t rpt, mpECP_t pt1, mpECP_t pt2) {
                 mpFp_init_fp(t4, pt1->cvp->fp);
                 mpFp_init_fp(t5, pt1->cvp->fp);
                 mpFp_init_fp(b3, pt1->cvp->fp);
+#endif
                 // TODO: Precalculate b3 and store in coeff.ws.b3
                 mpFp_add(b3, bb, bb);
                 mpFp_add(b3, b3, bb);
@@ -890,6 +915,7 @@ void mpECP_add(mpECP_t rpt, mpECP_t pt1, mpECP_t pt2) {
                     rpt->is_neutral = 0;
                 }
 
+#ifndef _MPECP_MPFP_NOMALLOC
                 mpFp_clear(b3);
                 mpFp_clear(t5);
                 mpFp_clear(t4);
@@ -897,6 +923,7 @@ void mpECP_add(mpECP_t rpt, mpECP_t pt1, mpECP_t pt2) {
                 mpFp_clear(t2);
                 mpFp_clear(t1);
                 mpFp_clear(t0);
+#endif
 #else
                 // 2007 Bernstein-Lange formula
                 // from : http://www.hyperelliptic.org/EFD/g1p/auto-shortw-jacobian.html#addition-add-2007-bl
@@ -1013,6 +1040,16 @@ void mpECP_add(mpECP_t rpt, mpECP_t pt1, mpECP_t pt2) {
                 // Y3 = A*G*(D-C)
                 // Z3 = c*F*G
                 mpFp_t A, B, C, D, E, F, G;
+#ifdef _MPECP_MPFP_NOMALLOC
+                __local_limb_t lA, lB, lC, lD, lE, lF, lG;
+                A->i->_mp_d = lA; A->i->_mp_size = 0; A->i->_mp_alloc = _MPFP_MAX_LIMBS; A->fp = pt1->cvp->fp;
+                B->i->_mp_d = lB; B->i->_mp_size = 0; B->i->_mp_alloc = _MPFP_MAX_LIMBS; B->fp = pt1->cvp->fp;
+                C->i->_mp_d = lC; C->i->_mp_size = 0; C->i->_mp_alloc = _MPFP_MAX_LIMBS; C->fp = pt1->cvp->fp;
+                D->i->_mp_d = lD; D->i->_mp_size = 0; D->i->_mp_alloc = _MPFP_MAX_LIMBS; D->fp = pt1->cvp->fp;
+                E->i->_mp_d = lE; E->i->_mp_size = 0; E->i->_mp_alloc = _MPFP_MAX_LIMBS; E->fp = pt1->cvp->fp;
+                F->i->_mp_d = lF; F->i->_mp_size = 0; F->i->_mp_alloc = _MPFP_MAX_LIMBS; F->fp = pt1->cvp->fp;
+                G->i->_mp_d = lG; G->i->_mp_size = 0; G->i->_mp_alloc = _MPFP_MAX_LIMBS; G->fp = pt1->cvp->fp;
+#else
                 mpFp_init_fp(A, pt1->cvp->fp);
                 mpFp_init_fp(B, pt1->cvp->fp);
                 mpFp_init_fp(C, pt1->cvp->fp);
@@ -1020,6 +1057,7 @@ void mpECP_add(mpECP_t rpt, mpECP_t pt1, mpECP_t pt2) {
                 mpFp_init_fp(E, pt1->cvp->fp);
                 mpFp_init_fp(F, pt1->cvp->fp);
                 mpFp_init_fp(G, pt1->cvp->fp);
+#endif
 
                 // A = Z1*Z2
                 mpFp_mul(A, pt1->z, pt2->z);
@@ -1055,6 +1093,7 @@ void mpECP_add(mpECP_t rpt, mpECP_t pt1, mpECP_t pt2) {
                 mpECurve_set(rpt->cvp, pt1->cvp);
                 rpt->is_neutral = 0;
 
+#ifndef _MPECP_MPFP_NOMALLOC
                 mpFp_clear(G);
                 mpFp_clear(F);
                 mpFp_clear(E);
@@ -1062,6 +1101,7 @@ void mpECP_add(mpECP_t rpt, mpECP_t pt1, mpECP_t pt2) {
                 mpFp_clear(C);
                 mpFp_clear(B);
                 mpFp_clear(A);
+#endif
                 return;
             }
             break;
@@ -1079,6 +1119,16 @@ void mpECP_add(mpECP_t rpt, mpECP_t pt1, mpECP_t pt2) {
                 // Y3 = A*G*(D-a*C)
                 // Z3 = F*G
                 mpFp_t A, B, C, D, E, F, G;
+#ifdef _MPECP_MPFP_NOMALLOC
+                __local_limb_t lA, lB, lC, lD, lE, lF, lG;
+                A->i->_mp_d = lA; A->i->_mp_size = 0; A->i->_mp_alloc = _MPFP_MAX_LIMBS; A->fp = pt1->cvp->fp;
+                B->i->_mp_d = lB; B->i->_mp_size = 0; B->i->_mp_alloc = _MPFP_MAX_LIMBS; B->fp = pt1->cvp->fp;
+                C->i->_mp_d = lC; C->i->_mp_size = 0; C->i->_mp_alloc = _MPFP_MAX_LIMBS; C->fp = pt1->cvp->fp;
+                D->i->_mp_d = lD; D->i->_mp_size = 0; D->i->_mp_alloc = _MPFP_MAX_LIMBS; D->fp = pt1->cvp->fp;
+                E->i->_mp_d = lE; E->i->_mp_size = 0; E->i->_mp_alloc = _MPFP_MAX_LIMBS; E->fp = pt1->cvp->fp;
+                F->i->_mp_d = lF; F->i->_mp_size = 0; F->i->_mp_alloc = _MPFP_MAX_LIMBS; F->fp = pt1->cvp->fp;
+                G->i->_mp_d = lG; G->i->_mp_size = 0; G->i->_mp_alloc = _MPFP_MAX_LIMBS; G->fp = pt1->cvp->fp;
+#else
                 mpFp_init_fp(A, pt1->cvp->fp);
                 mpFp_init_fp(B, pt1->cvp->fp);
                 mpFp_init_fp(C, pt1->cvp->fp);
@@ -1086,6 +1136,7 @@ void mpECP_add(mpECP_t rpt, mpECP_t pt1, mpECP_t pt2) {
                 mpFp_init_fp(E, pt1->cvp->fp);
                 mpFp_init_fp(F, pt1->cvp->fp);
                 mpFp_init_fp(G, pt1->cvp->fp);
+#endif
 
                 // A = Z1*Z2
                 mpFp_mul(A, pt1->z, pt2->z);
@@ -1121,6 +1172,7 @@ void mpECP_add(mpECP_t rpt, mpECP_t pt1, mpECP_t pt2) {
                 mpECurve_set(rpt->cvp, pt1->cvp);
                 rpt->is_neutral = 0;
 
+#ifndef _MPECP_MPFP_NOMALLOC
                 mpFp_clear(G);
                 mpFp_clear(F);
                 mpFp_clear(E);
@@ -1128,6 +1180,7 @@ void mpECP_add(mpECP_t rpt, mpECP_t pt1, mpECP_t pt2) {
                 mpFp_clear(C);
                 mpFp_clear(B);
                 mpFp_clear(A);
+#endif
                 return;
             }
             break;

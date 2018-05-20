@@ -38,6 +38,8 @@
 
 #define ARRAY_SZ    (200000)
 // _MPFP_MAX_LIMBS would be a 2048-bit integer in most cases (32*64)
+// This defines the limit on the bitsize of p**2 (which implies that
+// p can be at most 1024 bits)
 #define _MPFP_MAX_LIMBS   (32)
 
 #if 1
@@ -91,6 +93,13 @@ static _mpFp_field_list_t *_static_field_list = NULL;
 mpFp_field_ptr _mpFp_field_lookup(mpz_t p) {
     _mpFp_field_list_t **l;
     _mpFp_field_list_t *l_this;
+
+    size_t psz;
+
+    psz = p->_mp_size;
+    // if this is out of bounds there is no recovery... need to increase
+    // definition of contstant and recomile library
+    assert ((psz * 2) <= _MPFP_MAX_LIMBS);
 
     l = &_static_field_list;
     while (*l != NULL) {

@@ -34,7 +34,6 @@ case "$OSTYPE" in
     make clean
     make
     sudo mkdir -p -m 755 /usr/local/include/b64
-    sudo chown root.admin /usr/local/include/b64
     sudo install -m 644 -o root -g admin include/b64/cdecode.h /usr/local/include/b64/cdecode.h
     sudo install -m 644 -o root -g admin include/b64/cencode.h /usr/local/include/b64/cencode.h
     sudo install -m 644 -o root -g admin include/b64/decode.h /usr/local/include/b64/decode.h
