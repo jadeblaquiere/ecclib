@@ -48,7 +48,7 @@ matrix:
             - make clean
             - make
             - sudo make install
-            - sudo pip3 install --upgrade .
+            - sudo pip install --upgrade .
             - python3 ./tests/pytest_field.py
             - python3 ./tests/pytest_ecurve.py
             - python3 ./tests/pytest_ecpoint.py
@@ -69,4 +69,34 @@ matrix:
             - python3 ./tests/pytest_field.py
             - python3 ./tests/pytest_ecurve.py
             - python3 ./tests/pytest_ecpoint.py
+        - os: linux
+          language: go
+          sudo: required
+          python: 3.5
+          install: ./setup.sh
+          before_script:
+            - autoreconf --install
+            - pwd
+            - ls
+            - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then ./configure --enable-benchmarks --enable-examples          ; fi
+            - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then ./configure --prefix=/usr --enable-benchmarks --enable-examples          ; fi
+          script:
+            - make clean
+            - make
+            - sudo make install
+            - (cd ecgo; go test -v)
+        - os: osx
+          language: g0
+          install: ./setup.sh
+          before_script:
+            - autoreconf --install
+            - pwd
+            - ls
+            - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then ./configure --enable-benchmarks --enable-examples          ; fi
+            - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then ./configure --prefix=/usr --enable-benchmarks --enable-examples          ; fi
+          script:
+            - make clean
+            - make
+            - sudo make install
+            - (cd ecgo; go test -v)
 
