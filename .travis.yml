@@ -36,7 +36,6 @@ matrix:
         - os: linux
           language: python
           sudo: required
-          python: 3.5
           install: ./setup.sh
           before_script:
             - autoreconf --install
@@ -48,7 +47,7 @@ matrix:
             - make clean
             - make
             - sudo make install
-            - sudo pip install --upgrade .
+            - sudo pip3 install --upgrade .
             - python3 ./tests/pytest_field.py
             - python3 ./tests/pytest_ecurve.py
             - python3 ./tests/pytest_ecpoint.py
@@ -72,7 +71,6 @@ matrix:
         - os: linux
           language: go
           sudo: required
-          python: 3.5
           install: ./setup.sh
           before_script:
             - autoreconf --install
