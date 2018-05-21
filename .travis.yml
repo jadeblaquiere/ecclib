@@ -1,30 +1,72 @@
-sudo: required
-
 addons:
     apt:
         update: true
 
-os:
-    - linux
-    - osx
+matrix:
+    include:
+        - os: linux
+          language: c
+          sudo: required
+          install: ./setup.sh
+          before_script:
+            - autoreconf --install
+            - pwd
+            - ls
+            - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then ./configure --enable-benchmarks --enable-examples          ; fi
+            - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then ./configure --prefix=/usr --enable-benchmarks --enable-examples          ; fi
+          script:
+            - make clean
+            - make
+            - make check
+            - sudo make install
+        - os: osx
+          language: c
+          install: ./setup.sh
+          before_script:
+            - autoreconf --install
+            - pwd
+            - ls
+            - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then ./configure --enable-benchmarks --enable-examples          ; fi
+            - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then ./configure --prefix=/usr --enable-benchmarks --enable-examples          ; fi
+          script:
+            - make clean
+            - make
+            - make check
+            - sudo make install
+        - os: linux
+          language: python
+          sudo: required
+          python: 3.5
+          install: ./setup.sh
+          before_script:
+            - autoreconf --install
+            - pwd
+            - ls
+            - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then ./configure --enable-benchmarks --enable-examples          ; fi
+            - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then ./configure --prefix=/usr --enable-benchmarks --enable-examples          ; fi
+          script:
+            - make clean
+            - make
+            - sudo make install
+            - sudo pip3 install --upgrade .
+            - python3 ./tests/pytest_field.py
+            - python3 ./tests/pytest_ecurve.py
+            - python3 ./tests/pytest_ecpoint.py
+        - os: osx
+          language: generic
+          install: ./setup.sh
+          before_script:
+            - autoreconf --install
+            - pwd
+            - ls
+            - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then ./configure --enable-benchmarks --enable-examples          ; fi
+            - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then ./configure --prefix=/usr --enable-benchmarks --enable-examples          ; fi
+          script:
+            - make clean
+            - make
+            - sudo make install
+            - sudo pip3 install --upgrade .
+            - python3 ./tests/pytest_field.py
+            - python3 ./tests/pytest_ecurve.py
+            - python3 ./tests/pytest_ecpoint.py
 
-install: ./setup.sh
-
-language: c
-
-before_script:
-    - autoreconf --install
-    - pwd
-    - ls
-    - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then ./configure --enable-benchmarks --enable-examples          ; fi
-    - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then ./configure --prefix=/usr --enable-benchmarks --enable-examples          ; fi
-
-script:
-    - make clean
-    - make
-    - make check
-    - sudo make install
-    - sudo pip3 install --upgrade .
-    - python3 ./tests/pytest_field.py
-    - python3 ./tests/pytest_ecurve.py
-    - python3 ./tests/pytest_ecpoint.py
