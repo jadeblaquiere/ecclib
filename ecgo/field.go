@@ -180,6 +180,7 @@ func NewFieldElementUI(value uint64, field *big.Int) (z *FieldElement) {
 	if field.Cmp(big.NewInt(0)) == 0 {
 		panic("cannot operate on field of order 0")
 	}
+	C.mpz_init(&pmpz)
 	err = bigint_to_c_mpz_unsigned(&pmpz, field)
 	if err != nil {
 		return nil
@@ -205,6 +206,7 @@ func NewFieldElementURandom(field *big.Int) (z *FieldElement) {
 	if field.Cmp(big.NewInt(0)) == 0 {
 		panic("cannot operate on field of order 0")
 	}
+	C.mpz_init(&pmpz)
 	err = bigint_to_c_mpz_unsigned(&pmpz, field)
 	if err != nil {
 		return nil
@@ -241,7 +243,6 @@ func (z *FieldElement) AsInt() (r *big.Int) {
 func (z *FieldElement) Order() (r *big.Int) {
 	impz := C._p_of_fe(z.fe)
 	r = c_mpz_to_bigint(impz)
-	C.mpz_clear(impz)
 	return r
 }
 

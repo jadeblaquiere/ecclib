@@ -127,11 +127,11 @@ func NewPointXY(x, y *big.Int, c *Curve) (z *Point) {
 	z.ecp = C.malloc_ECPoint()
 	z.cv = c
 	C.mpECP_init(z.ecp, c.ec)
+	runtime.SetFinalizer(z, point_clear)
 	C.mpECP_set_mpz(z.ecp, &xmpz, &ympz, c.ec)
 
 	C.mpz_clear(&xmpz)
 	C.mpz_clear(&ympz)
-	runtime.SetFinalizer(z, point_clear)
 	return z
 }
 
@@ -141,9 +141,9 @@ func NewPointNeutral(c *Curve) (z *Point) {
 	z.ecp = C.malloc_ECPoint()
 	z.cv = c
 	C.mpECP_init(z.ecp, c.ec)
+	runtime.SetFinalizer(z, point_clear)
 	C.mpECP_set_neutral(z.ecp, c.ec)
 
-	runtime.SetFinalizer(z, point_clear)
 	return z
 }
 
@@ -153,9 +153,9 @@ func NewPointGenerator(c *Curve) (z *Point) {
 	z.ecp = C.malloc_ECPoint()
 	z.cv = c
 	C.mpECP_init(z.ecp, c.ec)
+	runtime.SetFinalizer(z, point_clear)
 	C.mpECP_set_mpz(z.ecp, C._pgx_of_cv(c.ec), C._pgy_of_cv(c.ec), c.ec)
 
-	runtime.SetFinalizer(z, point_clear)
 	return z
 }
 
@@ -165,9 +165,9 @@ func NewPointURandom(c *Curve) (z *Point) {
 	z.ecp = C.malloc_ECPoint()
 	z.cv = c
 	C.mpECP_init(z.ecp, c.ec)
+	runtime.SetFinalizer(z, point_clear)
 	C.mpECP_urandom(z.ecp, c.ec)
 
-	runtime.SetFinalizer(z, point_clear)
 	return z
 }
 
@@ -177,6 +177,7 @@ func NewPointFromString(gst string, c *Curve) (z *Point) {
 	z.ecp = C.malloc_ECPoint()
 	z.cv = c
 	C.mpECP_init(z.ecp, c.ec)
+	runtime.SetFinalizer(z, point_clear)
 	cstr := C.CString(gst)
 	status := C.mpECP_set_str(z.ecp, cstr, c.ec)
 	if status != C.int(0) {
@@ -184,7 +185,6 @@ func NewPointFromString(gst string, c *Curve) (z *Point) {
 	}
 	C.free(unsafe.Pointer(cstr))
 
-	runtime.SetFinalizer(z, point_clear)
 	return z
 }
 
@@ -194,6 +194,7 @@ func NewPointFromBytes(gby []byte, c *Curve) (z *Point) {
 	z.ecp = C.malloc_ECPoint()
 	z.cv = c
 	C.mpECP_init(z.ecp, c.ec)
+	runtime.SetFinalizer(z, point_clear)
 	cby := C.CBytes(gby)
 	l := len(gby)
 	status := C.mpECP_set_bytes(z.ecp, C._toUCP(cby), C.int(l), c.ec)
@@ -202,7 +203,6 @@ func NewPointFromBytes(gby []byte, c *Curve) (z *Point) {
 	}
 	C.free(cby)
 
-	runtime.SetFinalizer(z, point_clear)
 	return z
 }
 
