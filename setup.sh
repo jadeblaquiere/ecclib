@@ -8,6 +8,7 @@ case "$OSTYPE" in
         echo "Configuring build for Ubuntu"
         sudo apt-get update
         sudo apt-get -y install check
+        sudo apt-get -y install python3-pip 
         # the following are needed for building examples (core library only depends on GMP)
         #####
         # alternatively git clone git@gitlab.com:gnutls/libtasn1.git
@@ -28,6 +29,7 @@ case "$OSTYPE" in
     brew install libtasn1
     brew install popt
     brew install python3
+    brew upgrade python3
     mkdir libb64-build
     cd libb64-build
     git clone https://github.com/transmission/libb64.git
