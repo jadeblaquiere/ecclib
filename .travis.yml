@@ -10,17 +10,24 @@ os:
 
 install: ./setup.sh
 
-language: c
-
-before_script:
-    - autoreconf --install
-    - pwd
-    - ls
-    - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then ./configure --enable-benchmarks --enable-examples          ; fi
-    - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then ./configure --prefix=/usr --enable-benchmarks --enable-examples          ; fi
-
-script:
-    - make clean
-    - make
-    - make check
-    - sudo make install
+jobs:
+    include:
+        - stage: build-c
+          language: c
+          before_script:
+            - autoreconf --install
+            - pwd
+            - ls
+            - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then ./configure --enable-benchmarks --enable-examples          ; fi
+            - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then ./configure --prefix=/usr --enable-benchmarks --enable-examples          ; fi
+          script:
+            - make clean
+            - make
+        - stage: test-c
+          language: c
+          script:
+            - make check
+        - stage: deploy-c
+          language: c
+          script:
+            - sudo make install
