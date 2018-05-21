@@ -27,6 +27,7 @@ case "$OSTYPE" in
     brew install check
     brew install libtasn1
     brew install popt
+    brew install python3
     mkdir libb64-build
     cd libb64-build
     git clone https://github.com/transmission/libb64.git

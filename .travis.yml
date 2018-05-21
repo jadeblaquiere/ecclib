@@ -8,25 +8,23 @@ os:
     - linux
     - osx
 
-jobs:
-    include:
-        - stage: build-c
-          language: c
-          install: ./setup.sh
-          before_script:
-            - autoreconf --install
-            - pwd
-            - ls
-            - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then ./configure --enable-benchmarks --enable-examples          ; fi
-            - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then ./configure --prefix=/usr --enable-benchmarks --enable-examples          ; fi
-          script:
-            - make clean
-            - make
-        - stage: test-c
-          language: c
-          script:
-            - make check
-        - stage: deploy-c
-          language: c
-          script:
-            - sudo make install
+install: ./setup.sh
+
+language: c
+
+before_script:
+    - autoreconf --install
+    - pwd
+    - ls
+    - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then ./configure --enable-benchmarks --enable-examples          ; fi
+    - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then ./configure --prefix=/usr --enable-benchmarks --enable-examples          ; fi
+
+script:
+    - make clean
+    - make
+    - make check
+    - sudo make install
+    - sudo pip3 install --upgrade .
+    - python3 ./tests/pytest_field.py
+    - python3 ./tests/pytest_ecurve.py
+    - python3 ./tests/pytest_ecpoint.py
