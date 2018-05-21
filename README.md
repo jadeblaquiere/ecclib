@@ -1,4 +1,4 @@
-# ecclib
+# ecclib [![Build Status](https://travis-ci.org/jadeblaquiere/ecclib.svg?branch=master)](https://travis-ci.org/jadeblaquiere/ecclib)
 
 ecclib provides basic Elliptic Curve math operations in a library which loosely
 follows the conventions of the GNU Multiple Precision (GMP) math library. For
