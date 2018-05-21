@@ -86,7 +86,7 @@ matrix:
             - sudo make install
             - (cd ecgo; go test -v)
         - os: osx
-          language: g0
+          language: go
           install: ./setup.sh
           before_script:
             - autoreconf --install
