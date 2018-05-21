@@ -8,12 +8,11 @@ os:
     - linux
     - osx
 
-install: ./setup.sh
-
 jobs:
     include:
         - stage: build-c
           language: c
+          install: ./setup.sh
           before_script:
             - autoreconf --install
             - pwd
