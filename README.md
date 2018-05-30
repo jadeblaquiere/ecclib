@@ -1,4 +1,4 @@
-# ecclib [![Build Status](https://travis-ci.org/jadeblaquiere/ecclib.svg?branch=master)](https://travis-ci.org/jadeblaquiere/ecclib)
+# ecclib [![Build Status](https://travis-ci.org/jadeblaquiere/ecclib.svg?branch=master)](https://travis-ci.org/jadeblaquiere/ecclib) [![Codacy Badge](https://api.codacy.com/project/badge/Grade/007eab0568ae41049a1a9b94dfcce494)](https://www.codacy.com/app/jadeblaquiere/ecclib?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=jadeblaquiere/ecclib&amp;utm_campaign=Badge_Grade)
 
 ecclib provides basic Elliptic Curve math operations in a library which loosely
 follows the conventions of the GNU Multiple Precision (GMP) math library. For
