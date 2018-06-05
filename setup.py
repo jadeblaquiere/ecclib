@@ -38,7 +38,7 @@ module1 = Extension('ECC',
     sources = ['python/pygmplong.c', 'python/pyfield.c', 'python/pycurve.c', 'python/pyeccmodule.c', 'python/pypoint.c'])
 
 setup (name = 'ECC',
-    version = '1.0',
+    version = '0.1',
     packages = find_packages(),
     description = 'Elliptic Curve Cryptography (ECC) foundation library',
     ext_modules = [module1])

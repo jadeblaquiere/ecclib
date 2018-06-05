@@ -141,9 +141,9 @@ class TestFieldElement(unittest.TestCase):
     def test_sqrt(self):
         e = FieldElement(0, self.p)
         g = e.sqrt()
-        self.assertEqual(g, None)
+        self.assertEqual(int(g), 0)
         f = FieldElement(1, self.p)
-        g = f.inverse()
+        g = f.sqrt()
         self.assertEqual(int(g * g), 1)
         self.assertEqual(int(g * g), f)
         for _ in range(0, 10000):

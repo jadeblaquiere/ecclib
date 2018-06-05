@@ -648,11 +648,20 @@ void mpFp_urandom(mpFp_t a, mpz_t p) {
 
 int mpFp_sqrt(mpFp_t rop, mpFp_t op) {
     int s;
+    int leg_op;
     mpz_t t, q, opi, ropi;
     mpz_init(opi);
     mpz_set_mpFp(opi, op);
     // determine whether i is a quadratic residue (mod p)
-    if (mpz_legendre(opi, op->fp->p) != 1) return -1;
+    leg_op = mpz_legendre(opi, op->fp->p);
+    if (leg_op < 0) {
+        mpz_clear(opi);
+        return -1;
+    } else if (leg_op == 0) {
+        mpFp_set_ui_fp(rop, 0, op->fp);
+        mpz_clear(opi);
+        return 0;
+    }
     mpz_init(t);
     mpz_init(q);
     mpz_init(ropi);
