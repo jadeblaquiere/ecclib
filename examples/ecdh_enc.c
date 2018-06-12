@@ -31,11 +31,9 @@
 #include <assert.h>
 #include <b64file.h>
 #include <check.h>
-#include <ecurve.h>
+#include <ecc.h>
 #include <ecdh_der.h>
-#include <field.h>
 #include <limits.h>
-#include <mpzurandom.h>
 #include <popt.h>
 #include <sodium.h>
 #include <stdio.h>

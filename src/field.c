@@ -29,9 +29,9 @@
 //OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <assert.h>
-#include <field.h>
+#include <ecc/field.h>
+#include <ecc/mpzurandom.h>
 #include <gmp.h>
-#include <mpzurandom.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

@@ -34,9 +34,9 @@
 // use Renes-Costello-Batina Complete Addition for short-WS curves
 #define _MPECP_USE_RCB (1)
 
+#include <ecc/ecurve.h>
+#include <ecc/field.h>
 #include <gmp.h>
-#include <field.h>
-#include <ecurve.h>
 
 #ifdef __cplusplus
 extern "C" {

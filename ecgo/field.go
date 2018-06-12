@@ -31,7 +31,7 @@
 package ecgo
 
 // #cgo LDFLAGS: -lecc -lgmp
-// #include <field.h>
+// #include <ecc/field.h>
 // #include <gmp.h>
 // #include <stdlib.h>
 //

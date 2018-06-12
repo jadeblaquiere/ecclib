@@ -1,1 +1,1 @@
-include_HEADERS = field.h ecurve.h ecpoint.h mpzurandom.h
+nobase_include_HEADERS = ecc.h ecc/field.h ecc/ecurve.h ecc/ecpoint.h ecc/mpzurandom.h

@@ -32,7 +32,7 @@
 #define _EC_PY_GMPLONG_H_INCLUDED_
 
 #include <gmp.h>
-#include <field.h>
+#include <ecc/field.h>
 #include <Python.h>
 
 #ifdef __cplusplus

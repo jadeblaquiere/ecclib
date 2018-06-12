@@ -32,10 +32,8 @@
 #define _ECDH_DER_H_INCLUDED_
 
 #include <assert.h>
+#include <ecc.h>
 #include <gmp.h>
-#include <ecpoint.h>
-#include <ecurve.h>
-#include <field.h>
 #include <libtasn1.h>
 
 char *_ecdh_der_export_privkey(mpz_t privkey, mpECurve_t cv, size_t *sz);

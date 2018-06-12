@@ -30,9 +30,9 @@
 
 #include <assert.h>
 #include <check.h>
-#include <ecurve.h>
+#include <ecc/ecpoint.h>
+#include <ecc/ecurve.h>
 #include <gmp.h>
-#include <ecpoint.h>
 #include <stdio.h>
 #include <stdlib.h>
 

@@ -32,8 +32,8 @@
 #define _EC_PY_POINT_H_INCLUDED_
 
 #include <gmp.h>
-#include <ecpoint.h>
-#include <ecurve.h>
+#include <ecc/ecpoint.h>
+#include <ecc/ecurve.h>
 #include <Python.h>
 
 #ifdef __cplusplus

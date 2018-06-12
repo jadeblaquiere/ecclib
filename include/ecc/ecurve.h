@@ -31,7 +31,7 @@
 #ifndef _EC_CURVE_H_INCLUDED_
 #define _EC_CURVE_H_INCLUDED_
 
-#include <field.h>
+#include <ecc/field.h>
 #include <gmp.h>
 
 #ifdef __cplusplus

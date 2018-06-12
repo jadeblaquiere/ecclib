@@ -31,9 +31,9 @@
 package ecgo
 
 // #cgo LDFLAGS: -lecc -lgmp
-// #include <ecurve.h>
-// #include <ecpoint.h>
-// #include <field.h>
+// #include <ecc/ecurve.h>
+// #include <ecc/ecpoint.h>
+// #include <ecc/field.h>
 // #include <gmp.h>
 // #include <stdlib.h>
 //

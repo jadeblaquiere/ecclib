@@ -32,7 +32,7 @@
 #define _EC_PY_CURVE_H_INCLUDED_
 
 #include <gmp.h>
-#include <ecurve.h>
+#include <ecc/ecurve.h>
 #include <Python.h>
 
 #ifdef __cplusplus
