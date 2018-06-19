@@ -197,7 +197,7 @@ func NewPointFromBytes(gby []byte, c *Curve) (z *Point) {
 	runtime.SetFinalizer(z, point_clear)
 	cby := C.CBytes(gby)
 	l := len(gby)
-	status := C.mpECP_set_bytes(z.ecp, C._toUCP(cby), C.int(l), c.ec)
+	status := C.mpECP_set_bytes(z.ecp, C._toUCP(cby), C.size_t(l), c.ec)
 	if status != C.int(0) {
 		return nil
 	}

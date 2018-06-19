@@ -324,7 +324,7 @@ int mpECP_set_str(mpECP_t rpt, char *s, mpECurve_t cv) {
     return status;
 }
 
-int mpECP_set_bytes(mpECP_t rpt, unsigned char *b, int blen, mpECurve_t cv) {
+int mpECP_set_bytes(mpECP_t rpt, unsigned char *b, size_t blen, mpECurve_t cv) {
     int bytes;
 
     bytes = _bytelen(cv->bits);

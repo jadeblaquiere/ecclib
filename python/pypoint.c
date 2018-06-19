@@ -153,7 +153,7 @@ static int ECPoint_init(ECPoint *self, PyObject *args, PyObject *kwargs) {
             		PyErr_SetString(PyExc_ValueError, "unable to convert bytes initializer");
             		return -1;
                 }
-                status = mpECP_set_bytes(self->ecp,buffer, (int)bsize, ((ECurve *)curve)->ec);
+                status = mpECP_set_bytes(self->ecp,buffer, (size_t)bsize, ((ECurve *)curve)->ec);
                 if (status != 0) {
             		PyErr_SetString(PyExc_ValueError, "invalid curve point");
             		return -1;

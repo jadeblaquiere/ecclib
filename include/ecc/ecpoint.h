@@ -74,7 +74,7 @@ int  mpECP_set_str(mpECP_t rpt, char *s, mpECurve_t cv);
 int  mpECP_out_strlen(mpECP_t pt, int compress);
 void mpECP_out_str(char *s, mpECP_t pt, int compress);
 
-int  mpECP_set_bytes(mpECP_t rpt, unsigned char *s, int length, mpECurve_t cv);
+int  mpECP_set_bytes(mpECP_t rpt, unsigned char *s, size_t length, mpECurve_t cv);
 int  mpECP_out_bytelen(mpECP_t pt, int compress);
 void mpECP_out_bytes(unsigned char *s, mpECP_t pt, int compress);
 
