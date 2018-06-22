@@ -61,7 +61,8 @@ $ sudo make install
 ```
 
 Note: if you want to run the benchmarks you'll need to install libsodium and
-also pass the `--enable-benchmarks` option to configure
+also pass the `--enable-benchmarks` option to configure. Building the examples
+is enabled via `--enable-examples`. 
 
 ## Python bindings
 

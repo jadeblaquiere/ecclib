@@ -150,6 +150,10 @@ void mpFp_init_fp(mpFp_t c, mpFp_field_ptr fp) {
 void mpFp_clear(mpFp_t a) {
     mpz_clear(a->i);
     a->fp = NULL;
+#ifdef  SAFE_CLEAN
+    memset((void *)a, 0, sizeof(*a));
+#endif
+    return;
 }
 
 void mpFp_set(mpFp_t c, mpFp_t a) {

@@ -28,13 +28,23 @@
 //OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 //OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef _EC_ECC_H_INCLUDED_
-#define _EC_ECC_H_INCLUDED_
+#ifndef _SAFE_CLEAN_MEMORY_H_INCLUDED_
+#define _SAFE_CLEAN_MEMORY_H_INCLUDED_
 
-#include <ecc/field.h>
-#include <ecc/ecurve.h>
-#include <ecc/ecpoint.h>
-#include <ecc/mpzurandom.h>
-#include <ecc/safememory.h>
+#include <stdlib.h>
 
-#endif // _EC_ECC_H_INCLUDED_
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+// functions to zero memory on free/realloc
+
+void *_safe_clean_realloc(void *old, size_t oldsz, size_t newsz);
+void _safe_clean_free(void *old, size_t oldsz);
+void _enable_gmp_safe_clean();
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif // _SAFE_CLEAN_MEMORY_H_INCLUDED_

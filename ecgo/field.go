@@ -32,6 +32,7 @@ package ecgo
 
 // #cgo LDFLAGS: -lecc -lgmp
 // #include <ecc/field.h>
+// #include <ecc/safememory.h>
 // #include <gmp.h>
 // #include <stdlib.h>
 //
@@ -81,6 +82,10 @@ import (
 
 // Max size of Fp values is based on _MPFP_MAX_LIMBS * sizeof(mp_limb_t)
 const _MPFP_Max_Bytes = (32 * 8)
+
+func init() {
+	C._enable_gmp_safe_clean()
+}
 
 type FieldElement struct {
 	fe *C._mpFp_struct

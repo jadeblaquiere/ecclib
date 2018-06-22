@@ -102,6 +102,9 @@ void mpECP_clear(mpECP_t pt) {
     mpFp_clear(pt->y);
     mpFp_clear(pt->z);
     pt->cvp = NULL;
+#ifdef  SAFE_CLEAN
+    memset((void *)pt, 0, sizeof(*pt));
+#endif
     return;
 }
 

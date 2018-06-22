@@ -770,6 +770,9 @@ void mpECurve_clear(mpECurve_t c) {
     mpz_clear(c->h);
     mpz_clear(c->G[0]);
     mpz_clear(c->G[1]);
+#ifdef  SAFE_CLEAN
+    memset((void *)c, 0, sizeof(*c));
+#endif
     return;
 }
 

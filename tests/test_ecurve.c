@@ -30,6 +30,7 @@
 
 #include <assert.h>
 #include <ecc/ecurve.h>
+#include <ecc/safememory.h>
 #include <gmp.h>
 #include <check.h>
 #include <stdio.h>
@@ -222,6 +223,10 @@ int main(void)
     int number_failed;
     Suite *s;
     SRunner *sr;
+
+#ifdef SAFE_CLEAN
+    _enable_gmp_safe_clean();
+#endif
 
     s = mpECurve_test_suite();
     sr = srunner_create(s);

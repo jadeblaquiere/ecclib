@@ -10,17 +10,25 @@ AC_ARG_ENABLE([benchmarks],
   yes) benchmarks=true ;;
   no)  benchmarks=false ;;
   *) AC_MSG_ERROR([bad value ${enableval} for --enable-benchmarks]) ;;
-esac],[debug=false])
+esac],[benchmarks=false])
 AC_ARG_ENABLE([examples],
 [  --enable-examples       build examples @<:@default=no@:>@],
 [case "${enableval}" in
   yes) examples=true ;;
   no)  examples=false ;;
   *) AC_MSG_ERROR([bad value ${enableval} for --enable-examples]) ;;
-esac],[debug=false])
+esac],[examples=false])
+AC_ARG_ENABLE([safe-clean],
+[  --enable-safe-clean       zero memory before releasing with free @<:@default=yes@:>@],
+[case "${enableval}" in
+  yes) safeclean=true ;;
+  no)  safeclean=false ;;
+  *) AC_MSG_ERROR([bad value ${enableval} for --enable-safe-clean]) ;;
+esac],[safeclean=true])
 AC_CHECK_LIB([gmp], [__gmpz_realloc])
 AM_CONDITIONAL([COND_BENCHMARKS], [test "x$benchmarks" = xtrue])
 AM_CONDITIONAL([COND_EXAMPLES], [test "x$examples" = xtrue])
+AM_CONDITIONAL([COND_SAFECLEAN], [test "x$safeclean" = xtrue])
 AM_CONDITIONAL([COND_NEEDSODIUM], [test "x$benchmarks" = xtrue -o "x$examples" = xtrue])
 AM_COND_IF([COND_EXAMPLES],[AC_CHECK_LIB([popt], [poptGetContext])])
 AM_COND_IF([COND_EXAMPLES],[AC_CHECK_LIB([b64], [base64_init_encodestate])])

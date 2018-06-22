@@ -29,6 +29,7 @@
 //OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <gmp.h>
+#include <ecc/safememory.h>
 #include <pycurve.h>
 #include <pyfield.h>
 #include <pypoint.h>
@@ -64,6 +65,8 @@ PyMODINIT_FUNC
 PyInit_ECC(void) 
 {
 	PyObject* m;
+
+    _enable_gmp_safe_clean();
 
 	if (PyType_Ready(&FieldElementType) < 0)
 		return NULL;

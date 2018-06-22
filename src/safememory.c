@@ -28,13 +28,36 @@
 //OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 //OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef _EC_ECC_H_INCLUDED_
-#define _EC_ECC_H_INCLUDED_
-
-#include <ecc/field.h>
-#include <ecc/ecurve.h>
-#include <ecc/ecpoint.h>
-#include <ecc/mpzurandom.h>
 #include <ecc/safememory.h>
+#include <gmp.h>
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
 
-#endif // _EC_ECC_H_INCLUDED_
+void *_safe_clean_realloc(void *old, size_t oldsz, size_t newsz) {
+    void *ret;
+
+    if (__GMP_LIKELY(newsz <= oldsz)) {
+        return old;
+    }
+
+    ret = malloc(newsz);
+    if (__GMP_UNLIKELY(ret == NULL)) {
+        fprintf (stderr, "ECCLIB: unable to allocate memory, aborting\n");
+        exit(-1);
+    }
+
+    memcpy(ret, old, oldsz);
+    memset(old, 0, oldsz);
+
+    return ret;
+}
+
+void _safe_clean_free(void *old, size_t oldsz) {
+    memset(old, 0, oldsz);
+    free (old);
+}
+
+void _enable_gmp_safe_clean() {
+    mp_set_memory_functions(NULL, _safe_clean_realloc, _safe_clean_free);
+}

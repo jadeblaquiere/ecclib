@@ -81,6 +81,9 @@ int main(int argc, char **argv) {
     unsigned char shared_hash[crypto_stream_KEYBYTES];
     unsigned char nonce[crypto_stream_NONCEBYTES];
 
+    // attach gmp realloc/free functions to clear memory before free
+    _enable_gmp_safe_clean();
+
     // pc is the context for all popt-related functions
     pc = poptGetContext(NULL, argc, (const char **)argv, po, 0);
     //poptSetOtherOptionHelp(pc, "[ARG...]");
