@@ -32,7 +32,6 @@
 #include <ecc/ecurve.h>
 #include <ecc/safememory.h>
 #include <gmp.h>
-#include <check.h>
 #include <stdio.h>
 #include <stdlib.h>
 

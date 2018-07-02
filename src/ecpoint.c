@@ -196,6 +196,7 @@ void _mpECP_to_affine(mpECP_t pt) {
             // Montgomery curve point internal representation is short-WS
         case EQTypeShortWeierstrass:
             // RCB uses projective coords, so fall through to same xform as Ed
+            if (pt->is_neutral) break;
 #ifndef _MPECP_USE_RCB
             {
                 mpFp_t t;
@@ -656,16 +657,20 @@ int mpECP_cmp(mpECP_t pt1, mpECP_t pt2) {
                 mpFp_mul(U1, U1, pt1->x);
                 mpFp_pow_ui(U2, pt1->z, 2);
                 mpFp_mul(U2, U2, pt2->x);
-                if (mpFp_cmp(U1, U2) != 0) return -1;
+                if (mpFp_cmp(U1, U2) != 0) goto mows_return_notequal;
                 mpFp_pow_ui(U1, pt2->z, 3);
                 mpFp_mul(U1, U1, pt1->y);
                 mpFp_pow_ui(U2, pt1->z, 3);
                 mpFp_mul(U2, U2, pt2->y);
-                if (mpFp_cmp(U1, U2) != 0) return -1;
+                if (mpFp_cmp(U1, U2) != 0) goto mows_return_notequal;
                 mpFp_clear(U2);
                 mpFp_clear(U1);
+                break;
+mows_return_notequal:
+                mpFp_clear(U2);
+                mpFp_clear(U1);
+                return -1;
             }
-            break;
 #endif
         case EQTypeEdwards:
         case EQTypeTwistedEdwards: {
@@ -674,14 +679,18 @@ int mpECP_cmp(mpECP_t pt1, mpECP_t pt2) {
                 mpFp_init_fp(U2, pt1->cvp->fp);
                 mpFp_mul(U1, pt2->z, pt1->x);
                 mpFp_mul(U2, pt1->z, pt2->x);
-                if (mpFp_cmp(U1, U2) != 0) return -1;
+                if (mpFp_cmp(U1, U2) != 0) goto edte_return_notequal;
                 mpFp_mul(U1, pt2->z, pt1->y);
                 mpFp_mul(U2, pt1->z, pt2->y);
-                if (mpFp_cmp(U1, U2) != 0) return -1;
+                if (mpFp_cmp(U1, U2) != 0) goto edte_return_notequal;
                 mpFp_clear(U2);
                 mpFp_clear(U1);
+                break;
+edte_return_notequal:
+                mpFp_clear(U2);
+                mpFp_clear(U1);
+                return -1;
             }
-            break;
         default:
             assert(_known_curve_type(pt1->cvp));
     }
@@ -1377,6 +1386,10 @@ void mpECP_scalar_base_mul_setup(mpECP_t pt) {
         }
         mpECP_set(a, b);
     }
+    for (i = 0; i < pt->base_bits; i++) {
+        mpECP_clear(&(level_pt[i]));
+    }
+    free(level_pt);
     pt->base_pt = base_pt;
     mpECP_clear(b);
     mpECP_clear(a);
