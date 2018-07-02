@@ -1520,7 +1520,7 @@ START_TEST(test_mpFp_sqrt_extended)
             //bui[i] = ui_urandom(0);
         }
 
-        // Squaring
+        // Squaring first, then sqrt
         for (i = 0; i < ARRAY_SZ; i++) {
             status = mpFp_sqrt(c, a[i]);
             

@@ -90,6 +90,21 @@ typedef struct __mpFp_field_list_t {
 
 static _mpFp_field_list_t *_static_field_list = NULL;
 
+static void _cleanup_field_list(void) {
+    _mpFp_field_list_t *head;
+    
+    head = _static_field_list;
+    while (head != NULL) {
+        _mpFp_field_list_t *hPtr;
+        hPtr = head;
+        head = head->next;
+        mpFp_field_clear(hPtr->fp);
+        free(hPtr->fp);
+        free(hPtr);
+        hPtr = NULL;
+    }
+}
+
 mpFp_field_ptr _mpFp_field_lookup(mpz_t p) {
     _mpFp_field_list_t **l;
     _mpFp_field_list_t *l_this;
@@ -100,6 +115,10 @@ mpFp_field_ptr _mpFp_field_lookup(mpz_t p) {
     // if this is out of bounds there is no recovery... need to increase
     // definition of contstant and recomile library
     assert ((psz * 2) <= _MPFP_MAX_LIMBS);
+
+    if (_static_field_list == NULL) {
+        atexit(&_cleanup_field_list);
+    }
 
     l = &_static_field_list;
     while (*l != NULL) {
@@ -653,7 +672,7 @@ void mpFp_urandom(mpFp_t a, mpz_t p) {
 int mpFp_sqrt(mpFp_t rop, mpFp_t op) {
     int s;
     int leg_op;
-    mpz_t t, q, opi, ropi;
+    mpz_t t, q, opi;
     mpz_init(opi);
     mpz_set_mpFp(opi, op);
     // determine whether i is a quadratic residue (mod p)
@@ -668,7 +687,7 @@ int mpFp_sqrt(mpFp_t rop, mpFp_t op) {
     }
     mpz_init(t);
     mpz_init(q);
-    mpz_init(ropi);
+
     // tonelli shanks algorithm
     mpz_sub_ui(q, op->fp->p, 1);
     s = 0;
