@@ -91,6 +91,7 @@ int main(int argc, char **argv) {
             exit(1);
         }
     }
+    poptFreeContext(pc);
 
     if (keyfile == NULL) {
         fprintf(stderr,"<Error>: to_key is a required parameter\n");
@@ -102,6 +103,7 @@ int main(int argc, char **argv) {
         fprintf(stderr,"<Error>: file open failed for file \"%s\"\n", keyfile);
         exit(1);
     }
+    free(keyfile);
 
     if (filename != NULL) {
         fPtr = fopen(filename, "r");
@@ -109,6 +111,7 @@ int main(int argc, char **argv) {
             fprintf(stderr,"<Error>: file open failed for file \"%s\"\n", filename);
             exit(1);
         }
+        free(filename);
     }
 
     // HERE IS WHERE THE ACTUAL EXAMPLE STARTS... everything before is
@@ -119,6 +122,7 @@ int main(int argc, char **argv) {
         fprintf(stderr,"<ParseError>: unable to decode b64 data for private key\n");
         exit(1);
     }
+    fclose(kPtr);
  
     mpz_init(pmpz);
     mpECurve_init(cv);
@@ -133,12 +137,14 @@ int main(int argc, char **argv) {
         fprintf(stderr,"<ParseError>: unable to decode b64 data for message\n");
         exit(1);
     }
+    fclose(fPtr);
     
     result = _ecdhe_der_init_import_message(&ptxt, &psz, &ntxt, &nsz, &ctxt, &csz, der, sz);
     if (result != 0) {
         fprintf(stderr,"<Error>: Unable to import message as DER data\n");
         exit(1);
     }
+    free(der);
     
     // instantiate generator point for curve
     mpECP_init(Gpt, cv);
@@ -147,6 +153,7 @@ int main(int argc, char **argv) {
     // public (ephemeral key point = private key scalar * G
     mpECP_init(Ppt, cv);
     mpECP_set_bytes(Ppt, ptxt, psz, cv);
+    free(ptxt);
 
     // shared (ECDH) key using 
     mpECP_init(pQpt, cv);
@@ -174,9 +181,12 @@ int main(int argc, char **argv) {
     msz = csz;
     // crypto_stream_xor is XSalsa20 with a 192-bit nonce and 64-bit counter
     crypto_stream_xor(mtxt, ctxt, csz, ntxt, shared_hash);
+    free(ntxt);
+    free(ctxt);
 
     // write decrypted message to stdout
     fwrite(mtxt, sizeof(unsigned char), msz, stdout);
+    free(mtxt);
 
     mpECP_clear(pQpt);
     mpECP_clear(Ppt);

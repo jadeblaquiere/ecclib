@@ -36,12 +36,21 @@
 
 static FILE *_f_urandom = NULL;
 
+static void _close_f_urandom(void) {
+    if (_f_urandom != NULL) {
+        fclose(_f_urandom);
+        _f_urandom = NULL;
+    }
+    return;
+}
+
 void mpz_urandom(mpz_t rop, mpz_t rand_max) {
     int bytes, sz_read;
     char *buffer;
     if (_f_urandom == NULL) {
         _f_urandom = fopen("/dev/urandom", "rb");
         assert(_f_urandom != NULL);
+        atexit(_close_f_urandom);
     }
     // bytes intentionally long to ensure uniformity, will truncate with modulo
     bytes = ((mpz_sizeinbase(rand_max,2) + 7) >> 3) * 2;

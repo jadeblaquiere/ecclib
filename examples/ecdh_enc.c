@@ -38,6 +38,7 @@
 #include <sodium.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 typedef struct _readbuf {
     char    buffer[16000];
@@ -100,6 +101,7 @@ int main(int argc, char **argv) {
             exit(1);
         }
     }
+    poptFreeContext(pc);
 
     if (keyfile == NULL) {
         fprintf(stderr,"<Error>: to_key is a required parameter\n");
@@ -111,6 +113,7 @@ int main(int argc, char **argv) {
         fprintf(stderr,"<Error>: file open failed for file \"%s\"\n", keyfile);
         exit(1);
     }
+    free(keyfile);
 
     if (filename != NULL) {
         fPtr = fopen(filename, "r");
@@ -118,6 +121,7 @@ int main(int argc, char **argv) {
             fprintf(stderr,"<Error>: file open failed for file \"%s\"\n", filename);
             exit(1);
         }
+        free(filename);
     }
 
     // read entire plaintext input into memory
@@ -162,6 +166,7 @@ int main(int argc, char **argv) {
         msglen = len;
         _free_readbuf(head);
     }
+    fclose(fPtr);
 
     // HERE IS WHERE THE ACTUAL EXAMPLE STARTS... everything before is
     // processing and very limited validation of command line options
@@ -171,11 +176,15 @@ int main(int argc, char **argv) {
         fprintf(stderr,"<ParseError>: unable to decode b64 data\n");
         exit(1);
     }
+    fclose(kPtr);
  
     if (_ecdh_der_init_import_pubkey(Qpt, cv, der, sz) != 0) {
         fprintf(stderr,"<Error>: Unable to import public key\n");
         exit(1);
     }
+    
+    //memset(der, 0, sz);
+    free(der);
 
     // instantiate generator point for curve
     mpECP_init(Gpt, cv);
@@ -227,10 +236,13 @@ int main(int argc, char **argv) {
         exit(1);
     }
 
+    free(msg);
     free(der);
+    free(ctext);
     mpECP_clear(pQpt);
     mpECP_clear(Qpt);
     mpECP_clear(Ppt);
+    mpECP_clear(Gpt);
     mpz_clear(pmpz);
     mpECurve_clear(cv);
 

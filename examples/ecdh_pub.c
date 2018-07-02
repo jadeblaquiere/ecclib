@@ -74,6 +74,7 @@ int main(int argc, char **argv) {
             exit(1);
         }
     }
+    poptFreeContext(pc);
 
     if (filename != NULL) {
         fPtr = fopen(filename, "r");
@@ -81,6 +82,7 @@ int main(int argc, char **argv) {
             fprintf(stderr,"<Error: file open failed for file \"%s\">\n", filename);
             exit(1);
         }
+        free(filename);
     }
 
     // HERE IS WHERE THE ACTUAL EXAMPLE STARTS... everything before is
@@ -91,6 +93,7 @@ int main(int argc, char **argv) {
         fprintf(stderr,"<ParseError>: unable to decode b64 data\n");
         exit(1);
     }
+    fclose(fPtr);
  
     mpECurve_init(cv);
     mpz_init(pmpz);
@@ -98,6 +101,7 @@ int main(int argc, char **argv) {
         fprintf(stderr,"<Error>: Unable to import private key\n");
         exit(1);
     }
+    free(der);
 
     // instantiate generator point for curve
     mpECP_init(Gpt, cv);
@@ -106,6 +110,7 @@ int main(int argc, char **argv) {
     // public key point = private key scalar * G
     mpECP_init(Ppt, cv);
     mpECP_scalar_mul_mpz(Ppt, Gpt, pmpz);
+    mpz_clear(pmpz);
 
     // encode to ASN.1 DER format
     der = _ecdh_der_export_pubkey(Ppt, cv, &sz);
@@ -119,7 +124,7 @@ int main(int argc, char **argv) {
 
     free(der);
     mpECP_clear(Ppt);
-    mpz_clear(pmpz);
+    mpECP_clear(Gpt);
     mpECurve_clear(cv);
 
     return 0;

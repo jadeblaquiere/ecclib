@@ -49,12 +49,21 @@ char *test_prime_fields[] = { "65521", "131071", "4294967291", "8589934583", "18
 
 static FILE *_f_urandom = NULL;
 
-unsigned long int ui_urandom(unsigned long int max) {
+static void _close_f_urandom(void) {
+    if (_f_urandom != NULL) {
+        fclose(_f_urandom);
+        _f_urandom = NULL;
+    }
+    return;
+}
+
+static unsigned long int ui_urandom(unsigned long int max) {
     int sz_read;
     unsigned long int value;
     if (_f_urandom == NULL) {
         _f_urandom = fopen("/dev/urandom", "rb");
         assert(_f_urandom != NULL);
+        atexit(_close_f_urandom);
     }
     // bytes intentionally long to ensure uniformity, will truncate with modulo
     sz_read = fread(&value, sizeof(unsigned long int), 1, _f_urandom);

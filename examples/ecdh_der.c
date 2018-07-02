@@ -234,7 +234,8 @@ char *_ecdh_der_export_privkey(mpz_t privkey, mpECurve_t cv, size_t *sz) {
     der = (char *)malloc((bsz) * sizeof(char));
     result = asn1_der_coding(privkey_asn1, "", der, &bsz, asnError);
     if (result != 0) {
-        printf("%s", asnError);
+        asn1_perror (result);
+        printf ("%s", asnError);
     }
     assert(result == 0);
     assert(bsz < bufsz);
@@ -403,6 +404,8 @@ char *_ecdh_der_export_pubkey(mpECP_t pubkey, mpECurve_t cv, size_t *sz) {
     // public key value
     result = asn1_write_value(pubkey_asn1, "pubkey", buf, bsz);
     assert(result == 0);
+    memset(buf, 0, bsz);
+    free(buf);
     
     bsz += 5;
 
@@ -616,6 +619,7 @@ int _ecdh_der_init_import_pubkey(mpECP_t pubkey, mpECurve_t cv, char *der, size_
     if (result == 0) {
         result = mpECP_set_bytes(pubkey, rawpubkey, rawpubkeysz, cv);
     }
+    free(rawpubkey);
     {
         mpz_t px;
         mpz_t py;
@@ -625,6 +629,8 @@ int _ecdh_der_init_import_pubkey(mpECP_t pubkey, mpECurve_t cv, char *der, size_
         mpz_set_mpECP_affine_x(px, pubkey);
         mpz_set_mpECP_affine_y(py, pubkey);
         if (!mpECurve_point_check(cv, px, py)) result = -1;
+        mpz_clear(py);
+        mpz_clear(px);
     }
 
 error_cleanup:
@@ -645,14 +651,11 @@ char *_ecdhe_der_export_message(mpECP_t pubkey, unsigned char *nonce, size_t nsz
     ASN1_TYPE msg_asn1 = ASN1_TYPE_EMPTY;
     char asnError[ASN1_MAX_ERROR_DESCRIPTION_SIZE];
     char *der;
-    mpz_t tmpz;
     int bsz = 0;
     int bufsz;
     int result;
     unsigned char *buf;
     
-    mpz_init(tmpz);
-
     // read ASN1 syntax
     result = asn1_array2tree(ecdhe_asn1_tab, &ecdhe_asn1, asnError);
 
@@ -678,6 +681,7 @@ char *_ecdhe_der_export_message(mpECP_t pubkey, unsigned char *nonce, size_t nsz
     // public key value
     result = asn1_write_value(msg_asn1, "pubkeybytes", buf, bsz);
     assert(result == 0);
+    free(buf);
     
     // public key value
     result = asn1_write_value(msg_asn1, "nonce", nonce, nsz);

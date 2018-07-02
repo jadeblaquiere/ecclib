@@ -65,8 +65,10 @@ int write_b64wrapped_to_file(FILE *fPtr, char* bindata, int sz, char *wrap) {
     return 0;
 }
 
+#define _B64W_READ_CHUNK_SIZE   (16000)
+
 typedef struct _readbuf {
-    char    buffer[16000];
+    char    buffer[_B64W_READ_CHUNK_SIZE];
     struct _readbuf *next;
     int     sz;
 } _readbuf_t;
@@ -105,7 +107,7 @@ char *read_b64wrapped_from_file(FILE *fPtr, char *wrap, int *sz) {
     len = 0;
     
     while(true) {
-        read = fread(next->buffer, sizeof(char), 16000, fPtr);
+        read = fread(next->buffer, sizeof(char), _B64W_READ_CHUNK_SIZE, fPtr);
         len += read;
         next->sz = read;
         if (feof(fPtr)) {

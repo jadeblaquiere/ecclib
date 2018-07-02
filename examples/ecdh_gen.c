@@ -86,6 +86,7 @@ int main(int argc, char **argv) {
             exit(1);
         }
     }
+    poptFreeContext(pc);
 
     if (list_curves != 0) {
         print_supported_curves(stdout);
@@ -105,6 +106,8 @@ int main(int argc, char **argv) {
         print_supported_curves(stderr);
         exit(1);
     }
+    
+    if (curvename != default_curve) free(curvename);
 
     // random value between 0 and cv->n (curve order)
     mpz_init(pmpz);
