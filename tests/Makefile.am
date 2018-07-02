@@ -2,7 +2,7 @@ if COND_SAFECLEAN
   MAYBE_SAFECLEAN = -DSAFE_CLEAN
 endif
 
-VALGRIND_TEST_CASES = mtest_field
+VALGRIND_TEST_CASES = mtest_field mtest_ecurve
 noinst_PROGRAMS = test_field test_ecurve test_ecpoint test_mpzurandom $(VALGRIND_TEST_CASES)
 TESTS = test_field test_ecurve test_ecpoint test_mpzurandom
 
@@ -25,3 +25,7 @@ test_mpzurandom_LDADD = -L../src/.libs/ -lecc -lgmp $(LDFLAGS) $(CHECK_LIBS)
 mtest_field_SOURCES = mtest_field.c
 mtest_field_CFLAGS = -Wall $(MAYBE_SAFECLEAN) -I ../include $(CFLAGS) $(CHECK_CFLAGS)
 mtest_field_LDADD = -L../src/.libs/ -lecc -lgmp $(LDFLAGS)
+
+mtest_ecurve_SOURCES = mtest_ecurve.c
+mtest_ecurve_CFLAGS = -Wall $(MAYBE_SAFECLEAN) -I ../include $(CFLAGS) $(CHECK_CFLAGS)
+mtest_ecurve_LDADD = -L../src/.libs/ -lecc -lgmp $(LDFLAGS)
