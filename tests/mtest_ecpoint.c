@@ -172,6 +172,9 @@ int _test_mpECP_add(void) {
     mpECP_t a, b, c, d;
     mpECurve_init(cv);
 
+    // attach gmp realloc/free functions to clear memory before free
+    _enable_gmp_safe_clean();
+
     npoints = sizeof(test_point) / sizeof(test_point[0]);
     for (i = 0 ; i < npoints ; i++) {
         int slen;

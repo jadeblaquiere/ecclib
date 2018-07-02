@@ -49,6 +49,7 @@ void *_safe_clean_realloc(void *old, size_t oldsz, size_t newsz) {
 
     memcpy(ret, old, oldsz);
     memset(old, 0, oldsz);
+    free(old);
 
     return ret;
 }

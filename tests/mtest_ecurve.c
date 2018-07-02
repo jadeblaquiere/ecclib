@@ -41,6 +41,9 @@ int main(void) {
     char **clist;
     mpECurve_init(a);
 
+    // attach gmp realloc/free functions to clear memory before free
+    _enable_gmp_safe_clean();
+
     clist = _mpECurve_list_standard_curves();
     i = 0;
     while(clist[i] != NULL) {

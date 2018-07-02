@@ -91,6 +91,9 @@ int main(void) {
     mpz_init(p);
     //mpFp_field_init(fp);
 
+    // attach gmp realloc/free functions to clear memory before free
+    _enable_gmp_safe_clean();
+
     nfields = sizeof(test_prime_fields)/sizeof(test_prime_fields[0]);
 
     for (j = 0 ; j < nfields; j++) {
