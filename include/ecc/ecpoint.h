@@ -56,6 +56,7 @@ typedef struct _p_mpECP_t {
 } _mpECP_t;
 
 typedef _mpECP_t mpECP_t[1];
+typedef _mpECP_t *mpECP_ptr;
 
 void mpECP_init(mpECP_t pt, mpECurve_t cv);
 void mpECP_clear(mpECP_t pt);
