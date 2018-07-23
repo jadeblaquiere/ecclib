@@ -34,6 +34,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 extern const asn1_static_node ecdhe_asn1_tab[];
 
