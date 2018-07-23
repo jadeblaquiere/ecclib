@@ -8,7 +8,9 @@ case "$OSTYPE" in
         echo "Configuring build for Ubuntu"
         sudo apt-get update
         sudo apt-get -y install check
-        sudo apt-get -y install python3-pip 
+        sudo apt-get -y install python3-pip
+        # valgrind is required for tests
+        sudo apt-get -y install valgrind
         # the following are needed for building examples (core library only depends on GMP)
         #####
         # alternatively git clone git@gitlab.com:gnutls/libtasn1.git
