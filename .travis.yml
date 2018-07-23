@@ -18,6 +18,9 @@ matrix:
             - make clean
             - make
             - make check
+            - valgrind --leak-check=full -v --error-exitcode=255 ./tests/.libs/mtest_field
+            - valgrind --leak-check=full -v --error-exitcode=255 ./tests/.libs/mtest_ecurve
+            - valgrind --leak-check=full -v --error-exitcode=255 ./tests/.libs/mtest_ecpoint
             - sudo make install
         - os: osx
           language: c
