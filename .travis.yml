@@ -19,9 +19,9 @@ matrix:
             - make
             - make check
             - sudo make install
-            - valgrind --leak-check=full -v --error-exitcode=255 ./tests/.libs/mtest_field
-            - valgrind --leak-check=full -v --error-exitcode=255 ./tests/.libs/mtest_ecurve
-            - valgrind --leak-check=full -v --error-exitcode=255 ./tests/.libs/mtest_ecpoint
+            - valgrind --leak-check=full -v --error-exitcode=255 ./tests/.libs/mtest_field > /dev/null
+            - valgrind --leak-check=full -v --error-exitcode=255 ./tests/.libs/mtest_ecurve > /dev/null
+            - valgrind --leak-check=full -v --error-exitcode=255 ./tests/.libs/mtest_ecpoint > /dev/null
         - os: osx
           language: c
           install: ./setup.sh
@@ -36,6 +36,9 @@ matrix:
             - make
             - make check
             - sudo make install
+            - valgrind --leak-check=full -v --error-exitcode=255 ./tests/.libs/mtest_field > /dev/null
+            - valgrind --leak-check=full -v --error-exitcode=255 ./tests/.libs/mtest_ecurve > /dev/null
+            - valgrind --leak-check=full -v --error-exitcode=255 ./tests/.libs/mtest_ecpoint > /dev/null
         - os: linux
           language: python
           sudo: required

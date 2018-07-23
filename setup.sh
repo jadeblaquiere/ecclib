@@ -32,6 +32,7 @@ case "$OSTYPE" in
     brew install popt
     brew install python3
     brew upgrade python3
+    brew install valgrind
     mkdir libb64-build
     cd libb64-build
     git clone https://github.com/transmission/libb64.git
