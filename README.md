@@ -44,6 +44,9 @@ Supported elliptic curve types:
 * twisted Edwards
 * Montgomery (implemented internally via transform to short Weierstrass form)
 
+Supported cryptography operations
+* ECDSA
+
 ## build and install
 
 libecc follows the traditional GNU autotools build process so it _should_

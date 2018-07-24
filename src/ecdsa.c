@@ -58,9 +58,7 @@ void mpECDSAHashfunc_clear(mpECDSAHashfunc_t H) {
 int mpECDSASignatureScheme_init(mpECDSASignatureScheme_t sscheme, mpECurve_t cv, mpECDSAHashfunc_t H) {
     size_t nsz;
 
-    // require |H| >= |n| (as ECDSA is defined for the leftmost |n| bits of H)
     nsz = (mpz_sizeinbase(cv->n, 2) + 7) >> 3;
-    if (nsz > H->hsz) return -1;
     sscheme->nsz = nsz;
     sscheme->cvp = (mpECurve_ptr)cv;
     mpECDSAHashfunc_init(sscheme->H);
@@ -106,7 +104,12 @@ int mpECDSASignature_init_Sign(mpECDSASignature_t sig, mpECDSASignatureScheme_t 
     mpECP_init(R, sscheme->cvp);
 
     sscheme->H->dohash(hash, msg, sz);
-    mpz_import(e, sscheme->nsz, 1, 1, 1, 0, hash);
+    if (sscheme->nsz <= sscheme->H->hsz) {
+        mpz_import(e, sscheme->nsz, 1, 1, 1, 0, hash);
+    } else {
+        mpz_import(e, sscheme->H->hsz, 1, 1, 1, 0, hash);
+    }
+    free(hash);
     mpFp_set_mpz(e_n, e, sscheme->cvp->n);
 new_random:
     mpFp_urandom(k_n, sscheme->cvp->n);
@@ -167,8 +170,6 @@ int mpECDSASignature_verify_cmp(mpECDSASignature_t sig, mpECP_t pK, unsigned cha
         return -1;
     }
     
-    // require |H| >= |n| (as ECDSA is defined for the leftmost |n| bits of H)
-    assert (sig->sscheme->H->hsz >= sig->sscheme->nsz);
     hash = (unsigned char *)malloc(sig->sscheme->H->hsz * sizeof(char));
 
     mpz_init(e);
@@ -181,7 +182,12 @@ int mpECDSASignature_verify_cmp(mpECDSASignature_t sig, mpECP_t pK, unsigned cha
     mpECP_init(Pq, sig->sscheme->cvp);
 
     sig->sscheme->H->dohash(hash, msg, sz);
-    mpz_import (e, sig->sscheme->nsz, 1, 1, 1, 0, hash);
+    if (sig->sscheme->nsz <= sig->sscheme->H->hsz) {
+        mpz_import(e, sig->sscheme->nsz, 1, 1, 1, 0, hash);
+    } else {
+        mpz_import(e, sig->sscheme->H->hsz, 1, 1, 1, 0, hash);
+    }
+    free(hash);
     mpFp_set_mpz(e_n, e, sig->sscheme->cvp->n);
     mpFp_inv(w, sig->s);
     mpFp_mul(u1, e_n, w);
