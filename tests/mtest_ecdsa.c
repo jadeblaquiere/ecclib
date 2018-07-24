@@ -57,7 +57,7 @@ void wrap_libsodium_sha256(unsigned char *hash, unsigned char *msg, size_t sz) {
     return;
 }
 
-#define _TEST_MESSAGE_MAX   (100)
+#define _TEST_MESSAGE_MAX   (10)
 
 int main(void) {
     char **std_curves;
