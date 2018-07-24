@@ -4,6 +4,6 @@ if COND_SAFECLEAN
 endif
 
 lib_LTLIBRARIES=libecc.la
-libecc_la_SOURCES = field.c ecurve.c ecpoint.c mpzurandom.c $(BUILD_SAFECLEAN)
+libecc_la_SOURCES = field.c ecurve.c ecpoint.c mpzurandom.c ecdsa.c $(BUILD_SAFECLEAN)
 libecc_la_CFLAGS = -Wall $(MAYBE_SAFECLEAN) -I ../include
 libecc_la_LDFLAGS = -version-info 1:1:0
