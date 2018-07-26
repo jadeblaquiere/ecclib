@@ -66,7 +66,7 @@ static PyObject *FieldElement_new(PyTypeObject *type, PyObject *args, PyObject *
 }
 
 // Usage options:
-// FieldElement(p=PyLongObject)
+// FieldElement(i(value)=PyLongObject, p(field prime)=PyLongObject)
 static int FieldElement_init(FieldElement *self, PyObject *args, PyObject *kwargs) {
 	PyLongObject *i = NULL;
 	PyLongObject *p = NULL;

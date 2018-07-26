@@ -1,4 +1,4 @@
-#BSD 3-Clause License
+# BSD 3-Clause License
 #
 # Copyright (c) 2018, Joseph deBlaquiere <jadeblaquiere@yahoo.com>
 # All rights reserved
@@ -28,17 +28,41 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from setuptools import setup, find_packages, Extension
+import ast
+import unittest
+import ECC
+from ECC import FieldElement, ECurve, ECPoint, ECDSASignature, ECDSASignatureScheme
+from Crypto.Hash import SHA256, SHA384, SHA512
+from binascii import hexlify, unhexlify
 
-module1 = Extension('ECC',
-    include_dirs = ['/usr/local/include', 'python', 'include'],
-    libraries = ['ecc', 'gmp'],
-    library_dirs = ['src/.libs'],
-    extra_compile_args = ["-Wall"],
-    sources = ['python/pygmplong.c', 'python/pyfield.c', 'python/pycurve.c', 'python/pyeccmodule.c', 'python/pypoint.c', 'python/pyecdsa.c'])
 
-setup (name = 'ECC',
-    version = '0.1',
-    packages = find_packages(),
-    description = 'Elliptic Curve Cryptography (ECC) foundation library',
-    ext_modules = [module1])
+class TestECPoint(unittest.TestCase):
+
+    def setUp(self):
+        self.cv = []
+        self.cv.append(ECurve('secp256k1'))
+        self.cv.append(ECurve('secp256r1'))
+        self.cv.append(ECurve('E-222'))
+        self.cv.append(ECurve('M-221'))
+        self.cv.append(ECurve('Ed25519'))
+        self.hm = []
+        self.hm.append(SHA256)
+        self.hm.append(SHA384)
+        self.hm.append(SHA512)
+
+    def test_basic_sign_verify(self):
+        pts = []
+        for c in self.cv:
+            G = ECPoint(c, c.G)
+            sK = FieldElement.urandom(c.n)
+            pK = G * sK
+            for h in self.hm:
+                ss = ECDSASignatureScheme(c, h)
+                sig = ss.Sign(sK, 'test')
+                assert sig.Verify(pK, 'test')
+                # print(repr(ss))
+                
+
+
+if __name__ == '__main__':
+    unittest.main()

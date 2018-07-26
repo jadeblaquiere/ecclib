@@ -78,9 +78,11 @@ typedef _mpECDSASignature_t *mpECDSASignature_ptr;
 
 int mpECDSASignature_init_Sign(mpECDSASignature_t sig, mpECDSASignatureScheme_t sscheme, mpFp_t sK, unsigned char *msg, size_t sz);
 int mpECDSASignature_init_import_bytes(mpECDSASignature_t sig, mpECDSASignatureScheme_t sscheme, unsigned char *bsig, size_t sz);
+int mpECDSASignature_init_import_str(mpECDSASignature_t sig, mpECDSASignatureScheme_t sscheme, char *ssig);
 
 int mpECDSASignature_verify_cmp(mpECDSASignature_t sig, mpECP_t pK, unsigned char *msg, size_t sz);
 unsigned char *mpECDSASignature_export_bytes(mpECDSASignature_t sig, size_t *sz);
+char *mpECDSASignature_export_str(mpECDSASignature_t sig);
 
 void mpECDSASignature_clear(mpECDSASignature_t sig);
 

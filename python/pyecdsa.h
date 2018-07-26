@@ -28,23 +28,37 @@
 //OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 //OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef _SAFE_CLEAN_MEMORY_H_INCLUDED_
-#define _SAFE_CLEAN_MEMORY_H_INCLUDED_
+#ifndef _EC_PY_ECDSA_H_INCLUDED_
+#define _EC_PY_ECDSA_H_INCLUDED_
 
-#include <stdlib.h>
+#include <ecc/ecdsa.h>
+#include <Python.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-// functions to zero memory on free/realloc
+typedef struct {
+    PyObject_HEAD
+    mpECDSASignatureScheme_t sscheme;
+    ECurve  *cv;
+    PyObject *hashmodule;
+    int ready;
+} ECDSASignatureScheme;
 
-void *_safe_clean_realloc(void *old, size_t oldsz, size_t newsz);
-void _safe_clean_free(void *old, size_t oldsz);
-void _enable_gmp_safe_clean(void);
+extern PyTypeObject ECDSASignatureSchemeType;
+
+typedef struct {
+    PyObject_HEAD
+    mpECDSASignature_t sig;
+    ECDSASignatureScheme *ss;
+    int ready;
+} ECDSASignature;
+
+extern PyTypeObject ECDSASignatureType;
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif // _SAFE_CLEAN_MEMORY_H_INCLUDED_
+#endif // _EC_PY_ECDSA_H_INCLUDED_

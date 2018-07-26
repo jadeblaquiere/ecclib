@@ -262,6 +262,25 @@ unsigned char *mpECDSASignature_export_bytes(mpECDSASignature_t sig, size_t *sz)
     return buffer;
 }
 
+char *mpECDSASignature_export_str(mpECDSASignature_t sig) {
+    unsigned char *sbytes;
+    char *sstring;
+    size_t bsz;
+    size_t ssz;
+    int i;
+
+    sbytes = mpECDSASignature_export_bytes(sig, &bsz);
+
+    ssz = bsz << 1;
+    sstring = malloc((ssz + 1) * sizeof(char));
+    for (i = 0; i < bsz; i++) {
+        sprintf(&sstring[i<<1], "%02X", sbytes[i]);
+    }
+    sstring[ssz] = 0;
+    free (sbytes);
+    return sstring;
+}
+
 int mpECDSASignature_init_import_bytes(mpECDSASignature_t sig, mpECDSASignatureScheme_t sscheme, unsigned char *bsig, size_t sz) {
     mpz_t r;
     mpz_t s;
@@ -300,6 +319,36 @@ int mpECDSASignature_init_import_bytes(mpECDSASignature_t sig, mpECDSASignatureS
     mpz_clear(s);
     mpz_clear(r);
     return 0;
+}
+
+int mpECDSASignature_init_import_str(mpECDSASignature_t sig, mpECDSASignatureScheme_t sscheme, char *ssig) {
+    unsigned char *bbytes;
+    size_t ssz;
+    size_t bsz;
+    int i;
+    int status;
+
+    ssz = strlen(ssig);
+    // odd length string cannot be hex!
+    if ((ssz & 0x01) != 0x00) return -1;
+
+    bsz = ssz >> 1;
+    bbytes = (unsigned char *)malloc(bsz * sizeof(char));
+    for (i = 0; i < bsz; i++) {
+        int iread;
+        iread = sscanf(&ssig[i<<1], "%02hhX", &bbytes[i]);
+        if (iread != 1) {
+            memset(bbytes, 0, bsz);
+            free(bbytes);
+            return -1;
+        }
+    }
+
+    status = mpECDSASignature_init_import_bytes(sig, sscheme, bbytes, bsz);
+
+    memset(bbytes, 0, bsz);
+    free(bbytes);
+    return status;
 }
 
 void mpECDSASignature_clear(mpECDSASignature_t sig) {

@@ -97,8 +97,10 @@ START_TEST(test_mpECDSA_sscheme_init)
         for (j = 1; j < _TEST_MESSAGE_MAX; j++) {
             unsigned char msg[_TEST_MESSAGE_MAX];
             mpECDSASignature_t sig;
+            mpECDSASignature_t sigcp;
             unsigned char *sigbytes;
             size_t sigbytessz;
+            char *sigstr;
             
             randombytes_buf(msg, j);
             status = mpECDSASignature_init_Sign(sig, sscheme, sK, msg, j);
@@ -125,7 +127,42 @@ START_TEST(test_mpECDSA_sscheme_init)
             //    }
             //}
             //printf("\n");
+            
+            status = mpECDSASignature_init_import_bytes(sigcp, sscheme, sigbytes, sigbytessz);
+            assert(status == 0);
+            assert(mpFp_cmp(sig->r, sigcp->r) == 0);
+            assert(mpFp_cmp(sig->s, sigcp->s) == 0);
+            mpECDSASignature_clear(sigcp);
             free(sigbytes);
+
+            sigstr = mpECDSASignature_export_str(sig);
+            assert(sigstr != NULL);
+            assert(strlen(sigstr) > 0);
+            assert((strlen(sigstr) & 0x01) == 0);
+
+            //printf("Signature of ");
+            //{
+            //    int k;
+            //    for (k = 0 ; k < j; k++) {
+            //        printf("%02X", msg[k]);
+            //    }
+            //}
+            //printf(" is ");
+            //{
+            //    int k;
+            //    for (k = 0 ; k < sigbytessz; k++) {
+            //        printf("%02X", sigbytes[k]);
+            //    }
+            //}
+            //printf("\n");
+            
+            status = mpECDSASignature_init_import_str(sigcp, sscheme, sigstr);
+            assert(status == 0);
+            assert(mpFp_cmp(sig->r, sigcp->r) == 0);
+            assert(mpFp_cmp(sig->s, sigcp->s) == 0);
+            mpECDSASignature_clear(sigcp);
+            free(sigstr);
+
             mpECDSASignature_clear(sig);
         }
 
