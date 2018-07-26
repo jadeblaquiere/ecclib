@@ -73,3 +73,5 @@ make
 sudo make install
 cd ../..
 #####
+
+sudo pip3 install pycrypto
