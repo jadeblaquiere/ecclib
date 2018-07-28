@@ -30,8 +30,12 @@ securing private keys) up to the user.
     ./ecdh_gen --list-curves
     ./ecdh_gen --curve=Curve41417 > bob.privkey
     ./ecdh_pub --file bob.privkey > bob.pubkey
+    ./ecdh_gen --curve=Curve41417 > alice.privkey
+    ./ecdh_pub --file alice.privkey > alice.pubkey
     cat bob.privkey
     cat bob.pubkey
+    cat alice.privkey
+    cat alice.pubkey
     ```
     
     The keys as encoded include the key values and the curve parameters.
@@ -54,10 +58,31 @@ securing private keys) up to the user.
     running the encryption command again with the same message input will
     generate a different ciphertext.
 
+1. Sign the Message
+
+    Alice wishes that Bob can verify the authenticity of the message by signing
+    the message using the Elliptic Curve Digital Signature Algrithm (ECDSA). 
+    Alice uses her private key to sign the ciphertext.
+
+    ```
+    cat a2b.ctxt | ./ecdsa_sign --privkey=alice.privkey > a2b_sign.ctxt
+    cat a2b_sign.ctxt
+    ```
+
+1. Validate the Message Origin
+
+    Upon reciept of the message Bob first validates that the message was
+    signed with Alice's private key using Alice's public key.
+
+    ```
+    cat a2b_sign.ctxt | ./ecdsa_verify --pubkey=alice.pubkey > a2b_copy.ctxt
+    cat a2b_copy.ctxt
+    ```
+
 1. Decode the message
 
     Bob can use his private key to decode the message. Simple enough.
-    
+
     ```
     cat a2b.ctxt | ./ecdh_dec --privkey=bob.privkey
     ```

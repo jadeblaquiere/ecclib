@@ -32,6 +32,7 @@
 #define _EC_ECC_H_INCLUDED_
 
 #include <ecc/field.h>
+#include <ecc/ecdsa.h>
 #include <ecc/ecurve.h>
 #include <ecc/ecpoint.h>
 #include <ecc/mpzurandom.h>

@@ -49,6 +49,10 @@ int write_b64wrapped_to_file(FILE *fPtr, char* bindata, size_t sz, char *wrap);
 // returns NULL on error
 char *read_b64wrapped_from_file(FILE *fPtr, char *wrap, size_t *sz);
 
+// more primitive routines to work (useful for multiple passes on same file)
+char *read_buffer_from_file(FILE *fPtr, size_t *sz);
+char *read_b64wrapped_from_buffer(char *buffer, char *wrap, size_t *sz);
+
 #ifdef __cplusplus
 }
 #endif
