@@ -76,7 +76,7 @@ import (
 	//"fmt"
 	"hash"
 	//"io/ioutil"
-	//"math/big"
+	"math/big"
 	//"os"
 	//"reflect"
 	"runtime"
@@ -116,13 +116,14 @@ func signaturescheme_clear(ss *ECDSASignatureScheme) {
 	C.free_ECDSASignatureScheme(ss.css)
 }
 
-func (ss *ECDSASignatureScheme) Sign(sK *FieldElement, message []byte) *ECDSASignature {
+func (ss *ECDSASignatureScheme) Sign(sK *big.Int, message []byte) *ECDSASignature {
 	ss.h.Reset()
 	mhash := C.CBytes(ss.h.Sum(message))
 	hsz := C.size_t(ss.h.Size())
 	sig := new(ECDSASignature)
 	sig.csig = C.malloc_ECDSASignature()
-	status := C.mpECDSASignature_init_Sign(sig.csig, ss.css, sK.fe, C._toUCP(mhash), hsz)
+	sKfe := NewFieldElement(sK, ss.cv.GetAttr("n"))
+	status := C.mpECDSASignature_init_Sign(sig.csig, ss.css, sKfe.fe, C._toUCP(mhash), hsz)
 	C.free(mhash)
 	if status != C.int(0) {
 		C.free_ECDSASignature(sig.csig)

@@ -69,9 +69,9 @@ func TestSignVerify(t *testing.T) {
 			fmt.Println("Error: curve mismatch?")
 			t.FailNow()
 		}
-		sK := NewFieldElementURandom(cv.GetAttr("n"))
+		sK := NewFieldElementURandom(cv.GetAttr("n")).AsInt()
 		pK := NewPointNeutral(cv)
-		pK.Mul(G, sK.AsInt())
+		pK.Mul(G, sK)
 		sig := ss.Sign(sK, []byte("test"))
 		if sig == nil {
 			fmt.Println("Error: nil Signature returned from Sign")
@@ -96,9 +96,9 @@ func TestSignVerify(t *testing.T) {
 			t.FailNow()
 		}
 		for i := 0; i < 100; i++ {
-			sK2 := NewFieldElementURandom(cv.GetAttr("n"))
+			sK2 := NewFieldElementURandom(cv.GetAttr("n")).AsInt()
 			pK2 := NewPointNeutral(cv)
-			pK2.Mul(G, sK2.AsInt())
+			pK2.Mul(G, sK2)
 			if sig.Verify(pK2, []byte("test")) {
 				fmt.Println("Error: Signature verify worked for random key")
 				t.FailNow()
