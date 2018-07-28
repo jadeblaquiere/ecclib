@@ -28,14 +28,14 @@ securing private keys) up to the user.
     
     ```
     ./ecdh_gen --list-curves
-    ./ecdh_gen --curve=Curve41417 > bob.privkey
-    ./ecdh_pub --file bob.privkey > bob.pubkey
     ./ecdh_gen --curve=Curve41417 > alice.privkey
     ./ecdh_pub --file alice.privkey > alice.pubkey
-    cat bob.privkey
-    cat bob.pubkey
+    ./ecdh_gen --curve=Curve41417 > bob.privkey
+    ./ecdh_pub --file bob.privkey > bob.pubkey
     cat alice.privkey
     cat alice.pubkey
+    cat bob.privkey
+    cat bob.pubkey
     ```
     
     The keys as encoded include the key values and the curve parameters.

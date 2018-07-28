@@ -541,17 +541,33 @@ static PyObject *ECDSASignatureScheme_sign(PyObject *self, PyObject *args) {
 		return NULL;
 	}
 
-    if(!PyObject_TypeCheck(key, &FieldElementType)) {
-		PyErr_SetString(PyExc_TypeError, "ECDSASignatureScheme_sign: 1st arg must be secret key of FieldElement type");
+    if(PyObject_TypeCheck(key, &FieldElementType)) {
+        kfe = (FieldElement *)key;
+    } else if (PyLong_Check(key)) {
+        mpz_t fe_i;
+
+        mpz_init(fe_i);
+        status = _pylong_to_mpz((PyLongObject *)key, fe_i);
+        if (status != 0) {
+            mpz_clear(fe_i);
+    		PyErr_SetString(PyExc_TypeError, "ECDSASignatureScheme_sign: error converting arg 1 to GMP mpz");
+    		return NULL;
+        }
+        kfe = (FieldElement *)FieldElementType.tp_new(&FieldElementType, NULL, NULL);
+        mpFp_init(kfe->fe, ss->sscheme->cvp->n);
+        mpFp_set_mpz(kfe->fe, fe_i, ss->sscheme->cvp->n);
+        kfe->ready = 1;
+        mpz_clear(fe_i);
+    } else {
+		PyErr_SetString(PyExc_TypeError, "ECDSASignatureScheme_sign: arg 1 must be secret key of FieldElement or Long(Integer) type");
 		return NULL;
     }
-    kfe = (FieldElement *)key;
 
     if (PyBytes_Check(msg)) {
         bytes = msg;
     } else {
         if (!PyUnicode_Check(msg)) {
-    		PyErr_SetString(PyExc_TypeError, "ECDSASignatureScheme_sign: 2nd arg must be message of Bytes or Unicode type");
+    		PyErr_SetString(PyExc_TypeError, "ECDSASignatureScheme_sign: arg 2 must be message of Bytes or Unicode type");
     		return NULL;
         }
         bytes = PyUnicode_AsUTF8String(msg);
