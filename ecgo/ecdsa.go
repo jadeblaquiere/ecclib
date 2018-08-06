@@ -118,7 +118,10 @@ func signaturescheme_clear(ss *ECDSASignatureScheme) {
 
 func (ss *ECDSASignatureScheme) Sign(sK *big.Int, message []byte) *ECDSASignature {
 	ss.h.Reset()
-	mhash := C.CBytes(ss.h.Sum(message))
+	ss.h.Write(message)
+	mhash := C.CBytes(ss.h.Sum(nil))
+	// ghash := ss.h.Sum(nil)
+	// fmt.Fprintf(os.Stderr, "hash = %s\n", hex.EncodeToString(ghash))
 	hsz := C.size_t(ss.h.Size())
 	sig := new(ECDSASignature)
 	sig.csig = C.malloc_ECDSASignature()
@@ -135,7 +138,8 @@ func (ss *ECDSASignatureScheme) Sign(sK *big.Int, message []byte) *ECDSASignatur
 
 func (sig *ECDSASignature) Verify(pK *Point, message []byte) bool {
 	sig.ss.h.Reset()
-	mhash := C.CBytes(sig.ss.h.Sum(message))
+	sig.ss.h.Write(message)
+	mhash := C.CBytes(sig.ss.h.Sum(nil))
 	hsz := C.size_t(sig.ss.h.Size())
 	status := C.mpECDSASignature_verify_cmp(sig.csig, pK.ecp, C._toUCP(mhash), hsz)
 	C.free(mhash)

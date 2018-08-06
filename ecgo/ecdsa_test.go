@@ -32,6 +32,7 @@ package ecgo
 
 import (
 	"crypto/sha256"
+	"crypto/sha512"
 	//"encoding/hex"
 	"fmt"
 	"testing"
@@ -69,6 +70,11 @@ func TestSignVerify(t *testing.T) {
 			fmt.Println("Error: curve mismatch?")
 			t.FailNow()
 		}
+		ss2 := NewECDSASignatureScheme(cv, sha256.New())
+		if ss2.css.cvp != cv.ec {
+			fmt.Println("Error: curve mismatch?")
+			t.FailNow()
+		}
 		sK := NewFieldElementURandom(cv.GetAttr("n")).AsInt()
 		pK := NewPointNeutral(cv)
 		pK.Mul(G, sK)
@@ -85,7 +91,65 @@ func TestSignVerify(t *testing.T) {
 			fmt.Println("Error: Signature verify failed")
 			t.FailNow()
 		}
-		sig2 := ss.SignatureFromBytes(sigbytes)
+		sig2 := ss2.SignatureFromBytes(sigbytes)
+		if sig2 == nil {
+			fmt.Println("Error: Signature import failed")
+			t.FailNow()
+		}
+		valid2 := sig2.Verify(pK, []byte("test"))
+		if valid2 != true {
+			fmt.Println("Error: Signature verify failed")
+			t.FailNow()
+		}
+		for i := 0; i < 100; i++ {
+			sK2 := NewFieldElementURandom(cv.GetAttr("n")).AsInt()
+			pK2 := NewPointNeutral(cv)
+			pK2.Mul(G, sK2)
+			if sig.Verify(pK2, []byte("test")) {
+				fmt.Println("Error: Signature verify worked for random key")
+				t.FailNow()
+			}
+		}
+	}
+}
+
+func TestSignVerify512(t *testing.T) {
+	clist := CurveNames()
+	for _, cvn := range clist {
+		//fmt.Println("Curve found", cvn)
+		cv := NamedCurve(cvn)
+		if cv == nil {
+			fmt.Println("Error: nil returned from NamedCurve")
+			t.FailNow()
+		}
+		G := NewPointGenerator(cv)
+		ss := NewECDSASignatureScheme(cv, sha512.New())
+		if ss.css.cvp != cv.ec {
+			fmt.Println("Error: curve mismatch?")
+			t.FailNow()
+		}
+		ss2 := NewECDSASignatureScheme(cv, sha512.New())
+		if ss2.css.cvp != cv.ec {
+			fmt.Println("Error: curve mismatch?")
+			t.FailNow()
+		}
+		sK := NewFieldElementURandom(cv.GetAttr("n")).AsInt()
+		pK := NewPointNeutral(cv)
+		pK.Mul(G, sK)
+		sig := ss.Sign(sK, []byte("test"))
+		if sig == nil {
+			fmt.Println("Error: nil Signature returned from Sign")
+			t.FailNow()
+		}
+		sigbytes := sig.AsBytes()
+		//hexdigest := hex.EncodeToString(sigbytes)
+		//fmt.Printf("signature of \"test\" on curve %s is %s\n", cvn, hexdigest)
+		valid := sig.Verify(pK, []byte("test"))
+		if valid != true {
+			fmt.Println("Error: Signature verify failed")
+			t.FailNow()
+		}
+		sig2 := ss2.SignatureFromBytes(sigbytes)
 		if sig2 == nil {
 			fmt.Println("Error: Signature import failed")
 			t.FailNow()
