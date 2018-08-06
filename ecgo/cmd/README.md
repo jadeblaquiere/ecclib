@@ -10,7 +10,7 @@ These examples are built in the standard way. To build them all at once from
 the ecgo/cmd directory you can use a command *like*:
 
 ```
-for file in ecdh_*; do echo "building in $file"; (cd $file; go build ); done
+for file in ecd*_*; do echo "building in $file"; (cd $file; go build ); done
 ```
 
 Please refer to the [C Examples](../../examples/) for tutorial on how the
