@@ -23,6 +23,7 @@ matrix:
             - valgrind --leak-check=full -v --error-exitcode=255 ./tests/.libs/mtest_ecurve > /dev/null
             - valgrind --leak-check=full -v --error-exitcode=255 ./tests/.libs/mtest_ecpoint > /dev/null
             - valgrind --leak-check=full -v --error-exitcode=255 ./tests/.libs/mtest_ecdsa > /dev/null
+            - valgrind --leak-check=full -v --error-exitcode=255 ./tests/.libs/mtest_ecelgamal > /dev/null
         - os: osx
           language: c
           install: ./setup.sh
@@ -41,6 +42,7 @@ matrix:
             #- valgrind --leak-check=full -v --error-exitcode=255 ./tests/.libs/mtest_ecurve > /dev/null
             #- valgrind --leak-check=full -v --error-exitcode=255 ./tests/.libs/mtest_ecpoint > /dev/null
             #- valgrind --leak-check=full -v --error-exitcode=255 ./tests/.libs/mtest_ecdsa > /dev/null
+            #- valgrind --leak-check=full -v --error-exitcode=255 ./tests/.libs/mtest_ecelgamal > /dev/null
         - os: linux
           language: python
           sudo: required
