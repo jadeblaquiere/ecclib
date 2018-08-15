@@ -46,6 +46,7 @@ Supported elliptic curve types:
 
 Supported cryptography operations
 * ECDSA
+* Elliptic Curve Elgamal
 
 ## build and install
 
