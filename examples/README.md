@@ -42,18 +42,18 @@ securing private keys) up to the user.
 
 ## Sending a message
 
-1. Encode the Message
+1. Encrypt the Message
 
-    Alice encodes a message to Bob. Once the message is encoded it can be
+    Alice encrypts a message to Bob. Once the message is encrypted it can be
     delivered by any means to Bob. The contents of the message cannot be
-    decoded without access to the private key.
+    decrypted without access to the private key.
 
     ```
     echo "Hello, Bob!" | ./ecdh_enc --pubkey=bob.pubkey > a2b.ctxt
     cat a2b.ctxt
     ```
     
-    Note that the encoding uses a random ephemeral private key and nonce and
+    Note that the encryption uses a random ephemeral private key and nonce and
     passes the corresponding public key point and nonce in the message so
     running the encryption command again with the same message input will
     generate a different ciphertext.
@@ -79,10 +79,31 @@ securing private keys) up to the user.
     cat a2b_copy.ctxt
     ```
 
-1. Decode the message
+1. Decrypt the message
 
-    Bob can use his private key to decode the message. Simple enough.
+    Bob can use his private key to decrypt the message. Simple enough.
 
     ```
     cat a2b.ctxt | ./ecdh_dec --privkey=bob.privkey
+    ```
+
+## Sending an elliptic curve point with Elgamal encryption
+
+The Elliptic Curve Elgamal cryptosystem encrypts a point (e.g. public key)
+using public key encryption such that it can be decoded by the recipient.
+
+1. Encrypt a point
+
+    Alice can encrypt her own public key and send it to Bob
+    
+    ```
+    cat alice.pubkey | ./ecelgamal_enc --pubkey=bob.pubkey > a2b_eg.ctxt
+    ```
+
+2. Decrypt a point
+
+    Bob can decrypt the ciphertext to obtain the original elliptic curve point
+
+    ```
+    cat a2b_eg.ctxt | ./ecelgamal_dec --privkey=bob.privkey
     ```

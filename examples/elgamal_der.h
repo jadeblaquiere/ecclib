@@ -28,15 +28,23 @@
 //OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 //OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef _EC_ECC_H_INCLUDED_
-#define _EC_ECC_H_INCLUDED_
+#ifndef _ELGAMAL_DER_H_INCLUDED_
+#define _ELGAMAL_DER_H_INCLUDED_
 
-#include <ecc/field.h>
-#include <ecc/ecdsa.h>
-#include <ecc/ecelgamal.h>
-#include <ecc/ecurve.h>
-#include <ecc/ecpoint.h>
-#include <ecc/mpzurandom.h>
-#include <ecc/safememory.h>
+#include <assert.h>
+#include <ecc.h>
+#include <gmp.h>
+#include <libtasn1.h>
 
-#endif // _EC_ECC_H_INCLUDED_
+char *_ecelgamal_der_export_ciphertxt(mpECElgamalCiphertext_t ctxt, size_t *sz);
+int _ecelgamal_der_import_ciphertxt(mpECElgamalCiphertext_t ctxt, mpECurve_t cv, char *der, size_t sz);
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif // _ELGAMAL_DER_H_INCLUDED_
