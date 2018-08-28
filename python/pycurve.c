@@ -711,6 +711,16 @@ static PyObject *ECurve_getattro(PyObject *o, PyObject *attr_name) {
     return ECurve_getattr(o, attr_nm_c);
 }
 
+PyObject *PyECurve_FromECurve(mpECurve_t cv) {
+    ECurve *rop;
+
+	rop = (ECurve *)ECurve_new( &ECurveType, NULL, NULL);
+	mpECurve_init(rop->ec);
+	mpECurve_set(rop->ec, cv);
+	rop->ready = 1;
+	return (PyObject *)rop;
+}
+
 static PyMemberDef ECurve_members[] = {
 	{NULL}
 };

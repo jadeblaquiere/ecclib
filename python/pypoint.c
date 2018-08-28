@@ -316,6 +316,7 @@ static PyObject *ECPoint_op_add(ECPoint *op1, ECPoint *op2) {
     rop->cv = op1->cv;
     Py_INCREF(rop->cv);
     mpECP_add(rop->ecp, op1->ecp, op2->ecp);
+	rop->ready = 1;
     return (PyObject *)rop;
 }
 
@@ -337,6 +338,7 @@ static PyObject *ECPoint_op_sub(ECPoint *op1, ECPoint *op2) {
     rop->cv = op1->cv;
     Py_INCREF(rop->cv);
     mpECP_sub(rop->ecp, op1->ecp, op2->ecp);
+	rop->ready = 1;
     return (PyObject *)rop;
 }
 
@@ -353,6 +355,7 @@ static PyObject *ECPoint_op_neg(ECPoint *op1) {
     rop->cv = op1->cv;
     Py_INCREF(rop->cv);
     mpECP_neg(rop->ecp, op1->ecp);
+	rop->ready = 1;
     return (PyObject *)rop;
 }
 
@@ -399,6 +402,7 @@ static PyObject *ECPoint_op_mul(PyObject *op1, PyObject *op2) {
         mpECP_neg(rop->ecp, rop->ecp);
     }
     mpz_clear(scalar);
+	rop->ready = 1;
     return (PyObject *)rop;
 }
 
@@ -462,6 +466,18 @@ static PyObject *ECPoint_set_basemult(PyObject *p, PyObject *none) {
     mpECP_scalar_base_mul_setup(((ECPoint *)p)->ecp);
     
     Py_RETURN_NONE;
+}
+
+PyObject *PyECPoint_FromECP(mpECP_t pt) {
+	ECPoint *rop;
+
+	rop = (ECPoint *)ECPoint_new( &ECPointType, NULL, NULL);
+	mpECP_init(rop->ecp, pt->cvp);
+	mpECP_set(rop->ecp, pt);
+	rop->cv = (ECurve *)PyECurve_FromECurve(pt->cvp);
+	Py_INCREF(rop->cv);
+	rop->ready = 1;
+	return (PyObject *)rop;
 }
 
 static PyMemberDef ECPoint_members[] = {

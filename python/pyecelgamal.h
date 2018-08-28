@@ -28,11 +28,10 @@
 //OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 //OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef _EC_PY_CURVE_H_INCLUDED_
-#define _EC_PY_CURVE_H_INCLUDED_
+#ifndef _EC_PY_ECELGAMAL_H_INCLUDED_
+#define _EC_PY_ECELGAMAL_H_INCLUDED_
 
-#include <gmp.h>
-#include <ecc/ecurve.h>
+#include <ecc/ecelgamal.h>
 #include <Python.h>
 
 #ifdef __cplusplus
@@ -41,16 +40,15 @@ extern "C" {
 
 typedef struct {
     PyObject_HEAD
-    mpECurve_t ec;
+    mpECElgamalCiphertext_t ctxt;
+    ECurve *cv;
     int ready;
-} ECurve;
+} ECElgamalCiphertext;
 
-extern PyTypeObject ECurveType;
-
-PyObject *PyECurve_FromECurve(mpECurve_t cv);
+extern PyTypeObject ECElgamalCiphertextType;
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif // _EC_PY_CURVE_H_INCLUDED_
+#endif // _EC_PY_ECELGAMAL_H_INCLUDED_

@@ -32,6 +32,7 @@
 #include <ecc/safememory.h>
 #include <pycurve.h>
 #include <pyecdsa.h>
+#include <pyecelgamal.h>
 #include <pyfield.h>
 #include <pypoint.h>
 #include <Python.h>
@@ -79,6 +80,8 @@ PyInit_ECC(void)
 		return NULL;
 	if (PyType_Ready(&ECDSASignatureSchemeType) < 0)
 		return NULL;
+	if (PyType_Ready(&ECElgamalCiphertextType) < 0)
+		return NULL;
 
 	m = PyModule_Create(&ECC_module);
 
@@ -90,11 +93,13 @@ PyInit_ECC(void)
 	Py_INCREF(&ECPointType);
 	Py_INCREF(&ECDSASignatureType);
 	Py_INCREF(&ECDSASignatureSchemeType);
+	Py_INCREF(&ECElgamalCiphertextType);
 	// add the objects
 	PyModule_AddObject(m, "FieldElement", (PyObject *)&FieldElementType);
 	PyModule_AddObject(m, "ECurve", (PyObject *)&ECurveType);
 	PyModule_AddObject(m, "ECPoint", (PyObject *)&ECPointType);
 	PyModule_AddObject(m, "ECDSASignature", (PyObject *)&ECDSASignatureType);
 	PyModule_AddObject(m, "ECDSASignatureScheme", (PyObject *)&ECDSASignatureSchemeType);
+	PyModule_AddObject(m, "ECElgamalCiphertext", (PyObject *)&ECElgamalCiphertextType);
 	return m;
 }

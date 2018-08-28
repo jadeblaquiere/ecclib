@@ -154,6 +154,7 @@ static PyObject *FieldElement_op_add_pylong(FieldElement *op1, PyLongObject *op2
     mpFp_clear(op2f);
     mpz_clear(op2z);
 
+	rop->ready = 1;
     return (PyObject *)rop;
 }
 
@@ -186,6 +187,7 @@ static PyObject *FieldElement_op_add(FieldElement *op1, FieldElement *op2) {
     rop->fe->fp = op1->fe->fp;
     mpFp_realloc(rop->fe);
     mpFp_add(rop->fe, op1->fe, op2->fe);
+	rop->ready = 1;
     return (PyObject *)rop;
 }
 
@@ -209,6 +211,7 @@ static PyObject *FieldElement_op_sub_pylong(FieldElement *op1, PyLongObject *op2
     mpFp_clear(op2f);
     mpz_clear(op2z);
 
+	rop->ready = 1;
     return (PyObject *)rop;
 }
 
@@ -251,6 +254,7 @@ static PyObject *FieldElement_op_sub(FieldElement *op1, FieldElement *op2) {
     rop->fe->fp = op1->fe->fp;
     mpFp_realloc(rop->fe);
     mpFp_sub(rop->fe, op1->fe, op2->fe);
+	rop->ready = 1;
     return (PyObject *)rop;
 }
 
@@ -274,6 +278,7 @@ static PyObject *FieldElement_op_mul_pylong(FieldElement *op1, PyLongObject *op2
     mpFp_clear(op2f);
     mpz_clear(op2z);
 
+	rop->ready = 1;
     return (PyObject *)rop;
 }
 
@@ -306,6 +311,7 @@ static PyObject *FieldElement_op_mul(FieldElement *op1, FieldElement *op2) {
     rop->fe->fp = op1->fe->fp;
     mpFp_realloc(rop->fe);
     mpFp_mul(rop->fe, op1->fe, op2->fe);
+	rop->ready = 1;
     return (PyObject *)rop;
 }
 
@@ -317,6 +323,7 @@ static PyObject *FieldElement_op_neg(FieldElement *op1) {
     rop->fe->fp = op1->fe->fp;
     mpFp_realloc(rop->fe);
     mpFp_neg(rop->fe, op1->fe);
+	rop->ready = 1;
     return (PyObject *)rop;
 }
 
@@ -333,6 +340,7 @@ static PyObject *FieldElement_op_multiplicative_inverse(FieldElement *op1, PyObj
 		mpz_clear(rop->fe->i);
     	Py_RETURN_NONE;
     }
+	rop->ready = 1;
     return (PyObject *)rop;
 }
 
@@ -349,6 +357,7 @@ static PyObject *FieldElement_op_sqrt(FieldElement *op1, PyObject *none) {
 		mpz_clear(rop->fe->i);
     	Py_RETURN_NONE;
     }
+	rop->ready = 1;
     return (PyObject *)rop;
 }
 
@@ -473,6 +482,7 @@ static PyObject *FieldElement_op_power(FieldElement *a, FieldElement *b, PyObjec
     rop->fe->fp = a->fe->fp;
     mpFp_realloc(rop->fe);
     mpFp_pow_ui(rop->fe, a->fe, bui);
+	rop->ready = 1;
     return (PyObject *)rop;
 }
 

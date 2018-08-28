@@ -49,6 +49,8 @@ typedef struct {
 
 extern PyTypeObject ECPointType;
 
+PyObject *PyECPoint_FromECP(mpECP_t pt);
+
 #ifdef __cplusplus
 }
 #endif

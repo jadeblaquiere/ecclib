@@ -28,7 +28,7 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from ECC import FieldElement, ECurve, ECPoint
+from ECC import FieldElement, ECurve, ECPoint, ECElgamalCiphertext
 import asn1
 import sys
 import binascii
@@ -236,4 +236,36 @@ def der_decode_message(DERbytes):
     tag, ctext = decoder.read()
     decoder.leave()
     return (pubbytes, nonce, ctext)
-    
+
+def der_encode_ecelgamal_ctxt(ctext, curve):
+    # encode key, curve to ASN1 DER format
+    encoder = asn1.Encoder()
+    encoder.start()
+    encoder.enter(asn1.Numbers.Sequence)
+    # C
+    encoder.write(ctext.C.compressed(), asn1.Numbers.OctetString)
+    # D
+    encoder.write(ctext.D.compressed(), asn1.Numbers.OctetString)
+    # curve
+    _der_encode_curve(curve, encoder)
+    encoder.leave()
+    return encoder.output()
+
+def der_decode_ecelgamal_ctxt(DERbytes):
+    decoder = asn1.Decoder()
+    decoder.start(DERbytes)
+    ensure_tag(decoder, asn1.Numbers.Sequence)
+    decoder.enter()
+    # C
+    ensure_tag(decoder, asn1.Numbers.OctetString)
+    tag, Cbytes = decoder.read()
+    # D
+    ensure_tag(decoder, asn1.Numbers.OctetString)
+    tag, Dbytes = decoder.read()
+    # curve
+    curve = _der_decode_curve(decoder)
+    decoder.leave()
+    Cpt = ECPoint(curve, Cbytes)
+    Dpt = ECPoint(curve, Dbytes)
+    ctxt = ECElgamalCiphertext(Cpt,Dpt)
+    return ctxt
