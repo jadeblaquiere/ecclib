@@ -101,7 +101,7 @@ func TestSignVerify(t *testing.T) {
 			fmt.Println("Error: Signature verify failed")
 			t.FailNow()
 		}
-		for i := 0; i < 100; i++ {
+		for i := 0; i < 20; i++ {
 			sK2 := NewFieldElementURandom(cv.GetAttr("n")).AsInt()
 			pK2 := NewPointNeutral(cv)
 			pK2.Mul(G, sK2)
@@ -159,7 +159,7 @@ func TestSignVerify512(t *testing.T) {
 			fmt.Println("Error: Signature verify failed")
 			t.FailNow()
 		}
-		for i := 0; i < 100; i++ {
+		for i := 0; i < 20; i++ {
 			sK2 := NewFieldElementURandom(cv.GetAttr("n")).AsInt()
 			pK2 := NewPointNeutral(cv)
 			pK2.Mul(G, sK2)

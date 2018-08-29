@@ -36,7 +36,7 @@ package ecgo
 // #include <stdlib.h>
 // #include <string.h>
 //
-// typedef _mpECDSASignatureScheme_t *mpECDSASignatureScheme_ptr;
+// //typedef _mpECDSASignatureScheme_t *mpECDSASignatureScheme_ptr;
 //
 // mpECDSASignatureScheme_ptr malloc_ECDSASignatureScheme() {
 //     return (mpECDSASignatureScheme_ptr)malloc(sizeof(_mpECDSASignatureScheme_t));
@@ -46,7 +46,7 @@ package ecgo
 //     free(css);
 // }
 //
-// typedef _mpECDSASignature_t *mpECDSASignature_ptr;
+// //typedef _mpECDSASignature_t *mpECDSASignature_ptr;
 //
 // mpECDSASignature_ptr malloc_ECDSASignature() {
 //     return (mpECDSASignature_ptr)malloc(sizeof(_mpECDSASignature_t));

@@ -3,83 +3,9 @@
 These examples are intended to illustrate usage of the basic ECC primatives. 
 They exercise the major features of the Python API for curves and point. There
 are also interoperable equivalents using the [C API](../../examples/) and the
-[Go API](../../ecgo/cmd/).
+[Go API](../../ecgo/cmd/). In general the python examples work just like the C
+examples so you should be able to use the same script to walk through their
+execution.
 
-
-# Tutorial
-
-NOTE : The examples are intended to be just that, examples. While the example
-programs are intended to demonstrate a practical, working and complete
-cryptosystem, they haven't been audited and implement a rudimentary interface
-which leaves several details (e.g. authenticity of keys, securing private keys)
-up to the user.
-
-## Creating Keys
-
-1. Create a public and private key pair
-
-    As with most cryptography examples we have the situation where Alice wishes
-    to send a message to Bob. In order for this to happen, Bob must have created
-    a private key and then derive a public key (which he provides Alice). It is
-    not necessary that Alice has keys to send a message to Bob. Bob also wishes
-    to ensure his messages are highly secure so he selects a curve with a large
-    prime field.
-    
-    ```
-    python3 ecdh_gen.py --list_curves
-    python3 ecdh_gen.py --curve=Curve41417 > alice.privkey
-    python3 ecdh_pub.py --file alice.privkey > alice.pubkey
-    python3 ecdh_gen.py --curve=Curve41417 > bob.privkey
-    python3 ecdh_pub.py --file bob.privkey > bob.pubkey
-    cat alice.privkey alice.pubkey
-    cat bob.privkey bob.pubkey
-    ```
-    
-    The keys as encoded include the key values and the curve parameters.
-
-## Sending a message
-
-1. Encode the Message
-
-    Alice encodes a message to Bob. Once the message is encoded it can be
-    delivered by any means to Bob. The contents of the message cannot be
-    decoded without access to the private key.
-
-    ```
-    echo "Hello, Bob!" | python3 ecdh_enc.py --pubkey=bob.pubkey > a2b.ctxt
-    cat a2b.ctxt
-    ```
-    
-    Note that the encoding uses a random ephemeral private key and nonce and
-    passes the corresponding public key point and nonce in the message so
-    running the encryption command again with the same message input will
-    generate a different ciphertext.
-
-1. Sign the Message
-
-    Alice wishes that Bob can verify the authenticity of the message by signing
-    the message using the Elliptic Curve Digital Signature Algrithm (ECDSA). 
-    Alice uses her private key to sign the ciphertext.
-
-    ```
-    cat a2b.ctxt | python3 ecdsa_sign.py --privkey=alice.privkey > a2b_sign.ctxt
-    cat a2b_sign.ctxt
-    ```
-
-1. Validate the Message Origin
-
-    Upon reciept of the message Bob first validates that the message was
-    signed with Alice's private key using Alice's public key.
-
-    ```
-    cat a2b_sign.ctxt | python3 ecdsa_verify.py --pubkey=alice.pubkey > a2b_copy.ctxt
-    cat a2b_copy.ctxt
-    ```
-
-1. Decode the message
-
-    Bob can use his private key to decode the message. Simple enough.
-    
-    ```
-    cat a2b_copy.ctxt | python3 ecdh_dec.py --privkey=bob.privkey
-    ```
+Please refer to the [C Examples](../../examples/) for tutorial on how the
+examples work. If that doesn't work, try the "--help" option.
