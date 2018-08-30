@@ -52,7 +52,9 @@ Supported cryptography operations
 
 libecc follows the traditional GNU autotools build process so it _should_
 build without issue on most platforms where autotools is present. GMP is the
-only dependency. 
+only dependency (though by default unit tests are built which use libcheck
+and libsodium so to build with only GMP you'll need to pass the option
+`--disable-unit-tests` to configure)
 
 Example build and install sequence:
 

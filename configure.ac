@@ -25,18 +25,26 @@ AC_ARG_ENABLE([safe-clean],
   no)  safeclean=false ;;
   *) AC_MSG_ERROR([bad value ${enableval} for --enable-safe-clean]) ;;
 esac],[safeclean=true])
+AC_ARG_ENABLE([unit-tests],
+[  --enable-unit-tests       build unit tests, requires libcheck, libsodium @<:@default=yes@:>@],
+[case "${enableval}" in
+  yes) unittests=true ;;
+  no)  unittests=false ;;
+  *) AC_MSG_ERROR([bad value ${enableval} for --enable-unit-tests]) ;;
+esac],[unittests=true])
 AC_CHECK_LIB([gmp], [__gmpz_realloc])
 AM_CONDITIONAL([COND_BENCHMARKS], [test "x$benchmarks" = xtrue])
 AM_CONDITIONAL([COND_EXAMPLES], [test "x$examples" = xtrue])
 AM_CONDITIONAL([COND_SAFECLEAN], [test "x$safeclean" = xtrue])
-AM_CONDITIONAL([COND_NEEDSODIUM], [test "x$benchmarks" = xtrue -o "x$examples" = xtrue])
+AM_CONDITIONAL([COND_NEEDSODIUM], [test "x$benchmarks" = xtrue -o "x$examples" = xtrue -o "x$unittests" = xtrue])
+AM_CONDITIONAL([COND_UNITTESTS], [test "x$unittests" = xtrue])
 AM_COND_IF([COND_EXAMPLES],[AC_CHECK_LIB([popt], [poptGetContext])])
 AM_COND_IF([COND_EXAMPLES],[AC_CHECK_LIB([b64], [base64_init_encodestate])])
-AC_CHECK_LIB([sodium], [crypto_scalarmult_ed25519])
+AM_COND_IF([COND_NEEDSODIUM],[AC_CHECK_LIB([sodium], [crypto_scalarmult_ed25519])])
 AM_CONDITIONAL([HAVE_LIBSODIUM], [test "x$ac_cv_lib_sodium_crypto_scalarmult_ed25519" = xyes])
 AM_COND_IF([COND_BENCHMARKS],[AC_CHECK_LIB([relic], [ep_curve_set_plain])])
 AM_CONDITIONAL([HAVE_LIBRELIC], [test "x$ac_cv_lib_relic_ep_curve_set_plain" = xyes])
-PKG_CHECK_MODULES([CHECK], [check])
+AM_COND_IF([COND_UNITTESTS],[PKG_CHECK_MODULES([CHECK], [check])])
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_MACRO_DIR([m4])
 AC_OUTPUT([Makefile src/Makefile tests/Makefile include/Makefile examples/Makefile benchmark/Makefile])

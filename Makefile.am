@@ -5,4 +5,7 @@ endif
 if COND_EXAMPLES
   MAYBE_EXAMPLES = examples
 endif
-SUBDIRS=src tests include $(MAYBE_BENCHMARKS) $(MAYBE_EXAMPLES)
+if COND_UNITTESTS
+  MAYBE_TESTS = tests
+endif
+SUBDIRS=src include $(MAYBE_TESTS) $(MAYBE_BENCHMARKS) $(MAYBE_EXAMPLES)
