@@ -28,15 +28,11 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from ECC import FieldElement, ECurve, ECPoint, ECElgamalCiphertext
+from ECC import ECurve, ECPoint, ECElgamalCiphertext
 from example_der import der_decode_pubkey, der_encode_ecelgamal_ctxt
 from example_pem import pem_wrap, pem_unwrap
 from argparse import ArgumentParser
-import base64
 import sys
-from hashlib import sha256
-import asn1
-import pysodium
 
 desc = ('ecelgamal_enc encrypts an ecdh public key (point) with a public '
         'key (point)')

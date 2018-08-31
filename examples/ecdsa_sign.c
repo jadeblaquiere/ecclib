@@ -40,18 +40,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-typedef struct _readbuf {
-    char    buffer[16000];
-    struct _readbuf *next;
-    int     sz;
-} _readbuf_t;
-
-static void _free_readbuf(_readbuf_t *next) {
-    if (next->next != NULL) _free_readbuf(next->next);
-    free(next);
-    return;
-}
-
 void wrap_libsodium_sha512(unsigned char *hash, unsigned char *msg, size_t sz) {
     int status;
     status = crypto_hash_sha512(hash, msg, (unsigned long long)sz);
@@ -127,48 +115,7 @@ int main(int argc, char **argv) {
         free(filename);
     }
 
-    // read entire plaintext input into memory
-    {
-        size_t len, rlen;
-        _readbuf_t *head;
-        _readbuf_t *next;
-        unsigned char *buf;
-
-        // read file into linked list of chunks
-        head = (_readbuf_t *)malloc(sizeof(_readbuf_t));
-        next = head;
-        next->next = (_readbuf_t *)NULL;
-        len = 0;
-
-        while(1) {
-            rlen = fread(next->buffer, sizeof(char), 16000, fPtr);
-            len += rlen;
-            next->sz = rlen;
-            if (feof(fPtr)) {
-                break;
-            }
-            next->next = (_readbuf_t *)malloc(sizeof(_readbuf_t));
-            next = next->next;
-            next->next = NULL;
-        }
-        if (len == 0) {
-            fprintf(stderr,"<Error>: plaintext input zero length");
-            exit(1);
-        }
-
-        // concatenate chunks into a single buffer
-        msg = (unsigned char *)malloc((len + 1) * sizeof(char));
-        next = head;
-        buf = msg;
-        while (next != NULL) {
-            bcopy(next->buffer, buf, next->sz);
-            buf += next->sz;
-            next = next->next;
-        }
-        msg[len] = 0;
-        msglen = len;
-        _free_readbuf(head);
-    }
+    msg = (unsigned char *)read_buffer_from_file(fPtr, &msglen);
     fclose(fPtr);
 
     // HERE IS WHERE THE ACTUAL EXAMPLE STARTS... everything before is
@@ -204,6 +151,11 @@ int main(int argc, char **argv) {
     mpFp_init(sK, cv->n);
     mpFp_set_mpz(sK, pmpz, cv->n);
     result = mpECDSASignature_init_Sign(sig, ss, sK, msg, msglen);
+    if (result != 0) {
+        mpFp_clear(sK);
+        fprintf(stderr,"<Error>: Sign failed\n");
+        exit(1);
+    }
 
     result = write_b64wrapped_to_file(stdout, (char *)msg, msglen, "ECDSA SIGNED MESSAGE");
     if (result != 0) {

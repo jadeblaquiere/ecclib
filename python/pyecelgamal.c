@@ -235,6 +235,7 @@ static PyObject *ECElgamalCiphertext_decrypt(PyObject *self, PyObject *sK) {
     	if (status != 0) {
     		PyErr_SetString(PyExc_TypeError, "Error converting long to FieldElement");
         	mpz_clear(impz);
+        	free(feK);
     		return NULL;
     	}
 
@@ -249,14 +250,15 @@ static PyObject *ECElgamalCiphertext_decrypt(PyObject *self, PyObject *sK) {
 	rop = (ECPoint *)PyECPoint_FromECP(egc->ctxt->C);
 
     status = mpECElgamal_init_decrypt(rop->ecp, feK, egc->ctxt);
-    if (status != 0) {
-        PyErr_SetString(PyExc_RuntimeError, "ECElgamalCiphertext_init: unexpected error decrypting");
-        return NULL;
-    }
 
     if (PyLong_Check(sK)) {
         mpFp_clear(feK);
         free(feK);
+    }
+
+    if (status != 0) {
+        PyErr_SetString(PyExc_RuntimeError, "ECElgamalCiphertext_init: unexpected error decrypting");
+        return NULL;
     }
 
     // you're ready!

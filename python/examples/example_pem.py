@@ -29,7 +29,6 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import base64
-import binascii
 
 def pem_wrap(mbytes, ptype):
     r = '-----BEGIN ' + str(ptype) + '-----\n'

@@ -167,7 +167,7 @@ static _test_point_type test_point[] = {
 };
 
 int _test_mpECP_add(void) {
-    int error, i, j, npoints;
+    int i, j, npoints;
     mpECurve_t cv;
     mpECP_t a, b, c, d;
     mpECurve_init(cv);
@@ -177,7 +177,7 @@ int _test_mpECP_add(void) {
 
     npoints = sizeof(test_point) / sizeof(test_point[0]);
     for (i = 0 ; i < npoints ; i++) {
-        int slen;
+        int error, slen;
         char *buffer;
 
         error = mpECurve_set_named(cv, test_point[i].curve);
@@ -228,14 +228,14 @@ int _test_mpECP_add(void) {
 }
 
 int _test_mpECP_double(void) {
-    int error, i, npoints;
+    int i, npoints;
     mpECurve_t cv;
     mpECP_t a, b, c;
     mpECurve_init(cv);
     
     npoints = sizeof(test_point) / sizeof(test_point[0]);
     for (i = 0 ; i < npoints; i++) {
-        int slen;
+        int error, slen;
         char *buffer;
         
         error = mpECurve_set_named(cv, test_point[i].curve);
@@ -278,7 +278,7 @@ int _test_mpECP_double(void) {
 }
 
 int _test_mpECP_add_mul(void) {
-    int error, i, j, k, ncurves;
+    int i, j, k, ncurves;
     char *test_curve[] = {"secp256k1", "Curve41417", "Ed25519", "Curve25519"};
     mpECurve_t cv;
     mpECP_t a, b, c;
@@ -288,6 +288,8 @@ int _test_mpECP_add_mul(void) {
 
     ncurves = sizeof(test_curve) / sizeof(test_curve[0]);
     for (i = 0 ; i < ncurves; i++) {
+        int error;
+
         printf("testing add / mul for curve %s\n", test_curve[i]);
         error = mpECurve_set_named(cv, test_curve[i]);
         assert(error == 0);
@@ -333,7 +335,7 @@ int _test_mpECP_add_mul(void) {
 }
 
 int _test_mpECP_scalar_mul(void) {
-    int error, i, npoints;
+    int i, npoints;
     mpECurve_t cv;
     mpECP_t a, b, c;
     mpz_t r;
@@ -342,7 +344,7 @@ int _test_mpECP_scalar_mul(void) {
     
     npoints = sizeof(test_point) / sizeof(test_point[0]);
     for (i = 0 ; i < npoints; i++) {
-        int slen;
+        int error, slen;
         char *buffer;
         
         error = mpECurve_set_named(cv, test_point[i].curve);

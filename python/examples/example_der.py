@@ -28,9 +28,8 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from ECC import FieldElement, ECurve, ECPoint, ECElgamalCiphertext
+from ECC import ECurve, ECPoint, ECElgamalCiphertext
 import asn1
-import sys
 import binascii
 
 def _int_to_bebytes(ivalue):
@@ -118,42 +117,42 @@ def _der_decode_curve(decoder):
     decoder.enter()
     # field order
     ensure_tag(decoder, asn1.Numbers.OctetString)
-    tag, p = decoder.read()
+    _, p = decoder.read()
     p = _bebytes_to_int(p)
     # curve type (enum)
     ensure_tag(decoder, asn1.Numbers.Enumerated)
-    tag, ctype = decoder.read()
+    _, ctype = decoder.read()
     # curve equation coefficients
     ensure_tag(decoder, asn1.Numbers.Sequence)
     decoder.enter()
     ensure_tag(decoder, asn1.Numbers.OctetString)
-    tag, cp0 = decoder.read()
+    _, cp0 = decoder.read()
     cp0 = _bebytes_to_int(cp0)
     ensure_tag(decoder, asn1.Numbers.OctetString)
-    tag, cp1 = decoder.read()
+    _, cp1 = decoder.read()
     cp1 = _bebytes_to_int(cp1)
     decoder.leave()
     # curve order
     ensure_tag(decoder, asn1.Numbers.OctetString)
-    tag, n = decoder.read()
+    _, n = decoder.read()
     n = _bebytes_to_int(n)
     # curve cofactor
     ensure_tag(decoder, asn1.Numbers.OctetString)
-    tag, h = decoder.read()
+    _, h = decoder.read()
     h = _bebytes_to_int(h)
     # generator point
     ensure_tag(decoder, asn1.Numbers.Sequence)
     decoder.enter()
     ensure_tag(decoder, asn1.Numbers.OctetString)
-    tag, gx = decoder.read()
+    _, gx = decoder.read()
     gx = _bebytes_to_int(gx)
     ensure_tag(decoder, asn1.Numbers.OctetString)
-    tag, gy = decoder.read()
+    _, gy = decoder.read()
     gy = _bebytes_to_int(gy)
     decoder.leave()
     # curve field bitsize
     ensure_tag(decoder, asn1.Numbers.Integer)
-    tag, bits = decoder.read()
+    _, bits = decoder.read()
     decoder.leave()
     if ctype == 2:
         curve = ECurve.ShortWeierstrass(p, cp0, cp1, n, h, gx, gy, bits)
@@ -174,7 +173,7 @@ def der_decode_privkey(DERbytes):
     decoder.enter()
     # privkey
     ensure_tag(decoder, asn1.Numbers.OctetString)
-    tag, privkey = decoder.read()
+    _, privkey = decoder.read()
     privkey = _bebytes_to_int(privkey)
     curve = _der_decode_curve(decoder)
     decoder.leave()
@@ -199,7 +198,7 @@ def der_decode_pubkey(DERbytes):
     decoder.enter()
     # pubkey
     ensure_tag(decoder, asn1.Numbers.OctetString)
-    tag, pubbytes = decoder.read()
+    _, pubbytes = decoder.read()
     curve = _der_decode_curve(decoder)
     # curve
     pubkey = ECPoint(curve, pubbytes)
@@ -227,13 +226,13 @@ def der_decode_message(DERbytes):
     decoder.enter()
     # pubkey
     ensure_tag(decoder, asn1.Numbers.OctetString)
-    tag, pubbytes = decoder.read()
+    _, pubbytes = decoder.read()
     # nonce
     ensure_tag(decoder, asn1.Numbers.OctetString)
-    tag, nonce = decoder.read()
+    _, nonce = decoder.read()
     # ciphertext
     ensure_tag(decoder, asn1.Numbers.OctetString)
-    tag, ctext = decoder.read()
+    _, ctext = decoder.read()
     decoder.leave()
     return (pubbytes, nonce, ctext)
 
@@ -258,10 +257,10 @@ def der_decode_ecelgamal_ctxt(DERbytes):
     decoder.enter()
     # C
     ensure_tag(decoder, asn1.Numbers.OctetString)
-    tag, Cbytes = decoder.read()
+    _, Cbytes = decoder.read()
     # D
     ensure_tag(decoder, asn1.Numbers.OctetString)
-    tag, Dbytes = decoder.read()
+    _, Dbytes = decoder.read()
     # curve
     curve = _der_decode_curve(decoder)
     decoder.leave()

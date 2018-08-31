@@ -28,15 +28,12 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from ECC import FieldElement, ECurve, ECPoint
+from ECC import ECurve, ECPoint
 from example_der import der_decode_privkey, der_decode_message
-from example_pem import pem_wrap, pem_unwrap
+from example_pem import pem_unwrap
 from argparse import ArgumentParser
-import base64
-import binascii
 import sys
 from hashlib import sha256
-import asn1
 import pysodium
 
 desc = ('ecdh_dec decrypts a message ecnrypted with the ChaCha20 stream cipher '
@@ -79,7 +76,7 @@ if ctder is None:
 
 try:
     ePubkey = ECPoint(curve, ePubkeybytes)
-except:
+except (TypeError, ValueError):
     sys.exit('Pubkey value invalid for curve')
 
 # generate a random (ephemeral) private key

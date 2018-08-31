@@ -28,11 +28,10 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-import ast
 import unittest
 import ECC
 from ECC import FieldElement, ECurve, ECPoint
-from binascii import hexlify, unhexlify
+from binascii import unhexlify
 
 
 class TestECPoint(unittest.TestCase):

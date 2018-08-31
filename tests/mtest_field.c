@@ -90,8 +90,6 @@ int main(void) {
     mpFp_t cc;
     mpz_t aa, bb, d, e, p;
     //mpFp_field fp;
-    int64_t start_time, stop_time;
-    double fp_rate, mpz_rate;
 
     mpz_init(aa);
     mpz_init(bb);
@@ -106,6 +104,9 @@ int main(void) {
     nfields = sizeof(test_prime_fields)/sizeof(test_prime_fields[0]);
 
     for (j = 0 ; j < nfields; j++) {
+        int64_t start_time, stop_time;
+        double fp_rate, mpz_rate;
+
         mpz_set_str(p,test_prime_fields[j], 0);
 
         for (i = 0; i < ARRAY_SZ; i++) {

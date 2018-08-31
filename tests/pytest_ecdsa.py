@@ -28,12 +28,10 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-import ast
 import unittest
-import ECC
-from ECC import FieldElement, ECurve, ECPoint, ECDSASignature, ECDSASignatureScheme
+from ECC import FieldElement, ECurve, ECPoint, ECDSASignatureScheme
 from Crypto.Hash import SHA256, SHA384, SHA512
-from binascii import hexlify, unhexlify
+from binascii import unhexlify
 
 
 class TestECDSA(unittest.TestCase):
@@ -51,7 +49,6 @@ class TestECDSA(unittest.TestCase):
         self.hm.append(SHA512)
 
     def test_basic_sign_verify(self):
-        pts = []
         for c in self.cv:
             G = ECPoint(c, c.G)
             sK = FieldElement.urandom(c.n)
@@ -61,7 +58,6 @@ class TestECDSA(unittest.TestCase):
                 sig = ss.Sign(sK, 'test')
                 assert sig.Verify(pK, 'test')
                 # print(repr(ss))
-                
 
 
 if __name__ == '__main__':

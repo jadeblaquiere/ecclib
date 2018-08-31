@@ -316,7 +316,8 @@ int mpECP_set_str(mpECP_t rpt, char *s, mpECurve_t cv) {
     for (i = 0; i < blen; i++) {
         unsigned int btmp;
         sscanf(&s[2 * i], "%2X", &btmp);
-        assert(btmp >= 0);
+        // btmp is unsigned, always >= 0
+        //assert(btmp >= 0);
         assert(btmp < 256);
         buf[i] = (unsigned char)btmp;
         //printf("%02X", buf[i]);
@@ -512,7 +513,8 @@ void mpECP_out_str(char *s, mpECP_t pt, int compress) {
     for (i = (bytes-1); i >= 0; i--) {
         unsigned int value;
         value = ((unsigned char *)s)[i];
-        assert(value >= 0);
+        // value is unsigned, ergo never negative
+        //assert(value >= 0);
         assert(value < 256);
         s[2 * i] = _hexlut[(value >> 4)];
         s[2 * i + 1] = _hexlut[(value & 0x0F)];
@@ -1322,7 +1324,7 @@ void mpECP_sub(mpECP_t rpt, mpECP_t pt1, mpECP_t pt2) {
 }
 
 void mpECP_scalar_mul(mpECP_t rpt, mpECP_t pt, mpFp_t sc) {
-    int i, b;
+    int i;
     mpECP_t R0, R1;
     mpECP_init(R0, pt->cvp);
     mpECP_init(R1, pt->cvp);
@@ -1331,6 +1333,8 @@ void mpECP_scalar_mul(mpECP_t rpt, mpECP_t pt, mpFp_t sc) {
     // scalar should be modulo the order of the curve
     assert(mpz_cmp(sc->fp->p, pt->cvp->n) == 0);
     for (i = pt->cvp->bits - 1; i >= 0 ; i--) {
+        int b;
+
         b = mpFp_tstbit(sc, i);
         _mpECP_cswap_safe(R0, R1, b);
         mpECP_add(R1, R1, R0);
@@ -1397,7 +1401,7 @@ void mpECP_scalar_base_mul_setup(mpECP_t pt) {
 }
 
 void mpECP_scalar_base_mul(mpECP_t rpt, mpECP_t pt, mpFp_t sc) {
-    int j, k, nlevels, levelsz;
+    int j, nlevels, levelsz;
     mpz_t s, kmpz;
     mpECP_t a;
     assert (mpz_cmp(sc->fp->p, pt->cvp->n) == 0);
@@ -1412,6 +1416,8 @@ void mpECP_scalar_base_mul(mpECP_t rpt, mpECP_t pt, mpFp_t sc) {
     nlevels = _mpECP_n_base_pt_levels(pt);
     levelsz = _mpECP_n_base_pt_level_size(pt);
     for (j = 0; j < nlevels; j++) {
+        int k;
+
         mpz_mod_ui(kmpz, s, levelsz);
         k = mpz_get_ui(kmpz);
         mpECP_add(a, a, &pt->base_pt[(j * levelsz) + k]);

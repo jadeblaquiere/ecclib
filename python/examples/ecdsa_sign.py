@@ -28,13 +28,11 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from ECC import FieldElement, ECDSASignatureScheme, ECDSASignature
-from example_der import der_decode_privkey, der_encode_message
+from ECC import ECDSASignatureScheme, ECDSASignature
+from example_der import der_decode_privkey
 from example_pem import pem_wrap, pem_unwrap
 from argparse import ArgumentParser
-import base64
 import sys
-import asn1
 from Crypto.Hash import SHA512
 
 

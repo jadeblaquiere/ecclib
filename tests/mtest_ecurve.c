@@ -36,7 +36,7 @@
 #include <stdlib.h>
 
 int main(void) {
-    int i, error, status;
+    int i, status;
     mpECurve_t a;
     char **clist;
     mpECurve_init(a);
@@ -47,6 +47,7 @@ int main(void) {
     clist = _mpECurve_list_standard_curves();
     i = 0;
     while(clist[i] != NULL) {
+        int error;
         mpECurve_t b;
         mpECurve_init(b);
         printf("TEST: mpECurve found curve %s\n", clist[i]);

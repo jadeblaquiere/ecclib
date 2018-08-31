@@ -32,7 +32,6 @@ from ECC import FieldElement, ECurve
 from example_der import der_encode_privkey
 from example_pem import pem_wrap
 from argparse import ArgumentParser
-import base64
 import sys
 
 desc = ('ecdh-gen generates a private key for elliptic curve cryptography '
