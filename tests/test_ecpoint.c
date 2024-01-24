@@ -37,7 +37,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-START_TEST(test_mpECP_create)
+START_TEST(test_mpECP_create) {
     int error;
     mpECurve_t cv;
     mpECP_t a;
@@ -51,9 +51,10 @@ START_TEST(test_mpECP_create)
 
     mpECP_clear(a);
     mpECurve_clear(cv);
+}
 END_TEST
 
-START_TEST(test_mpECP_str_out)
+START_TEST(test_mpECP_str_out) {
     int error, i, ncurves;
     char *test_curve[] = {"secp256k1", "Curve25519", "Curve41417", "Ed25519"};
     mpECurve_t cv;
@@ -85,9 +86,10 @@ START_TEST(test_mpECP_str_out)
     }
 
     mpECurve_clear(cv);
+}
 END_TEST
 
-START_TEST(test_mpECP_affine)
+START_TEST(test_mpECP_affine) {
     int error, i, ncurves;
     char *test_curve[] = {"secp256k1", "Curve25519", "Curve41417", "Ed25519"};
     mpECurve_t cv;
@@ -121,9 +123,10 @@ START_TEST(test_mpECP_affine)
     }
 
     mpECurve_clear(cv);
+}
 END_TEST
 
-START_TEST(test_mpECP_infinity)
+START_TEST(test_mpECP_infinity) {
     int error, i, ncurves;
     char *test_curve[] = {"secp256k1", "Curve25519", "Curve41417", "Ed25519"};
     mpECurve_t cv;
@@ -155,9 +158,10 @@ START_TEST(test_mpECP_infinity)
     }
 
     mpECurve_clear(cv);
+}
 END_TEST
 
-START_TEST(test_mpECP_urandom)
+START_TEST(test_mpECP_urandom) {
     int error, i, j, ncurves;
     char *test_curve[] = {"secp256k1", "Curve41417", "Ed25519"};
     mpECurve_t cv;
@@ -200,9 +204,10 @@ START_TEST(test_mpECP_urandom)
     mpz_clear(y);
     mpz_clear(x);
     mpECurve_clear(cv);
+}
 END_TEST
 
-START_TEST(test_mpECP_export_import)
+START_TEST(test_mpECP_export_import) {
     int error, i, ncurves;
     char *test_curve[] = {"secp256k1", "Curve25519", "Curve41417", "Ed25519"};
     mpECurve_t cv;
@@ -284,6 +289,7 @@ START_TEST(test_mpECP_export_import)
     }
 
     mpECurve_clear(cv);
+}
 END_TEST
 
 typedef struct {
@@ -415,7 +421,7 @@ static _test_point_type test_point[] = {
 {"Curve25519", "0x7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFE3", "03090E3FBF3D491BE7DC3CAF59321A26E3AC24B57834634B85A86AFA92D85FEF13"},
 };
 
-START_TEST(test_mpECP_add)
+START_TEST(test_mpECP_add) {
     int error, i, j, npoints;
     mpECurve_t cv;
     mpECP_t a, b, c, d;
@@ -469,9 +475,10 @@ START_TEST(test_mpECP_add)
     }
 
     mpECurve_clear(cv);
+}
 END_TEST
 
-START_TEST(test_mpECP_double)
+START_TEST(test_mpECP_double) {
     int error, i, npoints;
     mpECurve_t cv;
     mpECP_t a, b, c;
@@ -517,9 +524,10 @@ START_TEST(test_mpECP_double)
     }
 
     mpECurve_clear(cv);
+}
 END_TEST
 
-START_TEST(test_mpECP_add_mul)
+START_TEST(test_mpECP_add_mul) {
     int error, i, j, k, ncurves;
     char *test_curve[] = {"secp256k1", "Curve41417", "Ed25519", "Curve25519"};
     mpECurve_t cv;
@@ -570,9 +578,10 @@ START_TEST(test_mpECP_add_mul)
     }
     mpz_clear(r);
     mpECurve_clear(cv);
+}
 END_TEST
 
-START_TEST(test_mpECP_scalar_mul)
+START_TEST(test_mpECP_scalar_mul) {
     int error, i, npoints;
     mpECurve_t cv;
     mpECP_t a, b, c;
@@ -616,9 +625,10 @@ START_TEST(test_mpECP_scalar_mul)
 
     mpz_clear(r);
     mpECurve_clear(cv);
+}
 END_TEST
 
-START_TEST(test_mpECP_scalar_base_mul)
+START_TEST(test_mpECP_scalar_base_mul) {
     int error, i, npoints;
     mpECurve_t cv;
     mpECP_t a, b, c;
@@ -677,6 +687,7 @@ START_TEST(test_mpECP_scalar_base_mul)
     mpECP_clear(b);
     mpECP_clear(a);
     mpECurve_clear(cv);
+}
 END_TEST
 
 static Suite *mpECP_test_suite(void) {

@@ -59,7 +59,7 @@ void wrap_libsodium_sha256(unsigned char *hash, unsigned char *msg, size_t sz) {
 
 #define _TEST_MESSAGE_MAX   (100)
 
-START_TEST(test_mpECDSA_sscheme_init)
+START_TEST(test_mpECDSA_sscheme_init) {
     char **std_curves;
     mpECDSAHashfunc_t H;
     int i;
@@ -176,6 +176,7 @@ START_TEST(test_mpECDSA_sscheme_init)
         i++;
     }
     free(std_curves);
+}
 END_TEST
 
 typedef struct {
@@ -448,7 +449,7 @@ static void _shift_right_and_zero_pad(unsigned char *buffer, size_t len, size_t 
     return;
 }
 
-START_TEST(test_mpECDSA_reference_test_vectors)
+START_TEST(test_mpECDSA_reference_test_vectors) {
     int nvecs;
     int i;
 
@@ -553,6 +554,7 @@ START_TEST(test_mpECDSA_reference_test_vectors)
         mpECurve_clear(cv);
         mpECDSAHashfunc_clear(H);
     }
+}
 END_TEST
 
 static Suite *mpECDSA_test_suite(void) {

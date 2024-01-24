@@ -36,7 +36,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-START_TEST(test_mpECurve_create)
+START_TEST(test_mpECurve_create) {
     int status;
     mpECurve_t a;
     mpECurve_init(a);
@@ -62,9 +62,10 @@ START_TEST(test_mpECurve_create)
     assert(status == 0);
 
     mpECurve_clear(a);
+}
 END_TEST
 
-START_TEST(test_mpECurve_cmp)
+START_TEST(test_mpECurve_cmp) {
     int status;
     mpECurve_t a, b, c, d;
     mpECurve_init(a);
@@ -135,9 +136,10 @@ START_TEST(test_mpECurve_cmp)
     mpECurve_clear(c);
     mpECurve_clear(b);
     mpECurve_clear(a);
+}
 END_TEST
 
-START_TEST(test_mpECurve_named)
+START_TEST(test_mpECurve_named) {
     int error;
     mpECurve_t a;
     mpECurve_init(a);
@@ -148,9 +150,10 @@ START_TEST(test_mpECurve_named)
     assert(error != 0);
 
     mpECurve_clear(a);
+}
 END_TEST
 
-START_TEST(test_mpECurve_all_named)
+START_TEST(test_mpECurve_all_named) {
     int i, error, status;
     mpECurve_t a;
     char **clist;
@@ -201,6 +204,7 @@ START_TEST(test_mpECurve_all_named)
     free(clist);
 
     mpECurve_clear(a);
+}
 END_TEST
 
 static Suite *mpECurve_test_suite(void) {

@@ -109,7 +109,7 @@ unsigned long int ui_urandom(unsigned long int max) {
     return value;
 }
 
-START_TEST(test_mpFp_neg_basic)
+START_TEST(test_mpFp_neg_basic) {
     mpFp_t a, b, c;
     mpz_t p;
     mpz_t d;
@@ -144,9 +144,10 @@ START_TEST(test_mpFp_neg_basic)
     mpFp_clear(a);
     mpz_clear(d);
     mpz_clear(p);
+}
 END_TEST
 
-START_TEST(test_mpFp_add_basic)
+START_TEST(test_mpFp_add_basic) {
     int64_t i,j;
     mpFp_t a, b, c;
     mpz_t p;
@@ -228,9 +229,10 @@ START_TEST(test_mpFp_add_basic)
     mpz_clear(aa);
     mpz_clear(d);
     mpz_clear(p);
+}
 END_TEST
 
-START_TEST(test_mpFp_add_extended)
+START_TEST(test_mpFp_add_extended) {
     int i, j;
     int nfields;
     // static as w/large values of ARRAY_SZ the stack exceeds ulimit allowance
@@ -426,9 +428,10 @@ START_TEST(test_mpFp_add_extended)
     mpz_clear(d);
     mpz_clear(bb);
     mpz_clear(aa);
+}
 END_TEST
 
-START_TEST(test_mpFp_sub_basic)
+START_TEST(test_mpFp_sub_basic) {
     int i,j;
     mpFp_t a, b, c;
     mpz_t p;
@@ -494,9 +497,10 @@ START_TEST(test_mpFp_sub_basic)
     mpFp_clear(c);
     mpFp_clear(b);
     mpFp_clear(a);
+}
 END_TEST
 
-START_TEST(test_mpFp_sub_extended)
+START_TEST(test_mpFp_sub_extended) {
     int i, j;
     int nfields;
     // static as w/large values of ARRAY_SZ the stack exceeds ulimit allowance
@@ -658,9 +662,10 @@ START_TEST(test_mpFp_sub_extended)
     mpz_clear(d);
     mpz_clear(bb);
     mpz_clear(aa);
+}
 END_TEST
 
-START_TEST(test_mpFp_mul_basic)
+START_TEST(test_mpFp_mul_basic) {
     mpFp_t a, b, c;
     mpz_t p;
     mpz_t d;
@@ -706,9 +711,10 @@ START_TEST(test_mpFp_mul_basic)
     mpFp_clear(c);
     mpFp_clear(b);
     mpFp_clear(a);
+}
 END_TEST
 
-START_TEST(test_mpFp_mul_extended)
+START_TEST(test_mpFp_mul_extended) {
     int i, j;
     int nfields;
     // static as w/large values of ARRAY_SZ the stack exceeds ulimit allowance
@@ -854,9 +860,10 @@ START_TEST(test_mpFp_mul_extended)
     mpz_clear(d);
     mpz_clear(bb);
     mpz_clear(aa);
+}
 END_TEST
 
-START_TEST(test_mpFp_pow_basic)
+START_TEST(test_mpFp_pow_basic) {
     mpFp_t a, b, c;
     mpz_t p, d, e;
     mpz_init(p);
@@ -905,9 +912,10 @@ START_TEST(test_mpFp_pow_basic)
     mpFp_clear(c);
     mpFp_clear(b);
     mpFp_clear(a);
+}
 END_TEST
 
-START_TEST(test_mpFp_pow_extended)
+START_TEST(test_mpFp_pow_extended) {
     int i, j;
     int nfields;
     // static as w/large values of ARRAY_SZ the stack exceeds ulimit allowance
@@ -1009,9 +1017,10 @@ START_TEST(test_mpFp_pow_extended)
     mpz_clear(d);
     mpz_clear(bb);
     mpz_clear(aa);
+}
 END_TEST
 
-START_TEST(test_mpFp_sqr_extended)
+START_TEST(test_mpFp_sqr_extended) {
     int i, j;
     int nfields;
     // static as w/large values of ARRAY_SZ the stack exceeds ulimit allowance
@@ -1115,9 +1124,10 @@ START_TEST(test_mpFp_sqr_extended)
     mpz_clear(d);
     mpz_clear(bb);
     mpz_clear(aa);
+}
 END_TEST
 
-START_TEST(test_mpFp_inv_basic)
+START_TEST(test_mpFp_inv_basic) {
     mpFp_t a, b, c;
     mpz_t p, d, e;
     mpz_init(p);
@@ -1167,9 +1177,10 @@ START_TEST(test_mpFp_inv_basic)
     mpFp_clear(c);
     mpFp_clear(b);
     mpFp_clear(a);
+}
 END_TEST
 
-START_TEST(test_mpFp_inv_extended)
+START_TEST(test_mpFp_inv_extended) {
     int i, j;
     int nfields;
     int status, rstatus;
@@ -1264,9 +1275,10 @@ START_TEST(test_mpFp_inv_extended)
     mpz_clear(d);
     mpz_clear(bb);
     mpz_clear(aa);
+}
 END_TEST
 
-START_TEST(test_mpFp_swap_cswap)
+START_TEST(test_mpFp_swap_cswap) {
     mpFp_t a, b, c, d;
     mpz_t p;
     mpz_t e;
@@ -1317,9 +1329,10 @@ START_TEST(test_mpFp_swap_cswap)
     mpFp_clear(c);
     mpFp_clear(b);
     mpFp_clear(a);
+}
 END_TEST
 
-START_TEST(test_mpFp_cswap_extended)
+START_TEST(test_mpFp_cswap_extended) {
     int i, j, ii;
     int nfields;
     // static as w/large values of ARRAY_SZ the stack exceeds ulimit allowance
@@ -1435,9 +1448,10 @@ START_TEST(test_mpFp_cswap_extended)
     mpz_clear(d);
     mpz_clear(bb);
     mpz_clear(aa);
+}
 END_TEST
 
-START_TEST(test_mpFp_sqrt_basic)
+START_TEST(test_mpFp_sqrt_basic) {
     int i, j, error, bb, cc;
     int primes[] = {11, 13, 17, 19, 23, 29, 31, 1021};
     mpFp_t a, b, c;
@@ -1471,9 +1485,10 @@ START_TEST(test_mpFp_sqrt_basic)
     }
 
     mpz_clear(p);
+}
 END_TEST
 
-START_TEST(test_mpFp_sqrt_extended)
+START_TEST(test_mpFp_sqrt_extended) {
     int i, j;
     int nfields;
     int status;
@@ -1559,9 +1574,10 @@ START_TEST(test_mpFp_sqrt_extended)
     mpz_clear(d);
     mpz_clear(bb);
     mpz_clear(aa);
+}
 END_TEST
 
-START_TEST(test_mpFp_tstbit)
+START_TEST(test_mpFp_tstbit) {
     int i, j, k, bit;
     int primes[] = {11, 13, 17, 19, 23, 29, 31};
     mpFp_t a, b, c;
@@ -1590,9 +1606,10 @@ START_TEST(test_mpFp_tstbit)
     }
 
     mpz_clear(p);
+}
 END_TEST
 
-START_TEST(test_mpFp_urandom)
+START_TEST(test_mpFp_urandom) {
     int i;
     mpz_t a;
     mpFp_t b;
@@ -1613,9 +1630,10 @@ START_TEST(test_mpFp_urandom)
 
     mpFp_clear(b);
     mpz_clear(a);
+}
 END_TEST
 
-START_TEST(test_mpFp_point_check)
+START_TEST(test_mpFp_point_check) {
     int ncurve;
     int i;
     mpz_t z_p, z_a, z_b, z_n, z_h, z_gx, z_gy, z_r, z_l, t;
@@ -1730,6 +1748,7 @@ START_TEST(test_mpFp_point_check)
     mpz_clear(z_p);
 
     mpECurve_clear(cv);
+}
 END_TEST
 
 static Suite *mpFp_test_suite(void) {

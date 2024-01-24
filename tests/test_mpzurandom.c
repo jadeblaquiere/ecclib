@@ -36,7 +36,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-START_TEST(test_mpzurandom)
+START_TEST(test_mpzurandom) {
     int i;
     mpz_t a, b;
     mpz_init(a);
@@ -55,6 +55,7 @@ START_TEST(test_mpzurandom)
 
     mpz_clear(b);
     mpz_clear(a);
+}
 END_TEST
 
 static Suite *mpzR_test_suite(void) {

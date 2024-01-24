@@ -43,7 +43,7 @@
 #include <stdlib.h>
 #include <time.h>
 
-START_TEST(test_mpECElgamal_init)
+START_TEST(test_mpECElgamal_init) {
     int i;
     char **curves;
 
@@ -113,6 +113,7 @@ START_TEST(test_mpECElgamal_init)
         i++;
     }
     free(curves);
+}
 END_TEST
 
 static Suite *mpECDSA_test_suite(void) {
