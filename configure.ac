@@ -1,4 +1,4 @@
-AC_INIT([libecc], [0.1], [https://github.com/jadeblaquiere/ecclib/issues])
+AC_INIT([libecc],[0.1],[https://github.com/jadeblaquiere/ecclib/issues])
 AC_CONFIG_AUX_DIR([build-aux])
 AM_INIT_AUTOMAKE([foreign -Wall -Werror])
 AC_PROG_CC
@@ -47,4 +47,5 @@ AM_CONDITIONAL([HAVE_LIBRELIC], [test "x$ac_cv_lib_relic_ep_curve_set_plain" = x
 AM_COND_IF([COND_UNITTESTS],[PKG_CHECK_MODULES([CHECK], [check])])
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_MACRO_DIR([m4])
-AC_OUTPUT([Makefile src/Makefile tests/Makefile include/Makefile examples/Makefile benchmark/Makefile])
+AC_CONFIG_FILES([Makefile src/Makefile tests/Makefile include/Makefile examples/Makefile benchmark/Makefile])
+AC_OUTPUT
